@@ -1,0 +1,201 @@
+{
+	"version": "2.0.0",
+
+	"configurations": [
+		{
+			"name": "API (attach)",
+			"type": "node",
+			"request": "attach",
+			"port": 9230,
+			"restart": true,
+			"sourceMaps": true,
+			"cwd": "${workspaceFolder}/api"
+		},
+		{
+			"name": "App (adapter-node build)",
+			"type": "node",
+			"request": "launch",
+			"program": "${workspaceFolder}/app/build/index.js",
+			"cwd": "${workspaceFolder}/app",
+			"env": {
+				"NODE_ENV": "development",
+				"PORT": "4173"
+			},
+			"sourceMaps": true
+		}
+	],
+	"compounds": [
+		{
+			"name": "Dev: API + App (prod server)",
+			"configurations": ["API (attach)", "App (adapter-node build)"]
+		}
+	],
+
+	"tasks": [
+		// Spacer
+		{
+			"label": " | ",
+			"type": "shell",
+			"command": "echo ''",
+			"group": "none",
+			"presentation": {
+				"reveal": "never",
+				"panel": "shared"
+			}
+		},
+
+		// Dev task
+		{
+			"label": "$(rocket) Dev",
+			"type": "npm",
+			"script": "dev",
+			"group": {
+				"kind": "test",
+				"isDefault": true
+			},
+			"presentation": {
+				"reveal": "always",
+				"panel": "dedicated"
+			},
+			"detail": "Run the development server",
+			"problemMatcher": []
+		},
+
+		// build task
+		{
+			"label": "$(wrench) Build",
+			"type": "npm",
+			"script": "build",
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"presentation": {
+				"reveal": "always",
+				"panel": "dedicated"
+			},
+			"detail": "Create the production bundle",
+			"problemMatcher": []
+		},
+
+		// deploy task
+		{
+			"label": "$(cloud-upload) Deploy",
+			"type": "npm",
+			"script": "deploy",
+			"group": "none",
+			"presentation": {
+				"reveal": "always",
+				"panel": "dedicated"
+			},
+			"detail": "Deploy to CapRover",
+			"problemMatcher": []
+		},
+
+		// spacer
+		{
+			"label": " | ",
+			"type": "shell",
+			"command": "echo ''",
+			"group": "none",
+			"presentation": {
+				"reveal": "never",
+				"panel": "shared"
+			}
+		},
+
+		// test task
+		{
+			"label": "Run Tests",
+			"type": "npm",
+			"script": "test",
+			"group": "none",
+			"presentation": {
+				"reveal": "always",
+				"panel": "dedicated"
+			},
+			"detail": "Execute the test suite",
+			"problemMatcher": []
+		},
+
+		// preview task
+		{
+			"label": "Preview",
+			"type": "npm",
+			"script": "preview",
+			"group": "none",
+			"presentation": {
+				"reveal": "always",
+				"panel": "dedicated"
+			},
+			"detail": "Serve the built app locally",
+			"problemMatcher": []
+		},
+
+		// start task
+		{
+			"label": "Start",
+			"type": "npm",
+			"script": "start",
+			"group": "none",
+			"presentation": {
+				"reveal": "always",
+				"panel": "dedicated"
+			},
+			"detail": "Start the production server",
+			"problemMatcher": []
+		},
+
+		// Spacer
+		{
+			"label": " | ",
+			"type": "shell",
+			"command": "echo ''",
+			"group": "none",
+			"presentation": {
+				"reveal": "never",
+				"panel": "shared"
+			}
+		},
+
+		// clear task
+		{
+			"label": "Clear Build",
+			"type": "npm",
+			"script": "clear",
+			"group": "none",
+			"presentation": {
+				"reveal": "always",
+				"panel": "dedicated"
+			},
+			"detail": "Remove build artifacts",
+			"problemMatcher": []
+		},
+
+		// Kill ports
+		{
+			"label": "Kill Ports",
+			"type": "npm",
+			"script": "kill",
+			"group": "none",
+			"presentation": {
+				"reveal": "always",
+				"panel": "dedicated"
+			},
+			"detail": "Free dev server ports",
+			"problemMatcher": []
+		},
+
+		// spacer
+		{
+			"label": " | ",
+			"type": "shell",
+			"command": "echo ''",
+			"group": "none",
+			"presentation": {
+				"reveal": "never",
+				"panel": "shared"
+			}
+		}
+	]
+}

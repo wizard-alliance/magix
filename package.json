@@ -1,0 +1,78 @@
+{
+	"name": "magix-root",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		
+		"init": "node ./.magix/commands/init.mjs",
+		"reinit": "FORCE=1 node ./.magix/commands/init.mjs",
+		"update": "node ./.magix/commands/update.mjs",
+		"versions": "node ./.magix/commands/versions.mjs",
+		"resolve-streams": "node ./.magix/commands/resolve-streams.mjs",
+		"info": "node ./.magix/commands/info.mjs",
+
+		"kill": "kill-port 3000 4000 5173 5174 4050",
+		"prebuild": "npm run clear && cd app && npm run prebuild && cd ..",
+		
+		"clear": "npm run clear:dist && npm run clear:logs && npm run kill",
+		"clear:dist": "cd api && npm run clear && cd ../app && npm run clear && cd ../electron && npm run clear && cd ..",
+		"clear:logs": "rimraf ./.logs",
+		
+		"clear:electron": "cd electron && npm run clear && cd ..",
+		"clear:api": "cd api && npm run clear && cd ..",
+		"clear:app": "cd app && npm run clear && cd ..",
+
+		"dev": "npm-run-all -p dev:app dev:api",
+		"dev:app": "cd app && npm run dev",
+		"dev:api": "cd api && npm run dev",
+		"dev:electron": "cd electron && npm run dev",
+
+		"build": "npm run prebuild && npm-run-all build:app build:api",
+		"build:app": "cd app && npm run build",
+		"build:api": "cd api && npm run build",
+		
+		"build:electron": "cd electron && npm run build",
+		"build:electron:windows": "cd electron && npm run build:windows",
+		"build:electron:linux": "cd electron && npm run build:linux",
+		"build:electron:mac": "cd electron && npm run build:mac",
+
+		"preview": "npm-run-all -p preview:app preview:api",
+		"preview:app": "cd app && npm run preview",
+		"preview:api": "cd api && npm run preview",
+
+		"start": "npm-run-all -p start:app start:api",
+		"start:app": "cd app && npm run start",
+		"start:api": "cd api && npm run start",
+		"start:electron": "cd electron && npm run start",
+
+		"typecheck": "npm-run-all -p typecheck:app typecheck:api",
+		"typecheck:app": "cd app && npm run typecheck",
+		"typecheck:api": "cd api && npm run typecheck",
+
+		"lint": "npm-run-all -p lint:app lint:api",
+		"lint:app": "cd app && npm run lint",
+		"lint:api": "cd api && npm run lint",
+
+		"check": "npm-run-all -p typecheck lint ",
+		"check:app": "npm-run-all -p typecheck:app lint:app",
+		"check:api": "npm-run-all -p typecheck:api lint:api",
+
+		"test": "cd app && npm run test",
+		"deploy": "caprover deploy"
+	},
+	"files": [
+		"dist",
+		"!dist/**/*.test.*",
+		"!dist/**/*.spec.*"
+	],
+	"sideEffects": [
+		"**/*.css"
+	],
+	"devDependencies": {
+		"chalk": "^5.6.2",
+		"cross-env": "^10.1.0",
+		"kill-port": "^2.0.1",
+		"npm-run-all": "^4.1.5",
+		"rimraf": "^6.1.2"
+	}
+}

@@ -1,0 +1,36 @@
+{
+  "appId": "com.magicrp.client",
+  "productName": "Magic RP",
+  "directories": {
+    "output": "dist",
+    "buildResources": "src/buildResources"
+  },
+  "files": [
+    "package.json",
+    "src/**/*"
+  ],
+  "extraResources": [
+    {
+      "from": "src/resources/app-dist",
+      "to": "app-dist"
+    }
+  ],
+  "asar": true,
+  "mac": {
+    "category": "public.app-category.utilities",
+    "target": [
+      "dmg"
+    ]
+  },
+  "win": {
+    "target": [
+      "nsis"
+    ]
+  },
+  "linux": {
+    "category": "Utility",
+    "target": [
+      "AppImage"
+    ]
+  }
+}

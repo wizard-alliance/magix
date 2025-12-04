@@ -1,0 +1,24 @@
+{
+	"compilerOptions": {
+		"baseUrl": "./",
+		"paths": {
+			"@api/core": ["./api/.core/index.ts"],
+			"@api/core/*": ["./api/.core/*"],
+			"@api/*": ["./api/src/*"],
+
+			"@app/core": ["./app/.core/index.ts"],
+			"@app/core/*": ["./app/.core/*"],
+			"@app/*": ["./app/src/*"],
+			
+			"@electron/core": ["./electron/.core/index.ts"],
+			"@electron/core/*": ["./electron/.core/*"],
+			"@electron/*": ["./electron/src/*"],
+
+			"@uploads/*": ["./api/uploads/*"],
+
+			// Framework specific
+			"@magix/config": ["./.magix/config.ts"],
+			"@magix/*": ["./.magix/*"]
+		}
+	}
+}

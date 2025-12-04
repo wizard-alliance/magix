@@ -1,0 +1,22 @@
+{
+	"extends": "../tsconfig.base.json",
+	
+	"compilerOptions": {
+		"target": "ES2022",
+		"module": "NodeNext",
+		"moduleResolution": "NodeNext",
+		"allowSyntheticDefaultImports": true,
+		"esModuleInterop": true,
+		"forceConsistentCasingInFileNames": true,
+		"resolveJsonModule": true,
+		"strict": true,
+		"skipLibCheck": true,
+		"outDir": ".dist",
+		"rootDir": "..",
+		"sourceMap": true,
+		"inlineSources": true,
+		"declaration": true,
+	},
+	"include": ["../.magix/**/*.ts", "src/**/*.ts", "src/**/*.d.ts", ".core/**/*.ts", ".core/**/*.d.ts"],
+	"exclude": ["src/**/.dist/**", "src/**/*.test.ts", "src/**/.tests/**", ".core/**/.dist/**", ".core/**/*.test.ts", ".core/**/.tests/**"]
+}

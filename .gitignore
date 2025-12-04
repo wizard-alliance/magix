@@ -1,0 +1,23 @@
+node_modules
+uploads
+.svelte-kit
+dist
+.dist
+.env
+.env.local
+.env.*
+!.env-example
+.DS_Store
+npm-debug.log*
+*.log
+coverage
+*.tsbuildinfo
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+.pub
+.ssh
+.cache
+
+// Electron.js specifics
+/electron/src/resources/**/**

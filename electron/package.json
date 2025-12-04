@@ -1,0 +1,37 @@
+{
+  "name": "project-simulacra-electron",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "src/main.js",
+  "scripts": {
+    "clear": "npm-run-all clear:dist clear:resources",
+    "clear:dist": "rimraf dist",
+    "clear:resources": "rimraf src/resources/app-dist",
+    "dev": "npm-run-all -p dev:app dev:electron",
+    "dev:app": "cross-env PUBLIC_APP_TARGET=electron npm --prefix ../app run dev",
+    "dev:electron": "wait-on http-get://localhost:5173 && cross-env NODE_ENV=development electron .",
+    "build": "npm-run-all clear build:app copy:app package",
+    "build:debug": "cross-env NODE_ENV=debug npm-run-all clear build:app copy:app package set:debug-flag",
+    "build:app": "cross-env PUBLIC_APP_TARGET=electron npm --prefix ../app run build",
+    "copy:app": "node ./scripts/copy-app-dist.mjs",
+    "package": "electron-builder --config src/electron-builder.config.json",
+    "set:debug-flag": "node ./scripts/set-debug-flag.mjs",
+    "build:windows": "npm-run-all build:app copy:app package:windows",
+    "build:linux": "npm-run-all build:app copy:app package:linux",
+    "build:mac": "npm-run-all build:app copy:app package:mac",
+    "package:windows": "electron-builder --win --config src/electron-builder.config.json",
+    "package:linux": "electron-builder --linux --config src/electron-builder.config.json",
+    "package:mac": "electron-builder --mac --config src/electron-builder.config.json",
+    "prestart": "npm-run-all build:app copy:app",
+    "start": "cross-env NODE_ENV=production electron ."
+  },
+  "devDependencies": {
+    "cross-env": "^10.1.0",
+    "electron": "^30.0.0",
+    "electron-builder": "^25.0.0",
+    "npm-run-all": "^4.1.5",
+    "rimraf": "^6.1.2",
+    "wait-on": "^7.2.0"
+  }
+}

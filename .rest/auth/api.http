@@ -1,0 +1,105 @@
+﻿@baseUrl = http://localhost:4000/api/v1
+@accessToken =
+@refreshToken =
+
+###
+### 1) Register demo user (one-off, POST is canonical)
+# @name registerDemo
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "email": "demo@example.com",
+  "username": "demo",
+  "password": "changeme",
+  "tosAccepted": true
+}
+
+###
+### 2) Login with demo user (sets tokens) [POST only]
+# @name authTokens
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "identifier": "demo",
+  "password": "changeme"
+}
+
+###
+# Token variables — taken from LAST response of any request named "authTokens"
+@accessToken = {{authTokens.response.body.$.data.tokens.access.token}}
+@refreshToken = {{authTokens.response.body.$.data.tokens.refresh.token}}
+
+###
+### 3) Fetch profile (me)
+GET {{baseUrl}}/auth/me
+Authorization: Bearer {{accessToken}}
+
+###
+### 4) Refresh tokens (POST)
+# @name authTokens
+POST {{baseUrl}}/auth/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "{{refreshToken}}"
+}
+
+###
+### 5) Change password (POST)
+POST {{baseUrl}}/auth/password
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "currentPassword": "changeme",
+  "newPassword": "super-secret-123",
+  "logoutAll": true
+}
+
+###
+### 6) Login with new password (updates authTokens) [POST only]
+# @name authTokens
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "identifier": "demo",
+  "password": "super-secret-123"
+}
+
+###
+### 7) Logout current session (POST)
+POST {{baseUrl}}/auth/logout
+Content-Type: application/json
+
+{
+  "refreshToken": "{{refreshToken}}"
+}
+
+###
+### 8) Logout all devices for current user (POST)
+POST {{baseUrl}}/auth/logout/all-devices
+Authorization: Bearer {{accessToken}}
+
+###
+### 9) Logout all users (admin / maintenance) (POST)
+POST {{baseUrl}}/auth/logout/all-users
+Authorization: Bearer {{accessToken}}
+
+###
+### 10) Vendor info (GET)
+GET {{baseUrl}}/auth/vendor/discord
+
+###
+### 11) Vendor login (POST)
+# @name vendorTokens
+POST {{baseUrl}}/auth/vendor/discord
+Content-Type: application/json
+
+{
+  "code": "sandbox-code",
+  "token": "sandbox-code",
+  "email": "demo+discord@example.com"
+}
