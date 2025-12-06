@@ -1,4 +1,4 @@
-import { pbkdf2Sync, randomBytes, timingSafeEqual } from "crypto"
+import { createHash, pbkdf2Sync, randomBytes, timingSafeEqual } from "crypto"
 
 const iterations = (() => {
 	const raw = process.env.BCRYPT_ROUNDS ?? "12"
@@ -37,4 +37,11 @@ export const verifyPassword = async (value: string, digest: string) => {
 		return false
 	}
 	return timingSafeEqual(safeStored, safeComputed)
+}
+
+
+export const generateHash = (input: any): string => {
+	const hash = createHash('sha256')
+	hash.update(JSON.stringify(input))
+	return hash.digest('hex')
 }

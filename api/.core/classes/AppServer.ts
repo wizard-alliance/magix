@@ -1,15 +1,7 @@
-// Node/3rd-party
-import express from "express"
 import path from 'node:path'
-
 import cors from "cors"
 import chalk from "chalk"
-import type { Application, Response } from "express"
-
-// Config & types
-import { Config } from "../config/env.js"
-import type { RouteDirectoryEntry } from "../types/routes.js"
-
+import type { Response } from "express"
 
 type ResponseContext = Response & {
 	__start?: number
@@ -17,12 +9,10 @@ type ResponseContext = Response & {
 }
 
 export class AppServer {
-	server: Application
 	private readonly prefix = "AppServer"
 	private loaded: boolean = false;
 
 	constructor() {
-		this.server = express()
 		this.configure()
 		this.listen()
 		this.initialize()
@@ -33,14 +23,18 @@ export class AppServer {
 			api.Log("Database not configured", this.prefix, "warning")
 		}
 
-		await api.Router.discoverRoutes(new URL("../routes", import.meta.url))
+		await api.Router.discoverRoutes(['.core/routes', 'src/routes'])
 
-		this.registerExpressBindings()
+		api.Router.getAll().forEach(({ method, path }: any) =>
+			api.Log(`${method} ${path}`, api.Router.prefix)
+		)
+
+		this.loaded = true;
 	}
 
 	configure = () => {
-		this.server.disable("x-powered-by")
-		this.server.set("trust proxy", 1)
+		api.Express.disable("x-powered-by")
+		api.Express.set("trust proxy", 1)
 
 		const parseList = (value: string) =>
 			value
@@ -71,7 +65,7 @@ export class AppServer {
 		]))
 			.map((value) => parseHostname(value))
 			.filter((value): value is string => Boolean(value))
-		this.server.use(
+		api.Express.use(
 			cors({
 				credentials: true,
 				methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
@@ -109,15 +103,15 @@ export class AppServer {
 			})
 		)
 
-		this.server.use(express.json())
-		this.server.use(express.urlencoded({ extended: true }))
+		api.Express.use(api.$Express.json())
+		api.Express.use(api.$Express.urlencoded({ extended: true }))
 
 		// Enable uploads directory serving
-		const uploadsDir = path.join(process.cwd(), (Config('UPLOAD_DIR') || '/uploads'))
-		this.server.use(`/static/${Config('UPLOAD_DIR')}`, express.static(uploadsDir))
+		const uploadsDir = path.join(process.cwd(), (api.Config('UPLOAD_DIR') || '/uploads'))
+		api.Express.use(`/static/${api.Config('UPLOAD_DIR')}`, api.$Express.static(uploadsDir))
 
 		// request logging (pre-route)
-		this.server.use((req, res, next) => {
+		api.Express.use((req, res, next) => {
 			const scopedRes = res as ResponseContext
 			scopedRes.__start = Date.now()
 			scopedRes.__prefix = this.prefix
@@ -125,37 +119,9 @@ export class AppServer {
 		})
 	}
 
-	private registerExpressBindings = () => {
-		const basePath = api.Config("API_BASE_PATH")
-
-		api.Router.register(this.server, {
-			basePath,
-			prefix: this.prefix,
-		})
-
-		this.server.get("/", (req, res) => {
-			api.Utils.sendSuccess(res, {
-				data: {
-					message: "API ready",
-					basePath,
-					endpoints: api.Router.getDirectory(),
-				},
-				request: req,
-			})
-		})
-		api.Router.directory.forEach(({ method, path }: RouteDirectoryEntry) =>
-			api.Log(`${method} ${path}`, this.prefix)
-		)
-
-		this.loaded = true;
-	}
-
 	listen = () => {
 		const parseList = (value: string) =>
-			value
-				.split(",")
-				.map((item) => item.trim())
-				.filter((item) => item.length > 0)
+			value.split(",").map((item) => item.trim()).filter((item) => item.length > 0)
 
 		const formatUrl = (url: string) => (url.endsWith("/") ? url : `${url}/`)
 
@@ -188,7 +154,7 @@ export class AppServer {
 
 		this.loaded = true;
 
-		this.server.listen(api.Config("PORT"), () => {
+		api.Express.listen(api.Config("PORT"), () => {
 			// Create fancy title
 			let appColor = api.Config("APP_COLOR") || "#813eceff"
 			let appColorSecondary = api.Config("APP_COLOR_SECONDARY") || "#a777dfff"

@@ -1,5 +1,4 @@
 import { randomUUID } from "crypto"
-import { PasswordHasher } from "../../helpers/PasswordHasher.js"
 import { AuthTokenManager } from "./AuthTokens.js"
 import { AuthVendor } from "./AuthVendor.js"
 
@@ -37,7 +36,6 @@ const normalizeUsername = (value?: string | null) => (value ?? "").trim()
 export class AuthService {
 	private readonly prefix = "AuthService"
 	private readonly db = api.Services.DB.connection
-	private readonly hasher = new PasswordHasher()
 	private readonly tokens = new AuthTokenManager()
 	private readonly vendors: Record<VendorName, AuthVendor>
 
@@ -86,7 +84,7 @@ export class AuthService {
 			return { error: "User already exists", code: 409 }
 		}
 
-		const password = await this.hasher.hash(input.password)
+		const password = await api.Utils.hashPassword(input.password)
 		const now = toTimestamp(Date.now())
 		const insertResult = await this.db
 			.insertInto("users")
@@ -131,7 +129,7 @@ export class AuthService {
 			return { error: "Account is disabled", code: 403 }
 		}
 
-		const valid = await this.hasher.verify(input.password, user.password)
+		const valid = await api.Utils.verifyPassword(input.password, user.password)
 		if (!valid) {
 			return { error: "Invalid credentials", code: 401 }
 		}
@@ -152,7 +150,7 @@ export class AuthService {
 		}
 
 		const randomPassword = randomUUID()
-		const password = await this.hasher.hash(randomPassword)
+		const password = await api.Utils.hashPassword(randomPassword)
 		const now = toTimestamp(Date.now())
 		const insertResult = await this.db
 			.insertInto("users")
@@ -300,13 +298,13 @@ export class AuthService {
 		}
 
 		if (user.password) {
-			const matches = await this.hasher.verify(input.currentPassword ?? "", user.password)
+			const matches = await api.Utils.verifyPassword(input.currentPassword ?? "", user.password)
 			if (!matches) {
 				return { error: "Current password incorrect", code: 401 }
 			}
 		}
 
-		const hashed = await this.hasher.hash(input.newPassword)
+		const hashed = await api.Utils.hashPassword(input.newPassword)
 		await this.db
 			.updateTable("users")
 			.set({ password: hashed, updated: toTimestamp(Date.now()) })

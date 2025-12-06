@@ -1,4 +1,3 @@
-import { createHash } from "crypto"
 import { CrudMethods } from "./Data/CrudMethods.js"
 import { CacheMethods } from "./Data/CacheMethods.js"
 
@@ -16,12 +15,6 @@ export class DataManager {
 	public readonly prefix = "DataManager"
 	public readonly CRUD: CrudMethods = new CrudMethods()
 	public readonly Cache: CacheMethods = new CacheMethods()
-
-	public generateHash(input: any): string {
-		const hash = createHash('sha256')
-		hash.update(JSON.stringify(input))
-		return hash.digest('hex')
-	}
 
 	public cloneValue<T>(input: T): T {
 		if (input === null || typeof input !== 'object') {

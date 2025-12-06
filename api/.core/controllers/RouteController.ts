@@ -1,587 +1,403 @@
-import { readdir } from "node:fs/promises"
 import { join, extname } from "node:path"
 import { fileURLToPath, pathToFileURL } from "node:url"
-import { sendError, sendSuccess } from "../helpers/ApiResponder.js"
-import { schemaColumns } from "../schema/Database.js"
+import { schemaColumns, tableColumnSets } from "../schema/Database.js"
 import { requireAuth } from "../middleware/auth.js"
-
-import type { Dirent } from "node:fs"
-import type { Application, NextFunction, Request, RequestHandler, Response } from "express"
-import type { ApiRoute, HttpMethod,	RouteDefinition, RouteDirectoryEntry } from "../types/routes.js"
-import type { $ } from "../types/routes.js"
-
-type RegisterOptions = {
-	basePath?: string
-	prefix?: string
-	exposeDirectory?: boolean
-	installFallbacks?: boolean
-}
-
-const normalizeMethod = (method: HttpMethod | string): HttpMethod => {
-	return method.toUpperCase() as HttpMethod
-}
-
-type ApiRouteConstructor = new () => ApiRoute
-
-const buildKey = (method: HttpMethod, path: string) => `${method} ${path}`
+import { glob } from 'glob'
+import { Config } from "../config/env.js"
+import { getReasonPhrase } from 'http-status-codes';
+import fs from "node:fs"
+import type { ColumnType } from "../schema/Database.js"
+import type { Application, Request, RequestHandler, Response } from "express"
+import type { $, HttpMethod, RouteOptions, Route, RestParams, ApiResponse, RouteCallback } from "../types/routes.js"
 
 export class RouteController {
-	private readonly tableName = ""
-	private readonly prefix = "RouteController"
-	private definitions = new Map<string, RouteDefinition>()
-	private modules = new Map<string, ApiRoute>()
-	private fallbackInstalled: Boolean = false
-	private directoryRegistered: Boolean = false
+	public readonly prefix = "Router"
+	private readonly version = Config('API_VERSION') || 'v1'
+	private readonly basePath = Config('API_BASE_PATH') || `/api`
+	private directory: Route[] = []
 
-	public directory: RouteDirectoryEntry[] = []
-	public directoryIndex = new Set<string>()
+	private get getCurrentVersion() {
+		return this.version
+	}
 
-	private readonly defaultOptionKeys = [
-		"limit",
-		"offset",
-		"sort",
-		"orderBy",
-		"page",
-		"max",
-		"debug",
-	] as const
+	private get getBasePath() {
+		return `${this.basePath}/${this.getCurrentVersion}/`
+	}
 
-	add(method: HttpMethod | string, path: string, ...handlers: RequestHandler[]): this {
-		const normalizedMethod = normalizeMethod(method)
-		if (handlers.length === 0) {
-			const key = buildKey(normalizedMethod, path)
-			api.Log(`no handlers supplied for ${key}`, this.prefix, "error")
-			throw new Error(`Route ${key} must include at least one handler`)
+	private getPath(path: string) {
+		const base = this.getBasePath.replace(/\/+$/, "")
+		const cleaned = path.replace(/^\/+/, "")
+		return `${base}/${cleaned}`
+	}
+
+	public set(method: Route["method"], path: Route["path"], cb: Route["callback"], options: RouteOptions = {}): Route {
+		const name = `${method.toLowerCase()}:${path}`
+		let route: Route = {
+			method: method.toUpperCase() as HttpMethod,
+			name,
+			path: this.getPath(path),
+			callback: cb,
+			meta: {
+				isRegistered: false,
+				isProtected: options?.protected ?? false,
+				isIndex: options?.index ?? false,
+				createdAt: Date.now(),
+				updatedAt: null,
+				tableName: options?.tableName || null,
+				perms: options?.perms || []
+			}
 		}
 
-		this.storeDefinition({
-			method: normalizedMethod,
-			path,
-			handlers,
-		})
-		return this
+		this.directory.push(route)
+
+		if (options?.register !== false) { this.register() }
+		return route
 	}
 
-	mount(route: ApiRoute | ApiRouteConstructor): this {
-		const instance: ApiRoute = typeof route === "function" ? new route() : route
-		const name = instance.getName()
-
-		this.modules.set(name, instance)
-		this.registerRouteDefinitions(instance)
-		return this
+	public unset(method: HttpMethod, path: string, register: boolean = true): void {
+		const route = this.get(`${method}:${path}`)
+		if (!route) {
+			api.Error(`Unset: Route not found: ${method}:${path}`, this.prefix)
+			return
+		}
+		this.directory = this.directory.filter(r => r !== route)
+		if (register) { this.register() }
 	}
 
-	has(method: HttpMethod | string, path: string): boolean {
-		return this.definitions.has(buildKey(normalizeMethod(method), path))
-	}
-
-	register(app: Application, options?: RegisterOptions): RouteDirectoryEntry[] {
+	public unsetAll(register: boolean = true): void {
 		this.directory = []
-		this.directoryIndex.clear()
-		this.fallbackInstalled = false
-		this.directoryRegistered = false
-		this.definitions.forEach((def) => {
-			const methodKey = normalizeMethod(def.method).toLowerCase()
-			const register = (app as any)[methodKey]
+		if (register) { this.register() }
+	}
 
-			if (typeof register !== "function") {
-				api.Error(`unsupported HTTP method ${def.method} for ${def.path}`, this.prefix)
+	public has(method: HttpMethod, path: string): boolean {
+		return this.directory.some(route => route.method === method && route.path === this.getPath(path))
+	}
+
+	public exists(name: string): boolean {
+		return this.get(name) !== undefined
+	}
+	
+	/**
+	 * Get a route by its method and path, if fetched route is a index route, return it too.
+	 */
+	public get(rawName: string): Route | undefined {
+		// Sanitize name and remove version
+		let name = rawName.replace(this.getBasePath, '').replace(/^\/+/, '').replace(/\/+$/, '')
+		if (!name.includes(':')) { name = `get:${name}` }
+		name = name.trim().toLowerCase()
+		const route = this.directory.find(route => route.name.toLowerCase() === name.toLowerCase())
+		return !route ? undefined : route
+	}
+
+	public getAll(): Route[] {
+		return this.directory
+	}
+
+	/**
+	 * Automatically discover route files from a directory, use readdir and/or Dirent
+	 */
+	public async discoverRoutes(dirPath: string | string[]): Promise<void> {
+		const dirPaths = Array.isArray(dirPath) ? dirPath : [dirPath]
+		const files: string[] = []
+		if(dirPaths.length === 0) { return }
+
+		dirPaths.forEach(dirPath => {
+			const fullPath = fileURLToPath(pathToFileURL(join(process.cwd(), dirPath)))
+
+			// Check if path exists, error if not
+			if (!fs.existsSync(fullPath)) {
+				api.Warning(`DiscoverRoutes: Path not found: ${fullPath}`, this.prefix)
 				return
 			}
 
-			register.call(app, def.path, ...def.handlers)
+			const potentialFiles = glob.sync("**/*.ts", { cwd: fullPath })
 
-			this.addDirectoryEntry({
-				method: def.method,
-				path: def.path,
-				version: def.version,
+			potentialFiles.forEach(file => {
+				const ext = extname(file)
+				if (ext !== ".ts") { return }
+				files.push(join(fullPath, file))
 			})
 		})
 
-		const shouldInstallFallbacks = options?.installFallbacks ?? true
+		// Loop and check if class has getDefinitions method
+		for (const filePath of files) {	
+			import(pathToFileURL(filePath).toString()).then(async (module) => {
+				for (const key in module) {
+					if( typeof module[key] !== "function" ) { continue }
+					let mod = module[key]
+					
+					// If Exported is function and named routes(), run it
+					if (mod.name == "routes") {
+						await mod()
+						this.register()
+						return
+					}
+
+					mod = new mod()
+
+					// If Exported is a class, look for method name inside the class routes() and run it
+					if (typeof mod === "object" && typeof mod['routes'] === 'function') {
+						await mod['routes']()
+						this.register()
+						return
+					}
+				}
+			}).catch((err) => {
+				api.Error(`Error importing route file: ${filePath} - ${err}`, this.prefix)
+			})
+		}
+	}
+
+	public return(raw: any, res: Response, req: Request, $: $): ApiResponse {
+		const data = (typeof raw === "object" && raw !== null) ? { ...raw } : raw
+		const code = Number(data.code) || 200
+		const errorMessage = data.errorMessage || data.error || null
+		const error = code >= 400 ? true : (data.error ?? false)
+		const errorPhrase = getReasonPhrase(code)
 		
-		if (shouldInstallFallbacks) {
-			this.installFallbackHandlers(app, {
-				basePath: options?.basePath,
-				prefix: options?.prefix ?? this.prefix,
-				exposeDirectory: options?.exposeDirectory ?? true,
-			})
-		}
+		const route = this.get(`${req.method}:${req.path}`)
 
-		return this.getDirectory()
-	}
+		if(data.code) { delete data.code }
+		if(data.error) { delete data.error }
 
-	getDirectory(): RouteDirectoryEntry[] {
-		return [...this.directory]
-	}
-
-	entries(): Array<{ key: string; route: RouteDefinition }> {
-		return Array.from(this.definitions.values()).map((route) => ({
-			key: buildKey(route.method, route.path),
-			route,
-		}))
-	}
-
-	async discoverRoutes(directory: URL | string): Promise<void> {
-		const directoryPath =
-			typeof directory === "string" ? directory : fileURLToPath(directory)
-		const entries = await readdir(directoryPath, { withFileTypes: true })
-
-		for (const entry of entries) {
-			const fullPath = join(directoryPath, entry.name)
-			if (entry.isDirectory()) {
-				await this.discoverRoutes(fullPath)
-				continue
-			}
-			if (!this.isRouteFile(entry)) continue
-
-			const moduleUrl = pathToFileURL(fullPath).href
-			const module = await import(moduleUrl)
-			const candidates = Object.values(module)
-			for (const candidate of candidates) {
-				const instance = this.instantiateRoute(candidate)
-				if (!instance) continue
-				if (!this.hasMinimumMetadata(instance)) continue
-				this.mount(instance)
-			}
-		}
-	}
-
-	private storeDefinition(definition: RouteDefinition) {
-		const guardNeeded = definition.auth || (definition.perms && definition.perms.length)
-		const handlers = guardNeeded
-			? [requireAuth({ perms: definition.perms }), ...definition.handlers]
-			: definition.handlers
-		const key = buildKey(definition.method, definition.path)
-		if (this.definitions.has(key)) {
-			api.Log(
-				`replacing existing definition for ${key}`,
-				this.prefix,
-				"warning"
-			)
-		}
-		this.definitions.set(key, { ...definition, handlers })
-	}
-
-	private registerRouteDefinitions(route: ApiRoute) {
-		const routeVersion = this.resolveVersion(route)
-		route.getDefinitions().forEach((definition) => {
-			const effectiveVersion = definition.version ?? routeVersion
-			const pathWithVersion = this.buildVersionedPath(
-				definition.path,
-				effectiveVersion
-			)
-			this.storeDefinition({
-				...definition,
-				path: pathWithVersion,
-				version: effectiveVersion,
-			})
-		})
-	}
-
-	private resolveVersion(route: ApiRoute): string | undefined {
-		if (typeof route.getVersion === "function") {
-			const version = route.getVersion()
-			if (version) return version
-		}
-		if (typeof route.version === "string" && route.version.length > 0) {
-			return route.version
-		}
-		return undefined
-	}
-
-	private buildVersionedPath(originalPath: string, version?: string): string {
-		const base = api.Config("API_BASE_PATH").replace(/\/+$/, "")
-		const sanitizedVersion = version
-			?.trim()
-			.replace(/^\/+|\/+$/g, "")
-			.replace(/\s+/g, "")
-		const normalizedPath = originalPath.startsWith("/")
-			? originalPath.slice(1)
-			: originalPath
-
-		if (
-			base.length > 0 &&
-			(originalPath.startsWith(base) ||
-				originalPath.startsWith(`${base}/`))
-		) {
-			return originalPath
-		}
-
-		const segments: string[] = []
-		const cleanedBase = base.replace(/^\/+/, "")
-		if (cleanedBase.length > 0) {
-			segments.push(cleanedBase)
-		}
-		if (sanitizedVersion) {
-			segments.push(sanitizedVersion)
-		}
-		if (normalizedPath.length > 0) {
-			segments.push(normalizedPath)
-		}
-		const built = segments.join("/")
-		const combined = built.length > 0 ? `/${built}` : "/"
-		return combined.replace(/\/+/g, "/")
-	}
-
-	private addDirectoryEntry(entry: RouteDirectoryEntry) {
-		const key = buildKey(entry.method, entry.path)
-		if (this.directoryIndex.has(key)) {
-			return
-		}
-		this.directoryIndex.add(key)
-		this.directory = [
-			...this.directory,
-			{
-				method: entry.method,
-				path: entry.path,
-				version: entry.version,
+		const payload: ApiResponse = {
+			code,
+			status: errorPhrase,
+			data,
+			error: Boolean(error),
+			errorMessage: errorMessage,
+			path: req.path,
+			timestamp: new Date().toISOString(),
+			meta: {
+				isProtected: route ? route.meta.isProtected : false,
+				isIndex: route ? route.meta.isIndex : false,
+				perms: route ? route.meta.perms : []
 			},
-		]
+			$: $ || null,
+		}
+
+		return res.status(code).json(payload) as any
 	}
 
-	private scopedDirectory(path: string): RouteDirectoryEntry[] {
-		const raw = path.split("?")[0] ?? ""
-		const ensured = raw.startsWith("/") ? raw : `/${raw}`
-		const collapsed = ensured.replace(/\/+/g, "/")
-		const candidates: string[] = []
-		if (collapsed.endsWith("/")) {
-			candidates.push(collapsed)
-		} else {
-			candidates.push(`${collapsed}/`)
-			const lastSlash = collapsed.lastIndexOf("/")
-			if (lastSlash > 0) {
-				candidates.push(`${collapsed.slice(0, lastSlash + 1)}`)
-			}
-		}
-		for (const candidate of candidates) {
-			const normalized = candidate.length > 1 ? candidate.replace(/\/+/g, "/") : "/"
-			const matches = this.directory.filter((entry) =>
-				entry.path.startsWith(normalized)
-			)
-			if (matches.length > 0) {
-				return matches
-			}
-		}
-		return this.getDirectory()
-	}
-
-	private installFallbackHandlers(
-		app: Application,
-		options: Omit<RegisterOptions, "installFallbacks">
-	) {
-		const prefix = options.prefix ?? this.prefix
-		const basePath = options.basePath
-
-		if (basePath && options.exposeDirectory) {
-			const shouldRegisterHandlers = !this.directoryRegistered
-			const registerDirectory = (path: string) => {
-				if (shouldRegisterHandlers) {
-					app.get(path, (req, res) => {
-						api.Log(`Directory requested for ${path}`, prefix)
-						sendSuccess(res, {
-							data: {
-								version: 1,
-								base: basePath,
-								endpoints: this.getDirectory(),
-							},
-							request: req,
-						})
-					})
-				}
-				this.addDirectoryEntry({ method: "GET" as HttpMethod, path })
-			}
-
-			registerDirectory(basePath)
-			if (!basePath.endsWith("/")) {
-				registerDirectory(`${basePath}/`)
-			}
-
-			this.directoryRegistered =
-				this.directoryRegistered || shouldRegisterHandlers
-		}
-
-		if (this.fallbackInstalled) {
-			return
-		}
-
-		this.fallbackInstalled = true
-
-		app.use((req, res) => {
-			sendError(res, {
-				error: "Not Found",
-				code: 404,
-				request: req,
-				meta: {
-					availableEndpoints: this.scopedDirectory(req.originalUrl),
-				},
-			})
-		})
-
-		app.use((err: unknown, req: Request, res: Response, _next: NextFunction) => { 
-			sendError(res, {
-				error: "Internal Server Error",
-				code: 500,
-				request: req,
-				meta: {
-					detail: err instanceof Error ? err.stack : String(err)
-				}
-			})
-		})
-
-		app.use((req, res, next) => {
-			const scopedRes = res as Response & { __prefix?: string }
-			const scopedPrefix = scopedRes.__prefix ?? prefix
-			const code = res.statusCode || 200
-			const type = code >= 500 ? "error" : code >= 400 ? "warning" : "success"
-			
-			api.Log(
-				`${req.method.toUpperCase()} ${req.originalUrl} -> ${code}`,
-				scopedPrefix,
-				type as any
-			)
-			next()
-		})
-	}
-
-	private instantiateRoute(candidate: unknown): ApiRoute | null {
-		if (!candidate) return null
-		if (this.isRouteInstance(candidate)) {
-			return candidate
-		}
-		if (typeof candidate === "function") {
-			try {
-				const instance = new (candidate as ApiRouteConstructor)()
-				return this.isRouteInstance(instance) ? instance : null
-			} catch (error) {
-				api.Log(
-					`failed to instantiate route candidate: ${error instanceof Error ? error.message : String(error)
-					}`,
-					this.prefix,
-					"warning"
-				)
-				return null
-			}
-		}
-		return null
-	}
-
-	private isRouteInstance(value: unknown): value is ApiRoute {
-		return (
-			typeof value === "object" &&
-			value !== null &&
-			typeof (value as ApiRoute).getName === "function" &&
-			typeof (value as ApiRoute).getDefinitions === "function"
-		)
-	}
-
-	private hasMinimumMetadata(route: ApiRoute): boolean {
-		const name = route.getName?.()
-		if (!name || typeof name !== "string") {
-			return false
-		}
-		const definitions = route.getDefinitions()
-		if (!Array.isArray(definitions) || definitions.length === 0) {
-			return false
-		}
-		return definitions.every((definition) => {
-			return (
-				typeof definition.path === "string" &&
-				definition.path.length > 0 &&
-				Array.isArray(definition.handlers) &&
-				definition.handlers.length > 0
-			)
-		})
-	}
-
-	private isRouteFile(entry: Dirent): boolean {
-		if (!entry.isFile()) {
-			return false
-		}
-		const extension = extname(entry.name)
-		if (extension === ".d.ts" || extension === "") {
-			return false
-		}
-		return [".js", ".ts", ".mjs", ".cjs"].includes(extension)
-	}
-
-	public paramsEmpty($: $): boolean {
-		return (
-			(Object.keys($.params || {}).length === 0) &&
-			(Object.keys($.query || {}).length === 0) &&
-			(Object.keys($.body || {}).length === 0)
-		)
+	public error(data: any, res: Response, req: Request, $: $): ApiResponse {
+		return this.return({
+			error: data.error || data.message || data, code: data.code || 500
+		}, res, req, $)
 	}
 
 	/**
-	 * Fetch parameters and such from the request object
+	 * Extract params from express Request
 	 */
-	public getParams(request: Request, args?: { tableName?: string, headers?: boolean}): $ {
-		let data: $ = {
-			body: request.body,
-			query: request.query,
-			params: request.params,
-			options: (request as any).options ?? {},
-			all: {}
-		}
+	public getParams(req: any, tableName?: string): RestParams {
+		const body = req.body || {}
+		const query = req.query || {}
+		const paramsObj = req.params || {}
+		const headers = req.headers || {}
 
-		if(args?.headers) data.headers = request.headers
+		const isEmpty =
+			Object.keys(body).length === 0 &&
+			Object.keys(query).length === 0 &&
+			Object.keys(paramsObj).length === 0
+
+		let params = {
+			body: body,
+			query: query,
+			params: paramsObj,
+			headers: headers,
+			isEmpty: isEmpty
+		}
 		
-		data = this.parseJSONRecursively(data)
-
-		const query = (data.query as Record<string, any>) ?? {}
-		const options = (data.options as Record<string, any>) ?? {}
-		
-		for (const key in query) {
-			if (["offset", "limit", "sort"].includes(key)) {
-				options[key] = query[key]
-				delete query[key]
-			}
-		}
-
-		data = {
-			...data,
-			query,
-			options,
-		}
-
-		data.body = this.ensurePlainObject(data.body)
-		data.params = this.ensurePlainObject(data.params)
-		data.query = this.ensurePlainObject(data.query)
-		data.options = this.ensurePlainObject(data.options)
-
-		const normalizeEmpty = (value?: Record<string, any>) => {
-			if (!value) {
-				return undefined
-			}
-			return Object.keys(value).length ? value : undefined
-		}
-
-		data = {
-			...data,
-			body: normalizeEmpty(data.body),
-			params: normalizeEmpty(data.params),
-			query: normalizeEmpty(data.query),
-		}
-
-		if (args?.tableName) {
-			data = this.schemaFilter(data, args.tableName)
-		}
-
-		data.all = [data.query, data.params, data.body].find(entry => entry && Object.keys(entry).length) ?? {}
-		
-		return data
+		return tableName ? this.sanitizeParams(params, tableName) : params
 	}
 
+	/**
+	 * @description Strip away any unwanted params based on the table schema
+	 */
+	public sanitizeParams(params: RestParams, tableName?: string): RestParams {
+		if(!tableName) {
+			api.Error(`sanitizeParams: No table name provided`, this.prefix)
+			return params 
+		}
 
-	private parseJSON(value: string): any {
-		try {
-			return JSON.parse(value)
-		} catch {
+		const schema = this.getTableSchema(tableName)
+		const columns = this.getColumnDefinitions(tableName)
+
+		if(!schema || !columns) {
+			api.Error(`sanitizeParams: No schema found for table: ${tableName}`, this.prefix)
+			return params 
+		}
+
+		const sanitizeSection = (section: Record<string, any> = {}) => {
+			const clean: Record<string, any> = {}
+			for (const [key, value] of Object.entries(section)) {
+				if (!schema.has(key)) { continue }
+				const type = columns[key as keyof typeof columns]
+				clean[key] = this.castValue(type, value)
+			}
+			return clean
+		}
+
+		return {
+			...params,
+			body: sanitizeSection(params.body),
+			query: sanitizeSection(params.query),
+			params: sanitizeSection(params.params)
+		}
+	}
+
+	/**
+	 * @name Register all endpoints: 
+	 * @description Create indexes where no conflicts happen, then Register all routes to express
+	 */
+	public register() {
+		this.createIndexRoutes()
+		
+		for (const route of this.directory) {
+			if (route.meta.isRegistered) { continue }
+
+			const methodKey = route.method.toLowerCase() as keyof Application
+			const middlewares: RequestHandler[] = []
+
+			if (route.meta.isProtected) {
+				middlewares.push(requireAuth({ perms: route.meta.perms }))
+			}
+
+			api.Express[methodKey](route.path, ...middlewares, async (req: Request, res: Response) => {
+				const $ = this.getParams(req, route.meta?.tableName || undefined)
+				try {
+					this.return((await route.callback($, req, res)), res, req, $)
+				} catch (err) {
+					this.error(err, res, req, $)
+				}
+			})
+
+			route.meta.updatedAt = Date.now()
+			route.meta.isRegistered = true
+		}
+	}
+
+	private getTableSchema(tableName: string): ReadonlySet<string> | null {
+		const tableKey = tableName as keyof typeof tableColumnSets
+		return tableColumnSets[tableKey] || null
+	}
+
+	private getColumnDefinitions(tableName: string): Record<string, ColumnType> | null {
+		const tableKey = tableName as keyof typeof schemaColumns
+		return schemaColumns[tableKey] || null
+	}
+
+	private castValue(type: ColumnType | undefined, value: any) {
+		if (value === undefined || value === null || !type) {
 			return value
 		}
-	}
 
-	private parseJSONRecursively(value: any): any {
-		if (typeof value === "string") {
-			const parsed = this.parseJSON(value)
-			if (parsed !== value) {
-				return this.parseJSONRecursively(parsed)
-			}
+		if (type === 'number') {
+			const parsed = Number(value)
+			return Number.isNaN(parsed) ? value : parsed
 		}
-		if (Array.isArray(value)) {
-			return value.map((item) => this.parseJSONRecursively(item))
-		}
-		if (typeof value === "object" && value !== null) {
-			const result: Record<string, any> = {}
-			for (const key in value) {
-				result[key] = this.parseJSONRecursively(value[key])
-			}
-			return result
-		}
-		return value
-	}
 
-	private ensurePlainObject(value: unknown): Record<string, any> {
-		if (value && typeof value === "object" && !Array.isArray(value)) {
-			return value as Record<string, any>
+		if (type === 'date') {
+			const date = new Date(value)
+			return Number.isNaN(date.valueOf()) ? value : date.toISOString()
 		}
-		return {}
+
+		return typeof value === 'string' ? value : String(value)
 	}
 
 	/**
-	 * Sanitize parameters based on table schema
+	 * Create index GET routes for all parent endpoints that do not exist.
 	 */
-	private schemaFilter(data: $, tableName: string): $ {
-		const schemaColumn = schemaColumns[tableName as keyof typeof schemaColumns]
+	private createIndexRoutes() {
+		let potentialRoutes: string[] = []
+		const basePath = this.getBasePath.replace(/\/+$/, "")
+		// Collect all potential index routes
+		for (const route of this.directory) {
 
-		const schema = {
-			params: schemaColumn,
-			query: schemaColumn,
-			body: schemaColumn,
-			options: this.defaultOptionKeys,
-		}
+			// Parent paths should be steps backwards from the full path, and remove basePath
+			// ie.: api, api/v1, api/v1/dev, api/v1/dev/parentz
+			const parentPaths = route.path.split('/').slice(0, -1).map((_, idx, arr) => {
+				return arr.slice(0, idx + 1).join('/')
+			}).map(path => path.replace(basePath, '')).filter(Boolean).map(path => path.replace(/\/+$/, "").replace(/^\/+/, ""))
 
-		const sanitize = (source: Record<string, any>, allowed?: readonly string[]): Record<string, any> => {
-			if (!allowed || allowed.length === 0) { return source }
-			const allowedSet = new Set(allowed.map((entry) => `${entry}`))
-			const filtered: Record<string, any> = {}
-			for (const [key, value] of Object.entries(source)) {
-				if (allowedSet.has(key)) { filtered[key] = value }
+			for (const parentPath of parentPaths) {
+				if(!parentPath || parentPath === '' || basePath.includes(parentPath)) { continue }
+
+				const parentRoute: Route = this.get(`get:${parentPath}`) as Route
+				
+				if(!parentRoute) {
+					potentialRoutes.push(parentPath)
+					continue
+				}
+
+				// Skip index routes
+				if (parentRoute.meta.isIndex) { continue }
+
+				potentialRoutes.push(parentPath)
 			}
-			return filtered
 		}
 
-		const optionsAllowed = schema.options ?? this.defaultOptionKeys
-		
+		// Make unique and include home route ('') so /api/v1/ resolves
+		const hasRoot = !!this.get('get:')
+		potentialRoutes = Array.from(
+			new Set([...potentialRoutes, ...(hasRoot ? [] : [''])])
+		)
+
+		// Register /index routes
+		for (const path of potentialRoutes) {
+			const callback = (path.trim().length === 0 ? this.homeContent : this.indexContent) as Route["callback"]
+			this.set('GET', path, callback.bind(this), {
+				protected: false,
+				index: true,
+				register: false
+			})
+		}
+	}
+
+	private homeContent: RouteCallback = ($: $, req: Request, _res: Response) => {
 		return {
-			...data,
-			params: sanitize(data.params || {}, schema.params),
-			query: sanitize(data.query || {}, schema.query),
-			body: sanitize(data.body || {}, schema.body),
-			options: sanitize(data.options || {}, optionsAllowed),
-			headers: data.headers || {},
+			title: `${api.Config('APP_NAME') || 'API'} → Home`,
+			message: `Welcome to the API - Home for ${req.path}`,
+			routes: this.listChildren(req.path)
 		}
 	}
 
-	/**
-	 * Automatically handle route return values and coding based on result and success
-	 */
-	Return(result: any, response: Response, request: Request) {
-		const $: $ = this.getParams(request)
-		
-		if (result && result instanceof Error) {
-			return api.Utils.sendError(response, {
-				error: result.message,
-				code: 500,
-				$: $,
-				request,
-			})
+	private indexContent: RouteCallback = ($: $, req: Request, _res: Response) => {
+		return {
+			title: `${api.Config('APP_NAME') || 'API'} → Index`,
+			message: `Index for ${req.path}`,
+			routes: this.listChildren(req.path)
 		}
-		// If empty result
-		if (result === null || result === undefined) {
-			return api.Utils.sendError(response, {
-				error: "No Content",
-				code: 200,
-				$: $,
-				request,
-			})
-		}
-
-		// If result indicates an error
-		if (result.error) {
-			const code = result.code || 400
-			return api.Utils.sendError(response, {
-				error: result.error,
-				code,
-				$: $,
-				request,
-			})
-		}
-
-		// If all is good
-		const payload = Array.isArray(result) ? result : result
-		return api.Utils.sendSuccess(response, { data: payload, $: $, request })
 	}
 
+	private listChildren(path: string): Partial<Route>[] {
+		const childRoutes = this.directory.filter(
+			route => route.path.startsWith(path) && route.path !== path
+		)
+
+		const seen = new Set<string>()
+		const children: any[] = []
+
+		for (const route of childRoutes) {
+			const key = `${route.method}:${route.path}`
+			if (seen.has(key)) continue
+			seen.add(key)
+			const child: any = { method: route.method, path: route.path }
+			// Set child metadata
+			child.protected = route.meta.isProtected
+			if (route.params && Object.keys(route.params).length > 0) {
+				child.params = route.params
+
+				// Perms
+				if (route.meta.perms && route.meta.perms.length > 0) {
+					child.perms = route.meta.perms
+				}
+			}
+			children.push(child)
+		}
+
+		// Sort by path
+		children.sort((a, b) => a.path.localeCompare(b.path))
+
+		return children
+	}
 }

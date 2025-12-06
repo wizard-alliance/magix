@@ -1,25 +1,21 @@
-import type { ApiRoute, RouteDefinition } from "../types/routes.js"
-import type { Request, Response } from "express"
 import dayjs from "dayjs"
 
-export class HealthRoute implements ApiRoute {
-	private readonly name = "HealthRoute"
+export class HealthRoute {
+	private readonly prefix = "HealthRoute"
 	private readonly routeName = "health"
 	readonly version = api.Config("API_VERSION")
 
-	getName = () => this.name
-
-	getDefinitions = (): RouteDefinition[] => [
-		{ method: "GET", path: `${this.routeName}`, handlers: [this.get] },
-	]
+	routes() {
+		api.Router.set("GET", `${this.routeName}`, this.get)
+	}
 
 	/**
 	 * Handle GET /health
 	 */
-	get = async (request: Request, response: Response) => {
-		api.Log("Computing health status", this.name)
+	get = async () => {
+		api.Log("Computing health status", this.prefix)
 
-		const data = {
+		return {
 			status: `ok`,
 			timestamp: dayjs().toISOString(),
 			apiBaseUrl: api.Config('API_BASE_URL'),
@@ -27,7 +23,5 @@ export class HealthRoute implements ApiRoute {
 			databaseVersion: await api.Services.DB.getServerVersion(),
 			smtpConfigured: api.Services.Mail.isConfigured(),
 		}
-
-		api.Router.Return(data, response, request)
 	}
 }

@@ -102,6 +102,9 @@ export type DatabaseSchema = {
 }
 
 
+export type ColumnType = 'string' | 'number' | 'date'
+
+
 export type UserDBRow = {
 	id?: number
 	username: string
@@ -128,138 +131,142 @@ export type UserDBRow = {
 
 
 export const schemaColumns = {
-	settings: [
-		"ID",
-		"autoload",
-		"created",
-		"updated",
-		"key",
-		"value"
-	] as const,
+	settings: {
+		ID: 'number',
+		autoload: 'number',
+		created: 'date',
+		updated: 'date',
+		key: 'string',
+		value: 'string'
+	},
 
-	users: [
-		"id",
-		"username",
-		"email",
-		"first_name",
-		"last_name",
-		"phone",
-		"company",
-		"address",
-		"activation_token",
-		"activated",
-		"tos_accepted",
-		"disabled",
-		"created",
-		"updated",
-		"deleted_at",
-		"password",
-		"tfa_enabled",
-		"tfa_secret",
-		"activation_token_expiration",
-		"failed_login_attempts",
-		"lockout_until",
-	] as const,
+	users: {
+		id: 'number',
+		username: 'string',
+		email: 'string',
+		first_name: 'string',
+		last_name: 'string',
+		phone: 'string',
+		company: 'string',
+		address: 'string',
+		activation_token: 'string',
+		activated: 'number',
+		tos_accepted: 'number',
+		disabled: 'number',
+		created: 'date',
+		updated: 'date',
+		deleted_at: 'date',
+		password: 'string',
+		tfa_enabled: 'number',
+		tfa_secret: 'string',
+		activation_token_expiration: 'date',
+		failed_login_attempts: 'number',
+		lockout_until: 'date'
+	},
 
-	user_devices: [
-		"id",
-		"user_id",
-		"name",
-		"custom_name",
-		"fingerprint",
-		"user_agent",
-		"ip",
-		"last_login",
-		"created",
-		"updated",
-	] as const,
+	user_devices: {
+		id: 'number',
+		user_id: 'number',
+		name: 'string',
+		custom_name: 'string',
+		fingerprint: 'string',
+		user_agent: 'string',
+		ip: 'string',
+		last_login: 'date',
+		created: 'date',
+		updated: 'date'
+	},
 
-	user_notifications: [
-		"id",
-		"user_id",
-		"type",
-		"message",
-		"read",
-		"created",
-	] as const,
+	user_notifications: {
+		id: 'number',
+		user_id: 'number',
+		type: 'string',
+		message: 'string',
+		read: 'number',
+		created: 'date'
+	},
 
-	user_permissions: [
-		"id",
-		"user_id",
-		"name",
-		"value",
-		"created",
-		"updated",
-	] as const,
+	user_permissions: {
+		id: 'number',
+		user_id: 'number',
+		name: 'string',
+		value: 'string',
+		created: 'date',
+		updated: 'date'
+	},
 
-	user_settings: [
-		"id",
-		"user_id",
-		"name",
-		"value",
-		"created",
-		"updated",
-	] as const,
+	user_settings: {
+		id: 'number',
+		user_id: 'number',
+		name: 'string',
+		value: 'string',
+		created: 'date',
+		updated: 'date'
+	},
 
-	user_tokens_access: [
-		"id",
-		"user_id",
-		"refresh_token_id",
-		"token",
-		"expires",
-		"created",
-	] as const,
+	user_tokens_access: {
+		id: 'number',
+		user_id: 'number',
+		refresh_token_id: 'number',
+		token: 'string',
+		expires: 'date',
+		created: 'date'
+	},
 
-	user_tokens_blacklist: [
-		"id",
-		"user_id",
-		"token",
-		"token_type",
-		"reason",
-		"expires",
-		"created",
-		"updated",
-	] as const,
+	user_tokens_blacklist: {
+		id: 'number',
+		user_id: 'number',
+		token: 'string',
+		token_type: 'string',
+		reason: 'string',
+		expires: 'date',
+		created: 'date',
+		updated: 'date'
+	},
 
-	user_tokens_refresh: [
-		"id",
-		"user_id",
-		"device_id",
-		"token",
-		"valid",
-		"expires",
-		"created",
-		"updated",
-	] as const,
+	user_tokens_refresh: {
+		id: 'number',
+		user_id: 'number',
+		device_id: 'number',
+		token: 'string',
+		valid: 'number',
+		expires: 'date',
+		created: 'date',
+		updated: 'date'
+	},
 
-	user_tokens_single: [
-		"id",
-		"user_id",
-		"refresh_token_id",
-		"token",
-		"expires",
-		"created",
-	] as const,
+	user_tokens_single: {
+		id: 'number',
+		user_id: 'number',
+		refresh_token_id: 'number',
+		token: 'string',
+		expires: 'date',
+		created: 'date'
+	},
 
-} as const
+} as const satisfies Record<string, Record<string, ColumnType>>
 
 
 export type SchemaColumns = typeof schemaColumns
 type ColumnSetMap = {
-	[K in keyof SchemaColumns]: ReadonlySet<SchemaColumns[K][number]>
+	[K in keyof SchemaColumns]: ReadonlySet<keyof SchemaColumns[K]>
+}
+
+const createColumnSet = <T extends Record<string, ColumnType>>(columns: T) => {
+	return new Set(Object.keys(columns)) as ReadonlySet<keyof T>
 }
 
 export const tableColumnSets: ColumnSetMap = {
-	settings: new Set<SchemaColumns["settings"][number]>(schemaColumns.settings),
-	users: new Set<SchemaColumns["users"][number]>(schemaColumns.users),
-	user_devices: new Set<SchemaColumns["user_devices"][number]>(schemaColumns.user_devices),
-	user_notifications: new Set<SchemaColumns["user_notifications"][number]>(schemaColumns.user_notifications),
-	user_permissions: new Set<SchemaColumns["user_permissions"][number]>(schemaColumns.user_permissions),
-	user_settings: new Set<SchemaColumns["user_settings"][number]>(schemaColumns.user_settings),
-	user_tokens_access: new Set<SchemaColumns["user_tokens_access"][number]>(schemaColumns.user_tokens_access),
-	user_tokens_blacklist: new Set<SchemaColumns["user_tokens_blacklist"][number]>(schemaColumns.user_tokens_blacklist),
-	user_tokens_refresh: new Set<SchemaColumns["user_tokens_refresh"][number]>(schemaColumns.user_tokens_refresh),
-	user_tokens_single: new Set<SchemaColumns["user_tokens_single"][number]>(schemaColumns.user_tokens_single),
+	settings: createColumnSet(schemaColumns.settings),
+	users: createColumnSet(schemaColumns.users),
+	user_devices: createColumnSet(schemaColumns.user_devices),
+	user_notifications: createColumnSet(schemaColumns.user_notifications),
+	user_permissions: createColumnSet(schemaColumns.user_permissions),
+	user_settings: createColumnSet(schemaColumns.user_settings),
+	user_tokens_access: createColumnSet(schemaColumns.user_tokens_access),
+	user_tokens_blacklist: createColumnSet(schemaColumns.user_tokens_blacklist),
+	user_tokens_refresh: createColumnSet(schemaColumns.user_tokens_refresh),
+	user_tokens_single: createColumnSet(schemaColumns.user_tokens_single),
 }
 
 export type TableMap = {

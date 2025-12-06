@@ -20,7 +20,7 @@ export class AuthController {
 	private readonly prefix = "AuthController"
 
 	login = async (request: Request, response: Response) => {
-		const $: $ = api.Router.getParams(request, { includeHeaders: true })
+		const $: $ = api.Router.getParams(request)
 		const body = ($.body ?? {}) as Record<string, any>
 		const result = await api.Auth.login({
 			identifier: body.identifier,
@@ -29,11 +29,11 @@ export class AuthController {
 			password: body.password,
 			device: this.buildDevice(body, request),
 		})
-		api.Router.Return(result, $, response, request)
+		return result
 	}
 
 	register = async (request: Request, response: Response) => {
-		const $: $ = api.Router.getParams(request, { includeHeaders: true })
+		const $: $ = api.Router.getParams(request)
 		const body = ($.body ?? {}) as Record<string, any>
 		const result = await api.Auth.register(
 			{
@@ -46,55 +46,55 @@ export class AuthController {
 			},
 			this.buildDevice(body, request)
 		)
-		api.Router.Return(result, $, response, request)
+		return result
 	}
 
 	me = async (request: Request, response: Response) => {
-		const $: $ = api.Router.getParams(request, { includeHeaders: true })
+		const $: $ = api.Router.getParams(request)
 		const token = parseAccessToken(request, $.headers)
 		const result = await api.Auth.me(token ?? "")
-		api.Router.Return(result, $, response, request)
+		return result
 	}
 
 	refresh = async (request: Request, response: Response) => {
 		const $: $ = api.Router.getParams(request)
 		const token = ($.body?.refreshToken ?? $.body?.token ?? $.body?.refresh_token ?? "") as string
 		const result = await api.Auth.refresh(token)
-		api.Router.Return(result, $, response, request)
+		return result
 	}
 
 	logout = async (request: Request, response: Response) => {
-		const $: $ = api.Router.getParams(request, { includeHeaders: true })
+		const $: $ = api.Router.getParams(request)
 		const refreshToken = ($.body?.refreshToken ?? $.body?.token ?? $.body?.refresh_token ?? "") as string
 		const accessToken = parseAccessToken(request, $.headers) ?? undefined
 		const result = await api.Auth.logout(refreshToken || undefined, accessToken)
-		api.Router.Return(result, $, response, request)
+		return result
 	}
 
 	logoutAllDevices = async (request: Request, response: Response) => {
-		const $: $ = api.Router.getParams(request, { includeHeaders: true })
+		const $: $ = api.Router.getParams(request)
 		const token = parseAccessToken(request, $.headers)
 		const me = token ? await api.Auth.me(token) : null
 		const userId = me && "user" in me ? me.user.id : undefined
 		const result = userId ? await api.Auth.logoutAllDevices(userId) : { error: "User not resolved", code: 400 }
-		api.Router.Return(result, $, response, request)
+		return result
 	}
 
 	logoutAllUsers = async (request: Request, response: Response) => {
 		const $: $ = api.Router.getParams(request)
 		const result = await api.Auth.logoutAllUsers()
-		api.Router.Return(result, $, response, request)
+		return result
 	}
 
 	changePassword = async (request: Request, response: Response) => {
-		const $: $ = api.Router.getParams(request, { includeHeaders: true })
+		const $: $ = api.Router.getParams(request)
 		const token = parseAccessToken(request, $.headers)
 		const me = token ? await api.Auth.me(token) : null
 		if (!me || (me as any).error) {
-			return api.Router.Return(me ?? { error: "Unauthorized", code: 401 }, $, response, request)
+			return me ?? { error: "Unauthorized", code: 401 }
 		}
 		const userId = (me as any).user?.id
-		if (!userId) return api.Router.Return({ error: "Unauthorized", code: 401 }, $, response, request)
+		if (!userId) return { error: "Unauthorized", code: 401 }
 		const body = $.body ?? {}
 		const result = await api.Auth.changePassword({
 			userId,
@@ -102,18 +102,18 @@ export class AuthController {
 			newPassword: body.newPassword ?? body.new_password ?? body.password ?? "",
 			logoutAll: body.logoutAll ?? body.logout_all ?? true,
 		})
-		api.Router.Return(result, $, response, request)
+		return result
 	}
 
 	updateProfile = async (request: Request, response: Response) => {
-		const $: $ = api.Router.getParams(request, { includeHeaders: true })
+		const $: $ = api.Router.getParams(request)
 		const token = parseAccessToken(request, $.headers)
 		const me = token ? await api.Auth.me(token) : null
 		if (!me || (me as any).error) {
-			return api.Router.Return(me ?? { error: "Unauthorized", code: 401 }, $, response, request)
+			return me ?? { error: "Unauthorized", code: 401 }
 		}
 		const userId = (me as any).user?.id
-		if (!userId) return api.Router.Return({ error: "Unauthorized", code: 401 }, $, response, request)
+		if (!userId) return { error: "Unauthorized", code: 401 }
 		const body = $.body ?? {}
 		const result = await api.Auth.updateProfile(userId, {
 			first_name: body.firstName ?? body.first_name ?? null,
@@ -122,27 +122,27 @@ export class AuthController {
 			company: body.company ?? null,
 			address: body.address ?? null,
 		})
-		api.Router.Return(result, $, response, request)
+		return result
 	}
 
 	vendorInfo = async (request: Request, response: Response) => {
 		const $: $ = api.Router.getParams(request)
 		const vendor = this.normalizeVendor($.params?.vendor as string | undefined)
 		const result = vendor ? api.Auth.getVendorInfo(vendor) : { error: "Unknown vendor", code: 404 }
-		api.Router.Return(result, $, response, request)
+		return result
 	}
 
 	vendorLogin = async (request: Request, response: Response) => {
 		const $: $ = api.Router.getParams(request)
 		const vendor = this.normalizeVendor($.params?.vendor as string | undefined)
 		if (!vendor) {
-			return api.Router.Return({ error: "Unknown vendor", code: 404 }, $, response, request)
+			return { error: "Unknown vendor", code: 404 }
 		}
 		const result = await api.Auth.vendorLogin({
 			vendor,
 			payload: $.body ?? {},
 		})
-		api.Router.Return(result, $, response, request)
+		return result
 	}
 
 	private normalizeVendor(value?: string | null): VendorName | null {

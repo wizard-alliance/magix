@@ -17,6 +17,7 @@ import { convertRecursiveObjToStr, convertObjToStr } from "@api/core/helpers/Obj
 
 import { RouteController } from "@api/core/controllers/RouteController.js"
 import { sendError, sendSuccess } from "@api/core/helpers/ApiResponder.js"
+import { generateHash, hashPassword, verifyPassword } from "@api/core/helpers/hashing.js"
 
 // Controllers
 import { DataManager } from "@api/core/controllers/DataManager.js"
@@ -48,7 +49,8 @@ scope.api.getParams = (request: express.Request) => {
 	return { ...(request.params || {}), ...(request.query || {}), ...(request.body || {}) }
 }
 
-
+scope.api.Express = express()
+scope.api.$Express = express
 scope.api.Router = new RouteController()
 
 scope.api.Utils = {
@@ -63,6 +65,9 @@ scope.api.Utils = {
 	convertRecursiveObjToStr,
 	convertObjToStr,
 	createSlug,
+	generateHash,
+	hashPassword,
+	verifyPassword,
 }
 
 scope.api.Services = {
@@ -80,9 +85,8 @@ scope.api.LoggerApp = new Logger({ basePath: "../.logs", scope: 'app', label: 'A
 registerAppLoggerBridge(scope.api.LoggerApp)
 
 
-// Start Express server
+// Start server
 scope.api.Server = new AppServer()
-
 
 process.on("unhandledRejection", (reason) => {
 	console.error("Unhandled rejection", reason)

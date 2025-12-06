@@ -11,10 +11,11 @@ declare global {
 		Schema: import('../schema/Schema.ts').SchemaType
 		Router: import('../controllers/RouteController.ts').RouteController
 		Data: import('../controllers/DataManager.ts').DataManager
-
+		Express: import('express').Express
+		$Express: typeof import('express').Express
+		
+		Server: import('../servers/AppServer.ts').AppServer
 		Utils: {
-			sendSuccess: typeof import('../helpers/ApiResponder.js').sendSuccess
-			sendError: typeof import('../helpers/ApiResponder.js').sendError
 			maybeJSONString: typeof import('../helpers/Utils.js').maybeJSONString
 			maybeJSONDecode: typeof import('../helpers/Utils.js').maybeJSONDecode
 			removeKeysDeep: typeof import('../helpers/Utils.js').removeKeysDeep
@@ -24,6 +25,9 @@ declare global {
 			convertRecursiveObjToStr: typeof import('../helpers/Obj.js').convertRecursiveObjToStr
 			convertObjToStr: typeof import('../helpers/Obj.js').convertObjToStr
 			createSlug: typeof import('../helpers/Utils.js').createSlug
+			generateHash: typeof import('../helpers/hashing.js').generateHash
+			hashPassword: typeof import('../helpers/hashing.js').hashPassword
+			verifyPassword: typeof import('../helpers/hashing.js').verifyPassword
 		}
 
 		Services: {
