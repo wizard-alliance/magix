@@ -422,6 +422,7 @@ export class RouteController {
 			query: request.query,
 			params: request.params,
 			options: (request as any).options ?? {},
+			all: {}
 		}
 
 		if(args?.headers) data.headers = request.headers
@@ -467,6 +468,8 @@ export class RouteController {
 			data = this.schemaFilter(data, args.tableName)
 		}
 
+		data.all = [data.query, data.params, data.body].find(entry => entry && Object.keys(entry).length) ?? {}
+		
 		return data
 	}
 
@@ -544,7 +547,7 @@ export class RouteController {
 	/**
 	 * Automatically handle route return values and coding based on result and success
 	 */
-	handleReturn(result: any, response: Response, request: Request) {
+	Return(result: any, response: Response, request: Request) {
 		const $: $ = this.getParams(request)
 		
 		if (result && result instanceof Error) {

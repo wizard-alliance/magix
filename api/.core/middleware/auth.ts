@@ -33,7 +33,7 @@ export const requireAuth = (options: GuardOptions = {}): RequestHandler => {
 			}
 		}
 
-		;(req as any).authUser = validation.user
+		(req as any).authUser = validation.user
 		next()
 	}
 }

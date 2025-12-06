@@ -1,18 +1,6 @@
-import superagent from 'superagent'
 import { createHash } from "crypto"
-import { SettingsData } from "./Data/Settings.js"
-import { format, isWeekend } from "date-fns"
-
-import type { TableMap } from "../schema/Database.js"
-
-export type SharedDataDependencies = {
-	tables: TableMap
-	setCache: (key: any, value: any, cachetime?: number) => void
-	getCache: (key: any) => any
-	applyWhere: (query: any, params: Record<string, any>) => any
-	applyOptions: (query: any, options: Record<string, any>) => any
-	createUrl: (path: string) => string
-}
+import { CrudMethods } from "./Data/CrudMethods.js"
+import { CacheMethods } from "./Data/CacheMethods.js"
 
 /**
  * Handles data management operations. 
@@ -25,94 +13,17 @@ type CacheEntry = {
 }
 
 export class DataManager {
-	private readonly cacheMaxAge = 5 // XX minutes
-	private readonly prefix = "DataManager"
-	private sessionCache: Map<string, CacheEntry> = new Map()
-	public readonly settings: SettingsData
+	public readonly prefix = "DataManager"
+	public readonly CRUD: CrudMethods = new CrudMethods()
+	public readonly Cache: CacheMethods = new CacheMethods()
 
-	constructor() {
-		const shared = {
-			setCache: this.setCache.bind(this),
-			getCache: this.getCache.bind(this),
-			applyWhere: this.applyWhere.bind(this),
-			applyOptions: this.applyOptions.bind(this),
-			createUrl: this.createUrl.bind(this),
-		}
-
-		this.settings = new SettingsData(shared)
-	}
-
-	setCache(keyRaw: any, value: any, cachetime: number = this.cacheMaxAge): void {
-		const key = typeof keyRaw === 'string' ? keyRaw : JSON.stringify(keyRaw)
-		const data = this.cloneValue(value)
-		const __cache_hash = this.generateHash(data)
-		const __cache_timestamp = Date.now() + (cachetime * 60 * 1000)
-
-		this.sessionCache.set(key, { data, __cache_hash, __cache_timestamp })
-	}
-
-	// Maybe get cache, if it exists and hash is identical
-	getCache(keyRaw: any): any | undefined {
-		const key = typeof keyRaw === 'string' ? keyRaw : JSON.stringify(keyRaw)
-		let returnCache = false
-		const cachedValue = this.sessionCache.get(key)
-		if (!cachedValue) {
-			return undefined
-		}
-		const { data, __cache_hash, __cache_timestamp } = cachedValue
-		const hashKey = this.generateHash(data)
-
-		// Check cache existence and validity
-		if (data && __cache_hash === hashKey) {
-			returnCache = true
-		}
-
-		// Check age of cache
-		if (returnCache && __cache_timestamp) {
-			const now = Date.now()
-			if (now > __cache_timestamp) {
-				api.Log(`Cache expired for key: ${key}`, this.prefix)
-				returnCache = false
-			}
-		}
-
-		if (returnCache) {
-			const cloned = this.cloneValue(data)
-			if (cloned && typeof cloned === 'object') {
-				Object.defineProperty(cloned, '__CACHE', {
-					value: {
-						key,
-						hash: __cache_hash,
-						fetchedFromCache: true,
-						fetchedAt: Date.now(),
-						cachedAt: __cache_timestamp,
-					},
-					enumerable: false,
-				})
-			}
-			return cloned
-		}
-
-		this.sessionCache.delete(key)
-		return undefined
-	}
-
-	clearCache(keyRaw: any): void {
-		const key = typeof keyRaw === 'string' ? keyRaw : JSON.stringify(keyRaw)
-		this.sessionCache.delete(key)
-	}
-
-	clearAllCache(): void {
-		this.sessionCache.clear()
-	}
-
-	generateHash(input: any): string {
+	public generateHash(input: any): string {
 		const hash = createHash('sha256')
 		hash.update(JSON.stringify(input))
 		return hash.digest('hex')
 	}
 
-	private cloneValue<T>(input: T): T {
+	public cloneValue<T>(input: T): T {
 		if (input === null || typeof input !== 'object') {
 			return input
 		}
@@ -135,19 +46,7 @@ export class DataManager {
 		return cloned as T
 	}
 
-	private createUrl(path: string): string {
-		const uploadDir = `static/${api.Config('UPLOAD_DIR') || 'uploads'}`
-		const baseUrl = api.Config("API_BASE_URL")
-		const filePath = `${uploadDir}/${path}`
-		const url = `${baseUrl}/${filePath}`
-
-		// Gently nudge for upload dir config
-		if (!api.Config('UPLOAD_DIR')) { api.Warning(`Upload directory not configured`, this.prefix) }
-
-		return url
-	}
-
-	private applyWhere(q: any, params: Record<string, any>) {
+	public applyWhere(q: any, params: Record<string, any>) {
 		for (const [k, v] of Object.entries(params)) {
 			if (v === undefined) continue
 			if (Array.isArray(v)) {
@@ -167,7 +66,7 @@ export class DataManager {
 		return q
 	}
 
-	private applyOptions(query: any, options: Record<string, any>) {
+	public applyOptions(query: any, options: Record<string, any>) {
 		if (options.limit) { query = query.limit(options.limit) }
 		if (options.orderBy) { query = query.orderBy(options.orderBy) }
 		if (options.offset) { query = query.offset(options.offset) }

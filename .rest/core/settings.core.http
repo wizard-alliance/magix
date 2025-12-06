@@ -1,0 +1,48 @@
+@baseUrl = http://localhost:4000/api/v1
+@accessToken = 
+@settingId = 1
+@settingKey = site_title
+
+### 1) Create a setting (body wins over query params)
+# @name createSetting
+POST {{baseUrl}}/setting
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+	"key": "{{settingKey}}",
+	"value": "Magix Portal",
+	"autoload": 1,
+	"version": 1
+}
+
+### 2) Fetch the created setting by ID or key (prefers query params in this order)
+# @name getSetting
+GET {{baseUrl}}/setting?key={{settingKey}}
+Authorization: Bearer {{accessToken}}
+
+### 3) Fetch multiple settings with optional filters
+# @name listSettings
+GET {{baseUrl}}/settings?autoload=1
+Authorization: Bearer {{accessToken}}
+
+### 4) Update the created setting (query/body both considered)
+# @name updateSetting
+PUT {{baseUrl}}/setting?ID={{settingId}}&key={{settingKey}}
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+	"value": "Magix Portal v2",
+	"autoload": 0
+}
+
+### 5) Delete the created setting (query or body)
+# @name deleteSetting
+DELETE {{baseUrl}}/setting?ID={{settingId}}
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+	"key": "{{settingKey}}"
+}

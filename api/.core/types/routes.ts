@@ -34,4 +34,5 @@ export type $ = {
 	body?: any,
 	headers?: Record<string, any>
 	options?: Record<string, any>
+	all?: Record<string, any>
 }

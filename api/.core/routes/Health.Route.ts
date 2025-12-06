@@ -28,6 +28,6 @@ export class HealthRoute implements ApiRoute {
 			smtpConfigured: api.Services.Mail.isConfigured(),
 		}
 
-		api.Router.handleReturn(data, response, request)
+		api.Router.Return(data, response, request)
 	}
 }

@@ -1,14 +1,18 @@
 import type { Request, Response } from "express"
-import type { $ } from "../types/routes.js"
 import type { ApiRoute, RouteDefinition } from "../types/routes.js"
+import { CrudMethods } from "../controllers/Data/CrudMethods.js"
+
+import type { SettingDBRow } from "../schema/Database.js"
+import type { Settings } from "../schema/DomainShapes.js"
 
 export class SettingsRoutes implements ApiRoute {
+	private readonly tableName: string = "settings"
 	private readonly name = "SettingsRoutes"
-	private readonly routeName = "setting"
-	readonly version = api.Config("API_VERSION")
-	private tableName: string = "settings"
-
-	getName = () => this.name
+	public readonly routeName = "setting"
+	public readonly version = api.Config("API_VERSION") || '1'
+	
+	public readonly getName = () => this.name
+	private get CRUD(): CrudMethods<Settings, SettingDBRow> { return api.Data.CRUD }
 
 	getDefinitions = (): RouteDefinition[] => [
 		{ method: "GET", path: `${this.routeName}`, handlers: [this.get] },
@@ -18,52 +22,45 @@ export class SettingsRoutes implements ApiRoute {
 		{ method: "GET", path: `${this.routeName}s`, handlers: [this.getMany] },
 	]
 
-
 	get = async (request: Request, response: Response) => {
-		const $: $ = api.Router.getParams(request, { tableName: this.tableName })
-		if(api.Router.paramsEmpty($)) {
-			api.Router.handleReturn({ error: 'Missing or Invalid request data' }, response, request)
+		const params = api.Router.getParams(request, { tableName: this.tableName })
+		if(api.Router.paramsEmpty(params)) {
+			api.Router.Return({ error: 'Missing request data' }, response, request)
 		}
-		const params = [$.query, $.params].find(entry => entry && Object.keys(entry).length) ?? {}
-		const data = await api.Data[this.tableName].get(params)
-		api.Router.handleReturn(data, response, request)
+		const data = await this.CRUD.get(this.tableName, params.all)
+		api.Router.Return(data, response, request)
 	}
 
 	getMany = async (request: Request, response: Response) => {
-		const $: $ = api.Router.getParams(request, { tableName: this.tableName })
-		const params = [$.query, $.params].find(entry => entry && Object.keys(entry).length) ?? {}
-		const data = await api.Data[this.tableName].getMany(params)
-		api.Router.handleReturn(data, response, request)
+		const params = api.Router.getParams(request, { tableName: this.tableName })
+		const data = await this.CRUD.getMany(this.tableName, params.all)
+		api.Router.Return(data, response, request)
 	}
 
 	update = async (request: Request, response: Response) => {
-		const $: $ = api.Router.getParams(request, { tableName: this.tableName })
-		if(api.Router.paramsEmpty($)) {
-			api.Router.handleReturn({ error: 'Missing or Invalid request data' }, response, request)
+		const params = api.Router.getParams(request, { tableName: this.tableName })
+		if(api.Router.paramsEmpty(params)) {
+			api.Router.Return({ error: 'Missing request data' }, response, request)
 		}
-		const params = [$.query, $.params].find(entry => entry && Object.keys(entry).length) ?? {}
-		const payload = $.body as any
-		const data = await api.Data[this.tableName].update(params, payload)
-		api.Router.handleReturn(data, response, request)
+		const data = await this.CRUD.update(this.tableName, params.all, params.body)
+		api.Router.Return(data, response, request)
 	}
 
 	create = async (request: Request, response: Response) => {
-		const $: $ = api.Router.getParams(request, { tableName: this.tableName })
-		if(api.Router.paramsEmpty($)) {
-			api.Router.handleReturn({ error: 'Missing or Invalid request data' }, response, request)
+		const params = api.Router.getParams(request, { tableName: this.tableName })
+		if(api.Router.paramsEmpty(params)) {
+			api.Router.Return({ error: 'Missing request data' }, response, request)
 		}
-		const params = [$.query, $.params, $.body].find(entry => entry && Object.keys(entry).length) ?? {}
-		const data = await api.Data[this.tableName].create(params)
-		api.Router.handleReturn(data, response, request)
+		const data = await this.CRUD.create(this.tableName, params.all)
+		api.Router.Return(data, response, request)
 	}
 
 	delete = async (request: Request, response: Response) => {
-		const $: $ = api.Router.getParams(request, { tableName: this.tableName })
-		if(api.Router.paramsEmpty($)) {
-			api.Router.handleReturn({ error: 'Missing or Invalid request data' }, response, request)
+		const params = api.Router.getParams(request, { tableName: this.tableName })
+		if(api.Router.paramsEmpty(params)) {
+			api.Router.Return({ error: 'Missing request data' }, response, request)
 		}
-		const params = [$.query, $.params, $.body].find(entry => entry && Object.keys(entry).length) ?? {}
-		const data = await api.Data[this.tableName].delete(params)
-		api.Router.handleReturn(data, response, request)
+		const data = await this.CRUD.delete(this.tableName, params.all)
+		api.Router.Return(data, response, request)
 	}
 }
