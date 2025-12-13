@@ -1,3 +1,8 @@
+import dayjs from "dayjs"
+import utc from "dayjs/plugin/utc.js"
+
+dayjs.extend(utc)
+
 import { randomUUID } from "crypto"
 import { AuthTokenManager } from "./AuthTokens.js"
 import { AuthVendor } from "./AuthVendor.js"
@@ -15,29 +20,18 @@ import type {
 	UserDeviceContext,
 	VendorLoginInput,
 	ChangePasswordInput,
-	VendorName
 } from "../../schema/AuthShapes.js"
 
 import type { User } from "../../schema/DomainShapes.js"
-
-const toTimestamp = (value: Date | string | number) => {
-	const date = value instanceof Date ? value : new Date(value)
-	if (!date || Number.isNaN(date.getTime())) {
-		return new Date().toISOString().slice(0, 19).replace("T", " ")
-	}
-	const offsetMs = date.getTimezoneOffset() * 60_000
-	const localDate = new Date(date.getTime() - offsetMs)
-	return localDate.toISOString().slice(0, 19).replace("T", " ")
-}
 
 const normalizeEmail = (value?: string | null) => (value ?? "").trim().toLowerCase()
 const normalizeUsername = (value?: string | null) => (value ?? "").trim()
 
 export class AuthService {
 	private readonly prefix = "AuthService"
-	private readonly db = api.Services.DB.connection
+	private readonly db = api.DB.connection
 	private readonly tokens = new AuthTokenManager()
-	private readonly vendors: Record<VendorName, AuthVendor>
+	private readonly vendors: Record<string, AuthVendor>
 
 	constructor() {
 		this.vendors = {
@@ -85,7 +79,7 @@ export class AuthService {
 		}
 
 		const password = await api.Utils.hashPassword(input.password)
-		const now = toTimestamp(Date.now())
+		const now = dayjs().utc().format("YYYY-MM-DD HH:mm:ss")
 		const insertResult = await this.db
 			.insertInto("users")
 			.values({
@@ -151,7 +145,7 @@ export class AuthService {
 
 		const randomPassword = randomUUID()
 		const password = await api.Utils.hashPassword(randomPassword)
-		const now = toTimestamp(Date.now())
+		const now = dayjs().utc().format("YYYY-MM-DD HH:mm:ss")
 		const insertResult = await this.db
 			.insertInto("users")
 			.values({
@@ -307,7 +301,7 @@ export class AuthService {
 		const hashed = await api.Utils.hashPassword(input.newPassword)
 		await this.db
 			.updateTable("users")
-			.set({ password: hashed, updated: toTimestamp(Date.now()) })
+			.set({ password: hashed, updated: dayjs().utc().format("YYYY-MM-DD HH:mm:ss") })
 			.where("id", "=", input.userId)
 			.execute()
 
@@ -331,7 +325,7 @@ export class AuthService {
 		}
 		await this.db
 			.updateTable("users")
-			.set({ ...allowed, updated: toTimestamp(Date.now()) })
+			.set({ ...allowed, updated: dayjs().utc().format("YYYY-MM-DD HH:mm:ss") })
 			.where("id", "=", userId)
 			.execute()
 
@@ -339,7 +333,7 @@ export class AuthService {
 		return updated ? this.toAccount(updated) : { error: "User not found", code: 404 }
 	}
 
-	getVendorInfo(vendor: VendorName) {
+	getVendorInfo(vendor: string) {
 		const resolved = this.vendors[vendor]
 		if (!resolved) {
 			return { error: "Unknown vendor", code: 404 }
@@ -461,8 +455,8 @@ export class AuthService {
 			fingerprint,
 			user_agent: device.userAgent ?? null,
 			ip: device.ip ?? null,
-			last_login: toTimestamp(Date.now()),
-			updated: toTimestamp(Date.now()),
+			last_login: dayjs().utc().format("YYYY-MM-DD HH:mm:ss"),
+			updated: dayjs().utc().format("YYYY-MM-DD HH:mm:ss"),
 		}
 
 		if (existing?.id) {
@@ -491,7 +485,7 @@ export class AuthService {
 				device_id: options.deviceId,
 				token: options.token,
 				valid: 1,
-				expires: toTimestamp(options.expires),
+				expires: dayjs(options.expires).utc().format("YYYY-MM-DD HH:mm:ss")
 			})
 			.executeTakeFirst()
 		return this.extractInsertId(result) ?? 0
@@ -509,7 +503,7 @@ export class AuthService {
 				user_id: options.userId,
 				refresh_token_id: options.refreshId,
 				token: options.token,
-				expires: toTimestamp(options.expires),
+				expires: dayjs(options.expires).utc().format("YYYY-MM-DD HH:mm:ss"),
 			})
 			.executeTakeFirst()
 	}

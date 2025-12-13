@@ -1,12 +1,18 @@
-export class CacheMethods {
-	private get prefix() { return `${api.Data.prefix} → Cache` }
+type CacheEntry = {
+	data: any
+	__cache_hash: string
+	__cache_timestamp: number
+}
+
+export class CacheManager {
+	private get prefix() { return `Cache` }
 	private readonly cacheMaxAge = 5
-	private sessionCache: Map<string, any> = new Map()
+	private sessionCache: Map<string, CacheEntry> = new Map()
 
 	public set(keyRaw: any, value: any, cachetime: number = this.cacheMaxAge): void {
 		const key = typeof keyRaw === 'string' ? keyRaw : JSON.stringify(keyRaw)
-		const data = api.Data.cloneValue(value)
-		const __cache_hash = api.Data.generateHash(data)
+		const data = api.Utils.cloneValue(value)
+		const __cache_hash = api.Utils.generateHash(data)
 		const __cache_timestamp = Date.now() + (cachetime * 60 * 1000)
 
 		this.sessionCache.set(key, { data, __cache_hash, __cache_timestamp })
@@ -20,7 +26,7 @@ export class CacheMethods {
 			return undefined
 		}
 		const { data, __cache_hash, __cache_timestamp } = cachedValue
-		const hashKey = api.Data.generateHash(data)
+		const hashKey = api.Utils.generateHash(data)
 
 		// Check cache existence and validity
 		if (data && __cache_hash === hashKey) {
@@ -37,7 +43,7 @@ export class CacheMethods {
 		}
 
 		if (returnCache) {
-			const cloned = api.Data.cloneValue(data)
+			const cloned = api.Utils.cloneValue(data)
 			if (cloned && typeof cloned === 'object') {
 				Object.defineProperty(cloned, '__CACHE', {
 					value: {

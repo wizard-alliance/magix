@@ -30,7 +30,14 @@ export class RouteController {
 		return `${base}/${cleaned}`
 	}
 
-	public set(method: Route["method"], path: Route["path"], cb: Route["callback"], options: RouteOptions = {}): Route {
+	public set(method: Route["method"] | Route["method"][], path: Route["path"], cb: Route["callback"], options: RouteOptions = {}): Route[] | Route {
+		const methods = Array.isArray(method) ? method : [method]
+		const routes: Route[] = []
+		for (const m of methods) { routes.push(this._set(m, path, cb, options)) }
+		return routes.length === 1 ? routes[0] : routes
+	}
+
+	private _set(method: Route["method"], path: Route["path"], cb: Route["callback"], options: RouteOptions = {}): Route {
 		const name = `${method.toLowerCase()}:${path}`
 		let route: Route = {
 			method: method.toUpperCase() as HttpMethod,
@@ -46,6 +53,15 @@ export class RouteController {
 				tableName: options?.tableName || null,
 				perms: options?.perms || []
 			}
+		}
+
+		// Auto-build param schema from tableName + path
+		if (options.tableName) {
+			route.params = this.getColumnDefinitions(options.tableName) as Record<string, any>
+			if(route.params.password !== undefined) { delete route.params.password }
+			if(route.params.password_hash !== undefined) { delete route.params.password_hash }
+			if(route.params.reset_token !== undefined) { delete route.params.reset_token }
+			route.params = { ...route.params, ...this.getTableSchema(options.tableName) }
 		}
 
 		this.directory.push(route)
@@ -148,7 +164,7 @@ export class RouteController {
 		}
 	}
 
-	public return(raw: any, res: Response, req: Request, $: $): ApiResponse {
+	public return(raw: any, res: Response, req: Request, $?: $): ApiResponse {
 		const data = (typeof raw === "object" && raw !== null) ? { ...raw } : raw
 		const code = Number(data.code) || 200
 		const errorMessage = data.errorMessage || data.error || null
@@ -179,10 +195,10 @@ export class RouteController {
 		return res.status(code).json(payload) as any
 	}
 
-	public error(data: any, res: Response, req: Request, $: $): ApiResponse {
+	public error(data: any, res: Response, req: Request, $?: $): ApiResponse {
 		return this.return({
 			error: data.error || data.message || data, code: data.code || 500
-		}, res, req, $)
+		}, res, req, $ || undefined)
 	}
 
 	/**
@@ -241,7 +257,7 @@ export class RouteController {
 			...params,
 			body: sanitizeSection(params.body),
 			query: sanitizeSection(params.query),
-			params: sanitizeSection(params.params)
+			params: sanitizeSection(params.params),
 		}
 	}
 

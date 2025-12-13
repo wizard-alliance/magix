@@ -1,5 +1,5 @@
 import type { Request } from "express"
-import { CrudMethods } from "../controllers/Data/CrudMethods.js"
+import { CrudMethods } from "../services/CrudMethods.js"
 
 import type { SettingDBRow } from "../schema/Database.js"
 import type { Settings } from "../schema/DomainShapes.js"
@@ -8,15 +8,16 @@ export class SettingsRoutes {
 	private readonly tableName: string = "settings"
 	public readonly routeName = "setting"
 	public readonly version = api.Config("API_VERSION") || '1'
+	private readonly CRUD = new CrudMethods<Settings, SettingDBRow>()
 	
-	private get CRUD(): CrudMethods<Settings, SettingDBRow> { return api.Data.CRUD }
-
 	public routes = async () => {
-		api.Router.set("GET", `${this.routeName}`, this.get, { protected: false, register: false });
-		api.Router.set("PUT", `${this.routeName}`, this.update, { protected: false, register: false });
-		api.Router.set("DELETE", `${this.routeName}`, this.delete, { protected: false, register: false });
-		api.Router.set("POST", `${this.routeName}`, this.create, { protected: false, register: false });
-		api.Router.set("GET", `${this.routeName}s`, this.getMany, { protected: false, register: false });
+		const options = { protected: false, register: false, tableName: this.tableName }
+		
+		api.Router.set("GET", `${this.routeName}`, this.get, options)
+		api.Router.set("PUT", `${this.routeName}`, this.update, options)
+		api.Router.set("DELETE", `${this.routeName}`, this.delete, options)
+		api.Router.set("POST", `${this.routeName}`, this.create, options)
+		api.Router.set("GET", `${this.routeName}s`, this.getMany, options)
 	}
 
 	get = async ($: any, req: Request) => {

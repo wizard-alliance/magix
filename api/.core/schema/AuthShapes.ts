@@ -5,8 +5,6 @@ import { User } from "./DomainShapes.js"
 /**
  * TYPES: VENDOR AUTH
  */
-export type VendorName = "discord" | "google"
-
 export type VendorProfile = {
 	id: string
 	email: string
@@ -15,7 +13,7 @@ export type VendorProfile = {
 }
 
 export type VendorConfig = {
-	name: VendorName
+	name: string
 	enabled: boolean
 	clientId: string
 	clientSecret?: string
@@ -38,7 +36,7 @@ export type AuthPayload = {
 }
 
 export type VendorLoginInput = {
-	vendor: VendorName
+	vendor: string
 	payload: Record<string, any>
 }
 

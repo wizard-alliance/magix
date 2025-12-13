@@ -19,9 +19,9 @@ export class HealthRoute {
 			status: `ok`,
 			timestamp: dayjs().toISOString(),
 			apiBaseUrl: api.Config('API_BASE_URL'),
-			databaseConfigured: api.Services.DB.isConfigured(),
-			databaseVersion: await api.Services.DB.getServerVersion(),
-			smtpConfigured: api.Services.Mail.isConfigured(),
+			databaseConfigured: api.DB.isConfigured(),
+			databaseVersion: await api.DB.getServerVersion(),
+			smtpConfigured: api.Mail.isConfigured(),
 		}
 	}
 }

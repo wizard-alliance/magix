@@ -1,20 +1,24 @@
-import { createHash, pbkdf2Sync, randomBytes, timingSafeEqual } from "crypto"
+import { createHash, pbkdf2, pbkdf2Sync, randomBytes, timingSafeEqual } from "crypto"
+import { promisify } from "util"
+
+const pbkdf2Async = promisify(pbkdf2)
 
 const iterations = (() => {
-	const raw = process.env.BCRYPT_ROUNDS ?? "12"
+	const raw = process.env.PBKDF2_ITERATIONS ?? "1337000"
 	const parsed = Number(raw)
 	if (!Number.isFinite(parsed) || parsed <= 0) {
-		return 12
+		return 1337000
 	}
-	return Math.max(1, Math.floor(parsed))
+	return Math.max(10000, Math.floor(parsed))
 })()
 
 const deriveHash = (value: string, salt: string, rounds: number) =>
 	pbkdf2Sync(value, salt, rounds, 64, "sha512").toString("hex")
 
 export const hashPassword = async (value: string) => {
-	const salt = randomBytes(16).toString("hex")
-	const hash = deriveHash(value, salt, iterations)
+	const salt = randomBytes(24).toString("hex")
+	const derived = await pbkdf2Async(value, salt, iterations, 64, "sha512")
+	const hash = derived.toString("hex")
 	return `pbkdf2$${iterations}$${salt}$${hash}`
 }
 

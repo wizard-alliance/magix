@@ -20,6 +20,17 @@ api.Router.set("GET", "dev/test", cb, { protected: false, register: false });
 
 api.Router.set("GET", "dev/test2", cb, { protected: false, register: false });
 
-api.Router.set("GET", "dev/parentz/test3", cb, { protected: false, register: false });
+api.Router.set("GET", "dev/test/:ID", cb, { protected: false, register: false });
 
 api.Router.register()
+
+
+api.Router.set("GET", "user/:id/settings", cb, {
+	protected: true,
+	tableName: "user_settings",
+	perms: ["user", "edit_self", "edit_self_settings"],
+	register: true,
+	params: [{ id: "number" }, { slug: "string" }]
+})
+
+// Fix User -> Perms class

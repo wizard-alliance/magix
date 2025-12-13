@@ -10,24 +10,23 @@ import { Logger, registerAppLoggerBridge } from "@api/core/helpers/Logger.js"
 import {
 	maybeJSONString, maybeJSONDecode,
 	removeKeysDeep, removeEmptyValuesDeep,
-	encapsulate, splitFromTags, createSlug
+	encapsulate, splitFromTags, createSlug,
+	cloneValue, applyWhere, applyOptions
 } from "@api/core/helpers/Utils.js"
 
 import { convertRecursiveObjToStr, convertObjToStr } from "@api/core/helpers/Obj.js"
 
-import { RouteController } from "@api/core/controllers/RouteController.js"
+import { CacheManager } from "@api/core/services/CacheManager.js"
+import { RouteController } from "@api/core/services/RouteService.js"
 import { sendError, sendSuccess } from "@api/core/helpers/ApiResponder.js"
 import { generateHash, hashPassword, verifyPassword } from "@api/core/helpers/hashing.js"
-
-// Controllers
-import { DataManager } from "@api/core/controllers/DataManager.js"
 
 // Services
 import { DatabaseClient } from "@api/core/services/DatabaseClient.js"
 import { MailService } from "@api/core/services/MailService.js"
 import { WebSocketServerManager } from "@api/core/services/WebSocketServer.js"
 import { Tickrate } from "@api/core/services/Tickrate.js"
-import { AuthService } from "@api/core/services/Auth/AuthService.js"
+import { UserService } from "@api/core/services/UserService.js"
 
 import { Config } from "@api/core/config/env.js"
 import { magixConfig } from "@magix/config" 
@@ -51,7 +50,6 @@ scope.api.getParams = (request: express.Request) => {
 
 scope.api.Express = express()
 scope.api.$Express = express
-scope.api.Router = new RouteController()
 
 scope.api.Utils = {
 	sendSuccess,
@@ -68,16 +66,19 @@ scope.api.Utils = {
 	generateHash,
 	hashPassword,
 	verifyPassword,
+
+	cloneValue,
+	applyWhere,
+	applyOptions,
 }
 
-scope.api.Services = {
-	DB: new DatabaseClient(),
-	Mail: new MailService(),
-	Tickrate: new Tickrate(),
-} as const
-
-scope.api.Auth = new AuthService()
-scope.api.Data = new DataManager()
+// Services
+scope.api.Router = new RouteController()
+scope.api.DB = new DatabaseClient()
+scope.api.Mail = new MailService()
+scope.api.Tickrate = new Tickrate()
+scope.api.User = new UserService()
+scope.api.Cache = new CacheManager()
 scope.api.WS = new WebSocketServerManager()
 
 scope.api.Logger = new Logger({ basePath: "../.logs", scope: 'api', label: 'API' })

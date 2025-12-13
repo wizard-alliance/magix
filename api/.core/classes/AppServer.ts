@@ -19,7 +19,7 @@ export class AppServer {
 	}
 
 	async initialize() {
-		if (!api.Services.DB.isConfigured()) {
+		if (!api.DB.isConfigured()) {
 			api.Log("Database not configured", this.prefix, "warning")
 		}
 

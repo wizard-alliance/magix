@@ -16,20 +16,22 @@ type GuardOptions = {
 export const requireAuth = (options: GuardOptions = {}): RequestHandler => {
 	return async (req: Request, res: Response, next: NextFunction) => {
 		const token = parseBearer(req)
+		const $ = api.Router.getParams(req)
+		
 		if (!token) {
 			if (options.optional) return next()
-			return api.Utils.sendError(res, { error: "Unauthorized", code: 401, request: req })
+			return api.Router.error({ error: "Unauthorized: No token provided", code: 401 }, res, req, $)
 		}
 
-		const validation = await api.Auth.validateAccessToken(token)
+		const validation = await api.User.Auth.validateAccessToken(token)
 		if (!validation.valid || !validation.user) {
-			return api.Utils.sendError(res, { error: validation.reason ?? "Unauthorized", code: validation.code ?? 401, request: req })
+			return api.Router.error({ error: "Unauthorized: Invalid token", code: 401 }, res, req, $)
 		}
 
 		if (options.perms && options.perms.length) {
-			const has = await api.Auth.hasPermissions(validation.user.id!, options.perms)
+			const has = await api.User.Auth.hasPermissions(validation.user.id!, options.perms)
 			if (!has) {
-				return api.Utils.sendError(res, { error: "Forbidden", code: 403, request: req })
+				return api.Router.error({ error: "Forbidden: Insufficient permissions", code: 403 }, res, req, $)
 			}
 		}
 
