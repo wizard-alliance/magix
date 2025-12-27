@@ -17,7 +17,8 @@ const envDefaults: Record<string, string | number | boolean> = {
 	API_VERSION: "v1",
 	APP_NAME: "Project Magix",
 	APP_TAGLINE: "Fullstack Framework + Boilerplate",
-
+	APP_COLOR: "#813eceff",
+	APP_COLOR_SECONDARY: "#a777dfff",
 	DB_HOST: "",
 	DB_PORT: 3306,
 	DB_USER: "",

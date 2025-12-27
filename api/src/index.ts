@@ -1,4 +1,5 @@
 import api from '@api/core'
+import dayjs from 'dayjs'
 
 const cb = ($: any, req: Request, res: Response) => {
 	return {
@@ -22,3 +23,8 @@ api.User.Auth.permissions.grant(93, [
 	"user.edit", 
 	"user.delete",
 ])
+
+// api.Mail.test("user@example.com")
+// api.Mail.test("user@example.com", "welcome")
+// api.Mail.test("user@example.com", "password-reset")
+// api.Mail.test("user@example.com", "verify-email")
