@@ -30,8 +30,8 @@ Content-Type: application/json
 
 ###
 # Token variables — taken from LAST response of any request named "authTokens"
-@accessToken = {{authTokens.response.body.$.data.tokens.access.token}}
-@refreshToken = {{authTokens.response.body.$.data.tokens.refresh.token}}
+@accessToken = {{authTokens.response.body.data.tokens.access.token}}
+@refreshToken = {{authTokens.response.body.data.tokens.refresh.token}}
 
 ###
 ### 3) Fetch profile (me)

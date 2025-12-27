@@ -25,7 +25,7 @@ export const requireAuth = (options: GuardOptions = {}): RequestHandler => {
 
 		const validation = await api.User.Auth.validateAccessToken(token)
 		if (!validation.valid || !validation.user) {
-			return api.Router.error({ error: "Unauthorized: Invalid token", code: 401 }, res, req, $)
+			return api.Router.error({ error: "Unauthorized: Invalid token - " + validation.reason, code: 401 }, res, req, $)
 		}
 
 		if (options.perms && options.perms.length) {

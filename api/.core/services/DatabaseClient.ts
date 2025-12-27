@@ -66,6 +66,8 @@ export class DatabaseClient {
 				connectTimeout: 2000,
 				supportBigNumbers: true,
 				decimalNumbers: true,
+				dateStrings: true,
+				timezone: "Z",
 			}),
 		})
 	}

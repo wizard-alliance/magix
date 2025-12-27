@@ -3,7 +3,7 @@ import type {
 	UserTokenAccessDBRow,
 	UserTokenBlacklistDBRow,
 } from "../../schema/Database.js"
-import { extractInsertId, formatUtcDateTime } from "./UserDbUtils.js"
+import { extractInsertId, formatUtcDateTime, parseUtcDateTimeMs } from "./UserDbUtils.js"
 
 export class TokenStore {
 	private readonly db = api.DB.connection
@@ -79,7 +79,7 @@ export class TokenStore {
 		if (!entry.expires) {
 			return true
 		}
-		return new Date(entry.expires).getTime() > Date.now()
+		return parseUtcDateTimeMs(entry.expires) > Date.now()
 	}
 
 	blacklistToken = async (options: {

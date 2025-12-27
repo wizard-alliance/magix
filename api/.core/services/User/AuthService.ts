@@ -5,6 +5,7 @@ import { PermissionService } from "./PermissionService.js"
 import { TokenStore } from "./TokenStore.js"
 import { UserRepo, normalizeEmail, normalizeUsername } from "./UserRepo.js"
 import { VendorRegistry } from "./VendorRegistry.js"
+import { parseUtcDateTimeMs } from "./UserDbUtils.js"
 
 import type { UserDBRow } from "../../schema/Database.js"
 
@@ -20,6 +21,10 @@ export class AuthService {
 	private readonly tokenStore = new TokenStore()
 	private readonly vendors = new VendorRegistry()
 	private readonly permissions = new PermissionService()
+
+	private parseExpiry(value: string | Date): number {
+		return parseUtcDateTimeMs(value)
+	}
 
 	async hasPermissions(userId: number, perms: readonly string[]) {
 		return this.permissions.hasPermissions(userId, perms)
@@ -119,7 +124,7 @@ export class AuthService {
 			return { error: "Refresh token expired or revoked", code: 401 }
 		}
 
-		if (new Date(stored.expires).getTime() <= Date.now()) {
+		if (this.parseExpiry(stored.expires) <= Date.now()) {
 			return { error: "Refresh token expired", code: 401 }
 		}
 
@@ -144,7 +149,7 @@ export class AuthService {
 			user: this.toAccount(user),
 			tokens: {
 				access,
-				refresh: { token: refreshToken, expiresAt: new Date(stored.expires) },
+				refresh: { token: refreshToken, expiresAt: new Date(this.parseExpiry(stored.expires)) },
 			},
 		}
 	}
@@ -287,7 +292,22 @@ export class AuthService {
 		code?: number
 	}> {
 		const fromSig = await this.validateAccessFromSignature(token)
+		api.Log(`[validateAccessToken] fromSig.valid=${fromSig.valid}, reason=${fromSig.reason}`, this.prefix, "warning")
+
+		// Fallback: if signature check fails but token exists in store and is not expired/revoked, trust DB record
 		if (!fromSig.valid) {
+			const stored = await this.tokenStore.getAccessToken(token)
+			if (stored) {
+				const refresh = await this.tokenStore.getRefreshById(stored.refresh_token_id)
+				const dbExpiry = this.parseExpiry(stored.expires)
+				const nowMs = Date.now()
+				const expired = dbExpiry <= nowMs
+				api.Log(`[validateAccessToken] DB fallback: dbExpiry=${dbExpiry}, nowMs=${nowMs}, expired=${expired}`, this.prefix, "warning")
+				const revoked = !refresh || refresh.valid !== 1
+				if (!expired && !revoked) {
+					return { valid: true, user: refresh ? await this.users.findById(refresh.user_id) ?? undefined : undefined }
+				}
+			}
 			return { valid: false, reason: fromSig.reason, code: fromSig.code }
 		}
 
@@ -298,7 +318,10 @@ export class AuthService {
 		const stored = await this.tokenStore.getAccessToken(token)
 
 		if (stored) {
-			if (new Date(stored.expires).getTime() <= Date.now()) {
+			const dbExpiry = this.parseExpiry(stored.expires)
+			const nowMs = Date.now()
+			api.Log(`[validateAccessToken] DB check: dbExpiry=${dbExpiry}, nowMs=${nowMs}, diff=${dbExpiry - nowMs}ms`, this.prefix, "warning")
+			if (dbExpiry <= nowMs) {
 				return { valid: false, reason: "Token expired", code: 401 }
 			}
 

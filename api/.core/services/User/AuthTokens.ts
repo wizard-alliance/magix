@@ -92,7 +92,7 @@ export class AuthTokenManager {
 				return { valid: false, reason: `Expected ${expectedType} token` }
 			}
 			const now = Date.now()
-			const leewayMs = 24 * 60 * 60_000
+			const leewayMs = 0
 			if (payload.exp && now >= payload.exp * 1000 + leewayMs) {
 				return { valid: false, reason: "Token expired" }
 			}
