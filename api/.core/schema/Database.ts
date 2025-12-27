@@ -8,6 +8,14 @@ export type SettingDBRow = {
 	value: string | null
 }
 
+export type PermissionDBRow = {
+	ID?: number
+	created?: string
+	updated?: string
+	key: string
+	value: string | null
+}
+
 export type UserDeviceDBRow = {
 	id?: number
 	user_id: number
@@ -90,6 +98,7 @@ export type UserTokenSingleDBRow = {
 
 export type DatabaseSchema = {
 	settings: SettingDBRow
+	permissions: PermissionDBRow
 	users: UserDBRow
 	user_devices: UserDeviceDBRow
 	user_notifications: UserNotificationDBRow
@@ -134,6 +143,14 @@ export const schemaColumns = {
 	settings: {
 		ID: 'number',
 		autoload: 'number',
+		created: 'date',
+		updated: 'date',
+		key: 'string',
+		value: 'string'
+	},
+
+	permissions: {
+		ID: 'number',
 		created: 'date',
 		updated: 'date',
 		key: 'string',
@@ -258,6 +275,7 @@ const createColumnSet = <T extends Record<string, ColumnType>>(columns: T) => {
 
 export const tableColumnSets: ColumnSetMap = {
 	settings: createColumnSet(schemaColumns.settings),
+	permissions: createColumnSet(schemaColumns.permissions),
 	users: createColumnSet(schemaColumns.users),
 	user_devices: createColumnSet(schemaColumns.user_devices),
 	user_notifications: createColumnSet(schemaColumns.user_notifications),
@@ -271,6 +289,7 @@ export const tableColumnSets: ColumnSetMap = {
 
 export type TableMap = {
 	settings: string
+	permissions: string
 	users: string
 	user_devices: string
 	user_notifications: string
@@ -285,6 +304,7 @@ export type TableMap = {
 
 export const TableMap: TableMap = {
 	settings: "settings",
+	permissions: "permissions",
 	users: "users",
 	user_devices: "user_devices",
 	user_notifications: "user_notifications",

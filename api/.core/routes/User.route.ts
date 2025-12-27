@@ -21,6 +21,8 @@ export class AuthRoute {
 		api.Router.set(["POST"], `${this.authRoute}/login`, this.login)
 		api.Router.set(["POST"], `${this.authRoute}/vendor/:vendor/login`, this.vendorLogin)
 		api.Router.set(["POST"], `${this.authRoute}/vendor/:vendor`, this.vendorInfo)
+		api.Router.set(["GET"], `${this.authRoute}/vendor/:vendor/redirect`, this.vendorRedirect)
+		api.Router.set(["GET"], `${this.authRoute}/vendor/:vendor/callback`, this.vendorCallback)
 		api.Router.set(["POST"], `${this.userRoute}/register`, this.register)
 		api.Router.set(["POST"], `${this.authRoute}/logout`, this.logout, this.userOptions)
 		api.Router.set(["POST"], `${this.authRoute}/logout/all-devices`, this.logoutAllDevices, this.userOptions)
@@ -187,6 +189,93 @@ export class AuthRoute {
 		$ = api.Router.getParams(req)
 		const vendor = $.params?.vendor as string | null
 		return vendor ? api.User.Auth.getVendorInfo(vendor) : { error: "Unknown vendor", code: 404 }
+	}
+
+	vendorRedirect = async ($: $, req: Request, res: Response) => {
+		$ = api.Router.getParams(req)
+		const vendorName = $.params?.vendor as string | null
+		const returnUrl = (req.query.returnUrl as string) || (req.query.return_url as string) || "/"
+
+		if (!vendorName) {
+			return { error: "Unknown vendor", code: 404 }
+		}
+
+		const vendor = api.User.Auth.vendors.get(vendorName)
+		if (!vendor || !vendor.isEnabled()) {
+			return { error: "Vendor not enabled", code: 400 }
+		}
+
+		const state = api.User.Auth.vendors.encodeState({
+			returnUrl,
+			csrf: crypto.randomUUID(),
+			vendor: vendorName,
+		})
+
+		const authorizeUrl = vendor.buildAuthorizeUrl(state)
+		res.redirect(authorizeUrl)
+		return null
+	}
+
+	vendorCallback = async ($: $, req: Request, res: Response) => {
+		$ = api.Router.getParams(req)
+		const vendorName = $.params?.vendor as string | null
+		const code = req.query.code as string | undefined
+		const stateParam = req.query.state as string | undefined
+		const error = req.query.error as string | undefined
+
+		const state = stateParam ? api.User.Auth.vendors.decodeState(stateParam) : null
+		const returnUrl = state?.returnUrl || "/"
+
+		const buildRedirect = (base: string, params: Record<string, string>) => {
+			const url = new URL(base)
+			for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v)
+			return url.toString()
+		}
+
+		const redirectError = (msg: string) => {
+			res.redirect(buildRedirect(returnUrl, { error: msg }))
+			return null
+		}
+
+		if (error) {
+			return redirectError(error)
+		}
+
+		if (!vendorName || !code || !state) {
+			return redirectError("invalid_request")
+		}
+
+		const vendor = api.User.Auth.vendors.get(vendorName)
+		if (!vendor || !vendor.isEnabled()) {
+			return redirectError("vendor_disabled")
+		}
+
+		// Exchange code for access token
+		const tokenResult = await vendor.exchangeCode(code)
+		if (tokenResult.error || !tokenResult.access_token) {
+			return redirectError(tokenResult.error ?? "token_exchange_failed")
+		}
+
+		// Fetch user profile from provider
+		const profile = await vendor.fetchProfile(tokenResult.access_token)
+		if (!profile) {
+			return redirectError("profile_fetch_failed")
+		}
+
+		// Login/register user
+		const authResult = await api.User.Auth.vendorLogin({ vendor: vendorName, payload: profile })
+		if ("error" in authResult) {
+			return redirectError(authResult.error)
+		}
+
+		// Redirect with tokens
+		res.redirect(buildRedirect(returnUrl, {
+			access_token: authResult.tokens.access.token,
+			access_expires: authResult.tokens.access.expiresAt.toISOString(),
+			refresh_token: authResult.tokens.refresh.token,
+			refresh_expires: authResult.tokens.refresh.expiresAt.toISOString(),
+		}))
+		return null
 	}
 
 	vendorLogin = async ($: $, req: Request, res: Response) => {

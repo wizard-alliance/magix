@@ -1,0 +1,98 @@
+@baseUrl = http://localhost:4000/api/v1
+
+###
+### Login as admin (must have administrator permission)
+# @name authTokens
+POST {{baseUrl}}/account/auth/login
+Content-Type: application/json
+
+{
+  "identifier": "admin",
+  "password": "admin123"
+}
+
+###
+@accessToken = {{authTokens.response.body.data.tokens.access.token}}
+
+###
+### List all defined permissions
+GET {{baseUrl}}/permissions
+Authorization: Bearer {{accessToken}}
+
+###
+### Define a new permission
+POST {{baseUrl}}/permissions
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "key": "posts.create",
+  "value": "Create new posts"
+}
+
+###
+### Define multiple at once (call multiple times)
+POST {{baseUrl}}/permissions
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "key": "posts.delete",
+  "value": "Delete posts"
+}
+
+###
+### Update permission metadata
+PUT {{baseUrl}}/permissions
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "key": "posts.create",
+  "value": "Create and publish posts"
+}
+
+###
+### Remove a defined permission
+DELETE {{baseUrl}}/permissions
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "key": "posts.delete"
+}
+
+###
+### List user permissions (user ID 1)
+GET {{baseUrl}}/permissions/user/1
+Authorization: Bearer {{accessToken}}
+
+###
+### Grant permission(s) to user
+POST {{baseUrl}}/permissions/user/1/grant
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "permissions": ["posts.create", "posts.delete"]
+}
+
+###
+### Grant single permission
+POST {{baseUrl}}/permissions/user/1/grant
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "perm": "moderator"
+}
+
+###
+### Revoke permission(s) from user
+POST {{baseUrl}}/permissions/user/1/revoke
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "permissions": ["posts.delete"]
+}

@@ -1,5 +1,11 @@
 import { AuthVendor } from "./AuthVendor.js"
 
+type OAuthState = {
+	returnUrl: string
+	csrf: string
+	vendor: string
+}
+
 export class VendorRegistry {
 	private readonly vendors: Record<string, AuthVendor>
 
@@ -32,5 +38,19 @@ export class VendorRegistry {
 			return { error: "Unknown vendor", code: 404 }
 		}
 		return { vendor: resolved.info() }
+	}
+
+	/** Encode state for OAuth redirect */
+	encodeState = (data: OAuthState): string => {
+		return Buffer.from(JSON.stringify(data)).toString("base64url")
+	}
+
+	/** Decode state from OAuth callback */
+	decodeState = (state: string): OAuthState | null => {
+		try {
+			return JSON.parse(Buffer.from(state, "base64url").toString("utf8"))
+		} catch {
+			return null
+		}
 	}
 }

@@ -10,7 +10,7 @@ const cb = ($: any, req: Request, res: Response) => {
 api.Router.set("GET", "user/:id/settings", cb, {
 	protected: true,
 	tableName: "user_settings",
-	perms: ["user", "edit_self", "edit_self_settings"],
+	perms: ["user", "user.edit.self", "user.edit.self.settings"],
 	register: true,
 	params: [{ id: "number" }, { slug: "string" }]
 })

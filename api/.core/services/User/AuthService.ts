@@ -19,8 +19,8 @@ export class AuthService {
 	private readonly users = new UserRepo()
 	private readonly devices = new DeviceService()
 	private readonly tokenStore = new TokenStore()
-	private readonly vendors = new VendorRegistry()
-	private readonly permissions = new PermissionService()
+	public readonly vendors = new VendorRegistry()
+	public readonly permissions = new PermissionService()
 
 	private parseExpiry(value: string | Date): number {
 		return parseUtcDateTimeMs(value)

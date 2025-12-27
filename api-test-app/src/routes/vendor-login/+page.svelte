@@ -1,41 +1,65 @@
 <script lang="ts">
 	import { browser } from "$app/environment"
+	import { page } from "$app/stores"
+	import { onMount } from "svelte"
+	import { setAccessToken, setRefreshToken } from "$lib/client/api"
 
-	let code = "sandbox-code"
-	let token = "sandbox-code"
-	let email = "demo+discord@example.com"
-	let loading = false
+	let status = ""
+	let tokens = { access: "", refresh: "" }
 
-	const handleVendorLogin = async () => {
+	const API_BASE = "http://localhost:4000/api/v1"
+
+	onMount(() => {
 		if (!browser) return
-		loading = true
-		const res = await window.Request({
-			method: "post",
-			path: "/account/auth/vendor/discord/login",
-			body: { code, token, email },
-		})
-		loading = false
-		console.log(res.body.error ? "error" : "success", res.body.code, res.body.error)
+		const params = $page.url.searchParams
+		const access = params.get("access_token")
+		const accessExp = params.get("access_expires")
+		const refresh = params.get("refresh_token")
+		const refreshExp = params.get("refresh_expires")
+		const error = params.get("error")
+
+		if (error) {
+			status = `Error: ${error}`
+		} else if (access && refresh) {
+			tokens = { access, refresh }
+			status = "Logged in!"
+			setAccessToken(access, accessExp ?? undefined)
+			setRefreshToken(refresh, refreshExp ?? undefined)
+			history.replaceState({}, "", window.location.pathname)
+		}
+	})
+
+	const loginWithDiscord = () => {
+		const returnUrl = encodeURIComponent(window.location.href)
+		window.location.href = `${API_BASE}/account/auth/vendor/discord/redirect?returnUrl=${returnUrl}`
 	}
 </script>
 
 <section class="panel">
 	<h2>Login with Discord</h2>
-	<form on:submit|preventDefault={handleVendorLogin}>
-		<div class="field">
-			<label for="code">Code</label>
-			<input id="code" type="text" bind:value={code} autocomplete="off" />
+
+	{#if status}
+		<p class="status">{status}</p>
+	{/if}
+
+	{#if tokens.access}
+		<div class="tokens">
+			<p><strong>Access:</strong> {tokens.access.slice(0, 20)}...</p>
+			<p><strong>Refresh:</strong> {tokens.refresh.slice(0, 20)}...</p>
 		</div>
-		<div class="field">
-			<label for="token">Token</label>
-			<input id="token" type="text" bind:value={token} autocomplete="off" />
-		</div>
-		<div class="field">
-			<label for="email">Email</label>
-			<input id="email" type="email" bind:value={email} autocomplete="email" />
-		</div>
-		<div class="stack">
-			<button type="submit" disabled={loading}>Login</button>
-		</div>
-	</form>
+	{:else}
+		<button on:click={loginWithDiscord}>Login with Discord</button>
+	{/if}
 </section>
+
+<style>
+	.status {
+		padding: 0.5rem;
+		background: #333;
+		border-radius: 4px;
+	}
+	.tokens {
+		font-size: 0.8rem;
+		word-break: break-all;
+	}
+</style>
