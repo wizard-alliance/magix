@@ -5,25 +5,27 @@
 ###
 ### 1) Register demo user (one-off, POST is canonical)
 # @name registerDemo
-POST {{baseUrl}}/auth/register
+POST {{baseUrl}}/account/register
 Content-Type: application/json
 
 {
   "email": "demo@example.com",
   "username": "demo",
   "password": "changeme",
-  "tosAccepted": true
+  "tos_accepted": true
 }
 
 ###
 ### 2) Login with demo user (sets tokens) [POST only]
 # @name authTokens
-POST {{baseUrl}}/auth/login
+POST {{baseUrl}}/account/auth/login
 Content-Type: application/json
 
 {
   "identifier": "demo",
-  "password": "changeme"
+  "password": "changeme",
+  "fingerprint": "rest-client",
+  "device_name": "REST Client"
 }
 
 ###
@@ -33,35 +35,38 @@ Content-Type: application/json
 
 ###
 ### 3) Fetch profile (me)
-GET {{baseUrl}}/auth/me
+POST {{baseUrl}}/account/me
 Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{}
 
 ###
 ### 4) Refresh tokens (POST)
 # @name authTokens
-POST {{baseUrl}}/auth/refresh
+POST {{baseUrl}}/account/auth/refresh
 Content-Type: application/json
 
 {
-  "refreshToken": "{{refreshToken}}"
+  "refresh_token": "{{refreshToken}}"
 }
 
 ###
 ### 5) Change password (POST)
-POST {{baseUrl}}/auth/password
+POST {{baseUrl}}/account/auth/password
 Authorization: Bearer {{accessToken}}
 Content-Type: application/json
 
 {
-  "currentPassword": "changeme",
-  "newPassword": "super-secret-123",
-  "logoutAll": true
+  "current_password": "changeme",
+  "new_password": "super-secret-123",
+  "logout_all": true
 }
 
 ###
 ### 6) Login with new password (updates authTokens) [POST only]
 # @name authTokens
-POST {{baseUrl}}/auth/login
+POST {{baseUrl}}/account/auth/login
 Content-Type: application/json
 
 {
@@ -71,31 +76,34 @@ Content-Type: application/json
 
 ###
 ### 7) Logout current session (POST)
-POST {{baseUrl}}/auth/logout
+POST {{baseUrl}}/account/auth/logout
 Content-Type: application/json
 
 {
-  "refreshToken": "{{refreshToken}}"
+  "refresh_token": "{{refreshToken}}"
 }
 
 ###
 ### 8) Logout all devices for current user (POST)
-POST {{baseUrl}}/auth/logout/all-devices
+POST {{baseUrl}}/account/auth/logout/all-devices
 Authorization: Bearer {{accessToken}}
 
 ###
 ### 9) Logout all users (admin / maintenance) (POST)
-POST {{baseUrl}}/auth/logout/all-users
+POST {{baseUrl}}/account/auth/logout/all-users
 Authorization: Bearer {{accessToken}}
 
 ###
 ### 10) Vendor info (GET)
-GET {{baseUrl}}/auth/vendor/discord
+POST {{baseUrl}}/account/auth/vendor/discord
+Content-Type: application/json
+
+{}
 
 ###
 ### 11) Vendor login (POST)
 # @name vendorTokens
-POST {{baseUrl}}/auth/vendor/discord
+POST {{baseUrl}}/account/auth/vendor/discord/login
 Content-Type: application/json
 
 {

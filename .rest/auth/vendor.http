@@ -1,11 +1,14 @@
 ﻿@baseUrl = http://localhost:4000/api/v1
 
 ### Vendor info (GET)
-GET {{baseUrl}}/auth/vendor/discord
+POST {{baseUrl}}/account/auth/vendor/discord
+Content-Type: application/json
+
+{}
 
 ### Vendor login (POST)
 # @name vendorTokens
-POST {{baseUrl}}/auth/vendor/discord
+POST {{baseUrl}}/account/auth/vendor/discord/login
 Content-Type: application/json
 
 {
@@ -16,5 +19,8 @@ Content-Type: application/json
 
 ### Me using vendor access token
 @accessToken = {{vendorTokens.response.body.$.data.tokens.access.token}}
-GET {{baseUrl}}/auth/me
+POST {{baseUrl}}/account/me
 Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{}

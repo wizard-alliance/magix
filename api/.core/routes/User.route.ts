@@ -120,7 +120,8 @@ export class AuthRoute {
 	// WIP
 	refresh = async ($: $, req: Request, res: Response) => {
 		$ = api.Router.getParams(req)
-		return $.body.refresh_token ?? ""
+		const refreshToken = $.body.refresh_token ?? $.body.refreshToken ?? ""
+		return await api.User.Auth.refresh(refreshToken)
 	}
 
 	logout = async ($: $, req: Request, res: Response) => {
