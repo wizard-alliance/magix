@@ -7,33 +7,33 @@ export class PermissionService {
 	// Permissions that bypass all other checks
 	private readonly bypassPerms = new Set(["administrator", "admin"])
 
-	hasPermissions = async (userId: number, perms: readonly string[]): Promise<boolean> => {
+	has = async (userId: number, perms: readonly string[]): Promise<boolean> => {
 		if (!perms.length) return true
 
 		// Check if all requested perms are implicit (no DB lookup needed)
 		if (perms.every((p) => this.implicitPerms.has(p))) return true
 
-		const userPerms = await this.getUserPermissions(userId)
+		const userPerms = await this.get(userId)
 
 		// Admin bypass - if user has any bypass perm, grant everything
 		if ([...this.bypassPerms].some((bp) => userPerms.has(bp))) return true
 
 		// Check each requested permission
-		return perms.every((perm) => this.implicitPerms.has(perm) || this.matchPermission(perm, userPerms))
+		return perms.every((perm) => this.implicitPerms.has(perm) || this.match(perm, userPerms))
 	}
 
-	hasAnyPermission = async (userId: number, perms: readonly string[]): Promise<boolean> => {
+	hasAny = async (userId: number, perms: readonly string[]): Promise<boolean> => {
 		if (!perms.length) return false
 
-		const userPerms = await this.getUserPermissions(userId)
+		const userPerms = await this.get(userId)
 
 		// Admin bypass
 		if ([...this.bypassPerms].some((bp) => userPerms.has(bp))) return true
 
-		return perms.some((perm) => this.implicitPerms.has(perm) || this.matchPermission(perm, userPerms))
+		return perms.some((perm) => this.implicitPerms.has(perm) || this.match(perm, userPerms))
 	}
 
-	getUserPermissions = async (userId: number): Promise<Set<string>> => {
+	get = async (userId: number): Promise<Set<string>> => {
 		const rows = await this.db
 			.selectFrom("user_permissions")
 			.select(["name"])
@@ -42,45 +42,69 @@ export class PermissionService {
 		return new Set(rows.map((r) => r.name))
 	}
 
-	listPermissions = async (userId: number): Promise<string[]> => {
-		const dbPerms = await this.getUserPermissions(userId)
+	list = async (userId: number): Promise<string[]> => {
+		const dbPerms = await this.get(userId)
 		return [...this.implicitPerms, ...dbPerms]
 	}
 
-	grantPermission = async (userId: number, perm: string): Promise<boolean> => {
-		if (this.implicitPerms.has(perm)) return true // Already implicit
-		const existing = await this.db
-			.selectFrom("user_permissions")
-			.select(["id"])
-			.where("user_id", "=", userId)
-			.where("name", "=", perm)
-			.executeTakeFirst()
-		if (existing) return true
+	grant = async (userId: number, perm: string | string[]): Promise<boolean> => {
+		const perms = Array.isArray(perm) ? perm : [perm]
+		for (const p of perms) {
+			if (this.implicitPerms.has(p)) continue
+			const existing = await this.db
+				.selectFrom("user_permissions")
+				.select(["id"])
+				.where("user_id", "=", userId)
+				.where("name", "=", p)
+				.executeTakeFirst()
+			if (existing) continue
 
-		await this.db
-			.insertInto("user_permissions")
-			.values({ user_id: userId, name: perm, value: "1" })
-			.execute()
+			await this.db
+				.insertInto("user_permissions")
+				.values({ user_id: userId, name: p, value: "1" })
+				.execute()
+		}
 		return true
 	}
 
-	revokePermission = async (userId: number, perm: string): Promise<boolean> => {
-		if (this.implicitPerms.has(perm)) return false // Can't revoke implicit
+	revoke = async (userId: number, perm: string | string[]): Promise<boolean> => {
+		const perms = Array.isArray(perm) ? perm : [perm]
+		const toRevoke = perms.filter((p) => !this.implicitPerms.has(p))
+		if (!toRevoke.length) return false
+
 		await this.db
 			.deleteFrom("user_permissions")
 			.where("user_id", "=", userId)
-			.where("name", "=", perm)
+			.where("name", "in", toRevoke)
 			.execute()
 		return true
 	}
 
 	isAdmin = async (userId: number): Promise<boolean> => {
-		const perms = await this.getUserPermissions(userId)
+		const perms = await this.get(userId)
 		return [...this.bypassPerms].some((bp) => perms.has(bp))
 	}
 
+	/**
+	 * Check if user can perform action on a resource, considering ownership.
+	 * Convention: "resource.action.own" allows self-access, "resource.action" or "resource.action.any" allows all.
+	 * @example canAccess(userId, targetId, "users.read") // checks users.read.own if self, users.read otherwise
+	 */
+	canAccess = async (userId: number, targetId: number, action: string): Promise<boolean> => {
+		const isOwn = userId === targetId
+
+		// If accessing own resource, check for .own or general permission
+		if (isOwn) {
+			const hasOwn = await this.has(userId, [`${action}.own`])
+			if (hasOwn) return true
+		}
+
+		// Check general permission (allows any)
+		return this.has(userId, [action])
+	}
+
 	// Supports wildcards: "posts.*" matches "posts.create", "posts.delete" etc
-	private matchPermission(requested: string, granted: Set<string>): boolean {
+	private match(requested: string, granted: Set<string>): boolean {
 		if (granted.has(requested)) return true
 
 		// Check wildcards in granted perms

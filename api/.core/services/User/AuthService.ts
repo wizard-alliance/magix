@@ -27,7 +27,7 @@ export class AuthService {
 	}
 
 	async hasPermissions(userId: number, perms: readonly string[]) {
-		return this.permissions.hasPermissions(userId, perms)
+		return this.permissions.has(userId, perms)
 	}
 
 	async register(input: RegisterInput, device?: UserDeviceContext): Promise<AuthPayload | { error: string; code?: number }> {
@@ -292,9 +292,9 @@ export class AuthService {
 		code?: number
 	}> {
 		const fromSig = await this.validateAccessFromSignature(token)
-		api.Log(`[validateAccessToken] fromSig.valid=${fromSig.valid}, reason=${fromSig.reason}`, this.prefix, "warning")
 
-		// Fallback: if signature check fails but token exists in store and is not expired/revoked, trust DB record
+		// Fallback: if signature check fails but token exists 
+		// in store and is not expired/revoked, trust DB record
 		if (!fromSig.valid) {
 			const stored = await this.tokenStore.getAccessToken(token)
 			if (stored) {
