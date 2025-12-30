@@ -75,30 +75,6 @@ export class UserRepo {
 		return extractInsertId(insertResult)
 	}
 
-	createVendorUser = async (input: {
-		email: string
-		username: string
-		password: string
-		displayName: string
-	}): Promise<number | null> => {
-		const now = nowUtcDateTime()
-		const insertResult = await this.db
-			.insertInto("users")
-			.values({
-				email: input.email,
-				username: input.username,
-				password: input.password,
-				first_name: input.displayName,
-				activated: 1,
-				tos_accepted: 1,
-				disabled: 0,
-				created: now,
-				updated: now,
-			} as any)
-			.executeTakeFirst()
-		return extractInsertId(insertResult)
-	}
-
 	updatePassword = async (userId: number, password: string) => {
 		await this.db
 			.updateTable("users")

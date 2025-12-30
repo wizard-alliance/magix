@@ -43,17 +43,12 @@
 	const handleUpdateUser = async () => {
 		if (!browser) return
 		loading = true
-		await window.Request({
-			method: "put",
-			path: "/account/user",
-			body: {
-				id: Number(userId),
-				username,
-				email,
-				first_name: firstName,
-				last_name: lastName,
-			},
-		})
+		const body: Record<string, any> = { id: Number(userId) }
+		if (username) body.username = username
+		if (email) body.email = email
+		if (firstName) body.first_name = firstName
+		if (lastName) body.last_name = lastName
+		await window.Request({ method: "put", path: "/account/user", body })
 		loading = false
 	}
 

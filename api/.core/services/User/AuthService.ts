@@ -5,7 +5,7 @@ import { PermissionService } from "./PermissionService.js"
 import { TokenStore } from "./TokenStore.js"
 import { UserRepo, normalizeEmail, normalizeUsername } from "./UserRepo.js"
 import { VendorRegistry } from "./VendorRegistry.js"
-import { parseUtcDateTimeMs } from "./UserDbUtils.js"
+import { parseUtcDateTimeMs, nowUtcDateTime } from "./UserDbUtils.js"
 
 import type { UserDBRow } from "../../schema/Database.js"
 
@@ -86,29 +86,22 @@ export class AuthService {
 	}
 
 	async register(input: RegisterInput, device?: UserDeviceContext): Promise<AuthPayload | { error: string; code?: number }> {
-		const email = normalizeEmail(input.email)
-		const username = normalizeUsername(input.username)
-		if (!email || !username || !input.password) {
+		if (!input.email || !input.username || !input.password) {
 			return { error: "Email, username, and password are required", code: 400 }
 		}
+		const result = await this.create({
+			email: input.email,
+			username: input.username,
+			password: input.password,
+			firstName: input.firstName,
+			lastName: input.lastName,
+		})
+		if (!result || "error" in result) return result ?? { error: "Unable to create user", code: 500 }
 
-		const existing = await this.users.findByEmailOrUsername(email, username)
-		if (existing) {
-			return { error: "User already exists", code: 409 }
-		}
-
-		const password = await api.Utils.hashPassword(input.password)
-		const userId = await this.users.createLocalUser({ email, username, password, register: input })
-		if (!userId) {
-			return { error: "Unable to create user", code: 500 }
-		}
-
-		const created = await this.users.findById(userId)
-		if (!created) {
-			return { error: "User not found after creation", code: 404 }
-		}
-
-		return this.issueSession(created, device)
+		// Issue session for newly registered user
+		const user = await this.users.findById(result.id)
+		if (!user) return { error: "User not found after creation", code: 404 }
+		return this.issueSession(user, device)
 	}
 
 	async login(input: LoginInput): Promise<AuthPayload | { error: string; code?: number }> {
@@ -121,7 +114,12 @@ export class AuthService {
 		if (!user) {
 			return { error: "Invalid credentials", code: 401 }
 		}
-		if (user.disabled || user.deleted_at) {
+
+		if (user.deleted_at) {
+			return { error: "Account not found or deleted", code: 404 }
+		}
+
+		if (user.disabled) {
 			return { error: "Account is disabled", code: 403 }
 		}
 
@@ -145,24 +143,20 @@ export class AuthService {
 			return this.issueSession(existing, { name: profile.displayName })
 		}
 
-		const randomPassword = randomUUID()
-		const password = await api.Utils.hashPassword(randomPassword)
-		const userId = await this.users.createVendorUser({
+		// Create new user via shared create method
+		const result = await this.create({
 			email: profile.email,
 			username: profile.username,
-			password,
-			displayName: profile.displayName,
+			password: randomUUID(), // Random password for vendor users
+			firstName: profile.displayName,
 		})
-		if (!userId) {
-			return { error: "Unable to create vendor user", code: 500 }
+		if (!result || "error" in result) {
+			return result ?? { error: "Unable to create vendor user", code: 500 }
 		}
 
-		const created = await this.users.findById(userId)
-		if (!created) {
-			return { error: "User not found after creation", code: 404 }
-		}
-
-		return this.issueSession(created, { name: profile.displayName })
+		const user = await this.users.findById(result.id)
+		if (!user) return { error: "User not found after creation", code: 404 }
+		return this.issueSession(user, { name: profile.displayName })
 	}
 
 	async refresh(refreshToken: string): Promise<AuthPayload | { error: string; code?: number }> {
@@ -188,7 +182,12 @@ export class AuthService {
 		}
 
 		const user = await this.users.findById(stored.user_id)
-		if (!user || !user.id || user.disabled || user.deleted_at) {
+		
+		if (!user || !user.id || user.deleted_at) {
+			return { error: "Account not found or deleted", code: 404 }
+		}
+
+		if (user.disabled) {
 			return { error: "Account is disabled", code: 403 }
 		}
 
@@ -274,6 +273,62 @@ export class AuthService {
 		return updated ? await this.get(userId, updated) : { error: "User not found", code: 404 }
 	}
 
+	// Admin: create user without session
+	async create(input: { email: string; username: string; password: string; firstName?: string; lastName?: string }) {
+		const email = input.email?.trim().toLowerCase()
+		const username = input.username?.trim()
+		if (!email || !username || !input.password) {
+			return { error: "Email, username, and password required", code: 400 }
+		}
+		const existing = await this.users.findByEmailOrUsername(email, username)
+		if (existing) return { error: "User already exists", code: 409 }
+
+		const password = await api.Utils.hashPassword(input.password)
+		const userId = await this.users.createLocalUser({
+			email,
+			username,
+			password,
+			register: { email, username, password: input.password, firstName: input.firstName, lastName: input.lastName },
+		})
+		return userId ? await this.get(userId) : { error: "Failed to create user", code: 500 }
+	}
+
+	// Admin: update any user field
+	async update(userId: number, payload: Partial<UserDBRow>) {
+		if (!userId) return { error: "User ID required", code: 400 }
+		const user = await this.users.findById(userId)
+		if (!user) return { error: "User not found", code: 404 }
+
+		const { id, password, ...data } = payload as any
+		// Filter out unchanged unique fields to avoid duplicate key errors
+		if (data.username === user.username) delete data.username
+		if (data.email === user.email) delete data.email
+		if (!Object.keys(data).length) return await this.get(userId)
+
+		await this.db.updateTable("users").set(data).where("id", "=", userId).execute()
+		return await this.get(userId)
+	}
+
+	// Admin: soft delete user
+	async delete(userId: number) {
+		if (!userId) return { error: "User ID required", code: 400 }
+		const user = await this.users.findById(userId)
+		if (!user) return { error: "User not found", code: 404 }
+
+		await this.db.updateTable("users").set({ deleted_at: nowUtcDateTime(), disabled: 1 }).where("id", "=", userId).execute()
+		await this.tokenStore.revokeAllDevices(userId)
+		return { success: true, userId }
+	}
+
+	// Admin: list all users
+	async list(options?: { limit?: number; offset?: number }) {
+		let query = this.db.selectFrom("users").selectAll().where("deleted_at", "is", null)
+		if (options?.limit) query = query.limit(options.limit)
+		if (options?.offset) query = query.offset(options.offset)
+		const rows = await query.execute()
+		return Promise.all(rows.map((r) => this.get(r.id!, r)))
+	}
+
 	private async issueSession(user: UserDBRow, device?: UserDeviceContext): Promise<AuthPayload> {
 		const deviceId = await this.devices.upsertDevice(user.id!, device)
 		const refresh = this.tokens.signRefresh({ sub: user.id!, deviceId })
@@ -305,10 +360,10 @@ export class AuthService {
 			return { valid: false, reason: verification.reason ?? "Invalid token", code: 401, user: null }
 		}
 		const user = await this.users.findById(verification.payload.sub)
-		if (!user) {
-			return { valid: false, reason: "User not found", code: 404, user: null }
+		if (!user || user.deleted_at) {
+			return { valid: false, reason: "Account not found or deleted", code: 404, user: null }
 		}
-		if (user.disabled || user.deleted_at) {
+		if (user.disabled) {
 			return { valid: false, reason: "Account disabled", code: 403, user: null }
 		}
 		return { valid: true, user, payload: verification.payload }

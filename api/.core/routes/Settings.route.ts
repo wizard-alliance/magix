@@ -12,6 +12,7 @@ export class SettingsRoutes {
 	
 	public routes = async () => {
 		const options = { protected: false, register: false, tableName: this.tableName }
+		
 		const optionsAdmin = { 
 			protected: true, 
 			register: false, 
@@ -21,7 +22,7 @@ export class SettingsRoutes {
 		
 		api.Router.set("GET", `${this.routeName}`, this.get, options)
 		api.Router.set("GET", `${this.routeName}s`, this.getMany, options)
-		
+
 		api.Router.set("PUT", `${this.routeName}`, this.update, optionsAdmin)
 		api.Router.set("DELETE", `${this.routeName}`, this.delete, optionsAdmin)
 		api.Router.set("POST", `${this.routeName}`, this.create, optionsAdmin)

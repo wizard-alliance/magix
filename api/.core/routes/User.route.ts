@@ -59,37 +59,45 @@ export class AuthRoute {
 	}
 
 	get = async ($: any, req: Request) => {
-		const params = api.Router.getParams(req, this.tableName)
-		if (params.isEmpty) return { code: 422, error: "Missing request data" }
-		const id = Number(params.params.id)
+		const p = api.Router.getParams(req, this.tableName)
+		const id = Number(p.params.id ?? p.query.id)
 		if (!id) return { code: 422, error: "User ID required" }
 		return await api.User.Auth.get(id) ?? { code: 404, error: "User not found" }
 	}
 
 	getMany = async ($: any, req: Request) => {
-		const params = api.Router.getParams(req, this.tableName)
-		const rows = await this.CRUD.getMany(this.tableName, params.params)
-		if (!Array.isArray(rows)) return rows
-		const users = await Promise.all(rows.map((r: any) => api.User.Auth.get(r.id)))
-		return users.filter(Boolean)
+		const p = api.Router.getParams(req, this.tableName)
+		return await api.User.Auth.list({ limit: Number(p.query.limit) || 100, offset: Number(p.query.offset) || 0 })
 	}
 
 	update = async ($: any, req: Request) => {
-		const params = api.Router.getParams(req, this.tableName)
-		if(params.isEmpty) { return { code: 422, error: 'Missing request data' } }
-		return await this.CRUD.update(this.tableName, params.params, params.body)
+		const p = api.Router.getParams(req, this.tableName)
+		const id = Number(p.params.id ?? p.query.id ?? p.body.id)
+		if (!id) return { code: 422, error: "User ID required" }
+		// Filter out id and empty values
+		const data: Record<string, any> = {}
+		for (const [k, v] of Object.entries(p.body)) {
+			if (k !== "id" && v !== "" && v !== null && v !== undefined) data[k] = v
+		}
+		return await api.User.Auth.update(id, data)
 	}
 
 	create = async ($: any, req: Request) => {
-		const params = api.Router.getParams(req, this.tableName)
-		if(params.isEmpty) { return { code: 422, error: 'Missing request data' } }
-		return await this.CRUD.create(this.tableName, params.params)
+		const p = api.Router.getParams(req, this.tableName)
+		return await api.User.Auth.create({
+			email: p.body.email,
+			username: p.body.username,
+			password: p.body.password,
+			firstName: p.body.first_name,
+			lastName: p.body.last_name,
+		})
 	}
 
 	delete = async ($: any, req: Request) => {
-		const params = api.Router.getParams(req, this.tableName)
-		if(params.isEmpty) { return { code: 422, error: 'Missing request data' } }
-		return await this.CRUD.delete(this.tableName, params.params)
+		const p = api.Router.getParams(req, this.tableName)
+		const id = Number(p.params.id ?? p.query.id ?? p.body.id)
+		if (!id) return { code: 422, error: "User ID required" }
+		return await api.User.Auth.delete(id)
 	}
 
 	login = async ($: $, req: Request, res: Response) => {
