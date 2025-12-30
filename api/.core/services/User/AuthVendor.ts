@@ -22,12 +22,12 @@ const OAUTH_ENDPOINTS: Record<string, OAuthEndpoints> = {
 
 export class AuthVendor {
 	private readonly endpoints: OAuthEndpoints
+	public readonly name: string
 
 	constructor(private readonly config: VendorConfig) {
+		this.name = config.name
 		this.endpoints = OAUTH_ENDPOINTS[config.name] ?? OAUTH_ENDPOINTS.discord
 	}
-
-	getName = () => this.config.name
 
 	isEnabled = () => this.config.enabled
 
@@ -86,17 +86,6 @@ export class AuthVendor {
 		} catch {
 			return null
 		}
-	}
-
-	buildRedirectUrl = (state?: string) => {
-		if (!this.config.redirectUri) {
-			return ""
-		}
-		if (!state) {
-			return this.config.redirectUri
-		}
-		const separator = this.config.redirectUri.includes("?") ? "&" : "?"
-		return `${this.config.redirectUri}${separator}state=${encodeURIComponent(state)}`
 	}
 
 	parseProfile = (payload: Record<string, any>): VendorProfile => {

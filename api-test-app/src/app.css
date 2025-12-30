@@ -139,14 +139,11 @@ header {
 	gap: 4px;
 	font-size: 13px;
 	color: var(--muted);
+	width: 100%;
 }
 
 .meta-row strong {
 	color: var(--text);
-}
-
-.meta-row strong:after {
-	content: ": ";
 }
 
 .meta-card {

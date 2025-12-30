@@ -24,7 +24,7 @@ export class PermissionRoute {
 
 	define = async (_$: any, req: Request) => {
 		const $ = api.Router.getParams(req)
-		const key = $.body.key
+		const key = $.body.key ?? $.body.name
 		const value = $.body.value ?? null
 		if (!key) return { error: "Permission key required", code: 400 }
 
@@ -36,11 +36,12 @@ export class PermissionRoute {
 
 	update = async (_$: any, req: Request) => {
 		const $ = api.Router.getParams(req)
-		const key = $.body.key
+		const id = $.body.id ? Number($.body.id) : null
+		const key = $.body.key ?? $.body.name
 		const value = $.body.value ?? null
-		if (!key) return { error: "Permission key required", code: 400 }
+		if (!id && !key) return { error: "Permission key or id required", code: 400 }
 
-		const updated = await api.User.Auth.permissions.update(key, value)
+		const updated = await api.User.Auth.permissions.update(id ?? key, value)
 		return updated
 			? { success: true }
 			: { error: "Permission not found", code: 404 }
@@ -48,10 +49,11 @@ export class PermissionRoute {
 
 	undefine = async (_$: any, req: Request) => {
 		const $ = api.Router.getParams(req)
-		const key = $.body.key ?? $.params.key
-		if (!key) return { error: "Permission key required", code: 400 }
+		const id = $.body.id ? Number($.body.id) : null
+		const key = $.body.key ?? $.body.name ?? $.params.key
+		if (!id && !key) return { error: "Permission key or id required", code: 400 }
 
-		const deleted = await api.User.Auth.permissions.undefine(key)
+		const deleted = await api.User.Auth.permissions.undefine(id ?? key)
 		return deleted
 			? { success: true }
 			: { error: "Cannot remove implicit/bypass permission", code: 400 }

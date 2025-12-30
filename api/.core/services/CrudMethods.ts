@@ -1,9 +1,19 @@
 
 
+const toBigIntSafe = (val: any): any => {
+	if (typeof val === "bigint") return Number(val)
+	if (Array.isArray(val)) return val.map(toBigIntSafe)
+	if (val && typeof val === "object") {
+		return Object.fromEntries(Object.entries(val).map(([k, v]) => [k, toBigIntSafe(v)]))
+	}
+	return val
+}
+
 export class CrudMethods<Shape = any, DBRow = any> {
 	private DB = api.DB.connection
 
 	async get(tableName: string, params: Partial<DBRow> = {}): Promise<Shape | null> {
+		if (!Object.keys(params).length) return null
 		return (await this.getMany(tableName, params, { limit: 1 }))[0] || null
 	}
 
@@ -23,33 +33,34 @@ export class CrudMethods<Shape = any, DBRow = any> {
 	}
 
 	async create(tableName: string, params: Partial<DBRow> = {}): Promise<any> {
-		let response = {} as any
-		const query = this.DB.insertInto(tableName as any).values(params)
-
-		try { response = await query.execute() }
-		catch (error: any) { response.error = error }
-		return response[0] || response
+		try {
+			const result = await this.DB.insertInto(tableName as any).values(params).executeTakeFirst()
+			return toBigIntSafe(result)
+		} catch (error: any) {
+			return { error }
+		}
 	}
 
-	async update(tableName: string, params: Partial<DBRow> = {}, where: Partial<DBRow> = {}): Promise<any> {
-		let response = {} as any
-		let query = this.DB.updateTable(tableName as any).set(params)
-		query = api.Utils.applyWhere(query, where)
-
-		try { response = await query.execute() }
-		catch (error: any) { response.error = error }
-		return response[0] || response
+	async update(tableName: string, data: Partial<DBRow> = {}, where: Partial<DBRow> = {}): Promise<any> {
+		try {
+			let query = this.DB.updateTable(tableName as any).set(data)
+			query = api.Utils.applyWhere(query, where)
+			const result = await query.executeTakeFirst()
+			return toBigIntSafe(result)
+		} catch (error: any) {
+			return { error }
+		}
 	}
 
 	async delete(tableName: string, params: Partial<DBRow> = {}): Promise<any> {
-		let response = {} as any
-		let query = this.DB.deleteFrom(tableName as any)
-		query = api.Utils.applyWhere(query, params)
-
-		try { response = await query.execute() }
-		catch (error: any) { response.error = error }
-		
-		response = response[0] || response
-		return response.numDeletedRows < 1 ? null : response
+		try {
+			let query = this.DB.deleteFrom(tableName as any)
+			query = api.Utils.applyWhere(query, params)
+			const result = await query.executeTakeFirst()
+			const safe = toBigIntSafe(result)
+			return safe?.numDeletedRows < 1 ? null : safe
+		} catch (error: any) {
+			return { error }
+		}
 	}
 }

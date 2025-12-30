@@ -11,9 +11,10 @@ import type { UserDBRow } from "../../schema/Database.js"
 
 import type { AuthPayload, ChangePasswordInput, LoginInput, RegisterInput, UserDeviceContext, VendorLoginInput } from "../../schema/AuthShapes.js"
 
-import type { User } from "../../schema/DomainShapes.js"
+import type { UserFull } from "../../schema/DomainShapes.js"
 
 export class AuthService {
+	private readonly db = api.DB.connection
 	private readonly prefix = "AuthService"
 	private readonly tokens = new AuthTokenManager()
 	private readonly users = new UserRepo()
@@ -22,12 +23,66 @@ export class AuthService {
 	public readonly vendors = new VendorRegistry()
 	public readonly permissions = new PermissionService()
 
-	private parseExpiry(value: string | Date): number {
-		return parseUtcDateTimeMs(value)
-	}
+	async get(idOrIdentifier: number | string, row?: UserDBRow): Promise<UserFull | null> {
+		const user = row ?? (
+			typeof idOrIdentifier === "number"
+				? await this.users.findById(idOrIdentifier)
+				: await this.users.findByIdentifier(idOrIdentifier)
+		)
+		if (!user || !user.id) return null
 
-	async hasPermissions(userId: number, perms: readonly string[]) {
-		return this.permissions.has(userId, perms)
+		const [perms, deviceRows, settingRows, refreshRows] = await Promise.all([
+			this.permissions.list(user.id),
+			this.db.selectFrom("user_devices").selectAll().where("user_id", "=", user.id).execute(),
+			this.db.selectFrom("user_settings").selectAll().where("user_id", "=", user.id).execute(),
+			this.db.selectFrom("user_tokens_refresh").selectAll().where("user_id", "=", user.id).execute(),
+		])
+
+		const sessionsByDevice = new Map<number, typeof refreshRows>()
+		for (const r of refreshRows) {
+			if (!r.device_id) continue
+			const list = sessionsByDevice.get(r.device_id) ?? []
+			list.push(r)
+			sessionsByDevice.set(r.device_id, list)
+		}
+
+		const devices = deviceRows.map((d) => ({
+			id: d.id!,
+			name: d.name ?? null,
+			customName: d.custom_name ?? null,
+			fingerprint: d.fingerprint ?? null,
+			userAgent: d.user_agent ?? null,
+			ip: d.ip ?? null,
+			lastLogin: d.last_login ?? null,
+			created: d.created ?? null,
+			sessions: (sessionsByDevice.get(d.id!) ?? []).map((s) => ({
+				id: s.id!,
+				valid: s.valid === 1,
+				expires: s.expires ?? null,
+				created: s.created ?? null,
+			})),
+		}))
+
+		return {
+			id: user.id,
+			info: {
+				id: user.id,
+				email: user.email,
+				username: user.username,
+				firstName: user.first_name ?? null,
+				lastName: user.last_name ?? null,
+				phone: user.phone ?? null,
+				company: user.company ?? null,
+				address: user.address ?? null,
+				activated: Boolean(user.activated),
+				disabled: Boolean(user.disabled),
+				created: user.created,
+				updated: user.updated,
+			},
+			permissions: perms,
+			settings: settingRows.map((s) => ({ key: s.key, value: s.value ?? null })),
+			devices,
+		}
 	}
 
 	async register(input: RegisterInput, device?: UserDeviceContext): Promise<AuthPayload | { error: string; code?: number }> {
@@ -124,7 +179,7 @@ export class AuthService {
 			return { error: "Refresh token expired or revoked", code: 401 }
 		}
 
-		if (this.parseExpiry(stored.expires) <= Date.now()) {
+		if (parseUtcDateTimeMs(stored.expires) <= Date.now()) {
 			return { error: "Refresh token expired", code: 401 }
 		}
 
@@ -133,7 +188,7 @@ export class AuthService {
 		}
 
 		const user = await this.users.findById(stored.user_id)
-		if (!user || !user.id || user.id === undefined || user.disabled || user.deleted_at) {
+		if (!user || !user.id || user.disabled || user.deleted_at) {
 			return { error: "Account is disabled", code: 403 }
 		}
 
@@ -146,23 +201,21 @@ export class AuthService {
 		})
 
 		return {
-			user: this.toAccount(user),
+			user: (await this.get(user.id!, user))!,
 			tokens: {
 				access,
-				refresh: { token: refreshToken, expiresAt: new Date(this.parseExpiry(stored.expires)) },
+				refresh: { token: refreshToken, expiresAt: new Date(parseUtcDateTimeMs(stored.expires)) },
 			},
 		}
 	}
 
-	async me(accessToken: string): Promise<{ user: User } | { error: string; code?: number }> {
-		if (!accessToken) {
-			return { error: "Access token required", code: 401 }
-		}
+	async me(accessToken: string): Promise<UserFull | { error: string; code?: number }> {
+		if (!accessToken) return { error: "Access token required", code: 401 }
 		const validation = await this.validateAccessToken(accessToken)
 		if (!validation.valid || !validation.user) {
 			return { error: validation.reason ?? "Invalid token", code: validation.code ?? 401 }
 		}
-		return { user: this.toAccount(validation.user) }
+		return await this.get(validation.user.id!, validation.user) ?? { error: "User not found", code: 404 }
 	}
 
 	async logout(refreshToken?: string, accessToken?: string) {
@@ -218,11 +271,7 @@ export class AuthService {
 			return { error: "User required", code: 400 }
 		}
 		const updated = await this.users.updateProfile(userId, payload)
-		return updated ? this.toAccount(updated) : { error: "User not found", code: 404 }
-	}
-
-	getVendorInfo(vendor: string) {
-		return this.vendors.getInfo(vendor)
+		return updated ? await this.get(userId, updated) : { error: "User not found", code: 404 }
 	}
 
 	private async issueSession(user: UserDBRow, device?: UserDeviceContext): Promise<AuthPayload> {
@@ -245,28 +294,8 @@ export class AuthService {
 		})
 
 		return {
-			user: this.toAccount(user),
-			tokens: {
-				access,
-				refresh,
-			},
-		}
-	}
-
-	private toAccount(row: UserDBRow): User {
-		return {
-			id: row.id ?? 0,
-			email: row.email,
-			username: row.username,
-			firstName: row.first_name ?? null,
-			lastName: row.last_name ?? null,
-			phone: row.phone ?? null,
-			company: row.company ?? null,
-			address: row.address ?? null,
-			activated: Boolean(row.activated),
-			disabled: Boolean(row.disabled),
-			created: row.created,
-			updated: row.updated,
+			user: (await this.get(user.id!, user))!,
+			tokens: { access, refresh },
 		}
 	}
 
@@ -299,10 +328,9 @@ export class AuthService {
 			const stored = await this.tokenStore.getAccessToken(token)
 			if (stored) {
 				const refresh = await this.tokenStore.getRefreshById(stored.refresh_token_id)
-				const dbExpiry = this.parseExpiry(stored.expires)
+				const dbExpiry = parseUtcDateTimeMs(stored.expires)
 				const nowMs = Date.now()
 				const expired = dbExpiry <= nowMs
-				api.Log(`[validateAccessToken] DB fallback: dbExpiry=${dbExpiry}, nowMs=${nowMs}, expired=${expired}`, this.prefix, "warning")
 				const revoked = !refresh || refresh.valid !== 1
 				if (!expired && !revoked) {
 					return { valid: true, user: refresh ? await this.users.findById(refresh.user_id) ?? undefined : undefined }
@@ -318,9 +346,8 @@ export class AuthService {
 		const stored = await this.tokenStore.getAccessToken(token)
 
 		if (stored) {
-			const dbExpiry = this.parseExpiry(stored.expires)
+			const dbExpiry = parseUtcDateTimeMs(stored.expires)
 			const nowMs = Date.now()
-			api.Log(`[validateAccessToken] DB check: dbExpiry=${dbExpiry}, nowMs=${nowMs}, diff=${dbExpiry - nowMs}ms`, this.prefix, "warning")
 			if (dbExpiry <= nowMs) {
 				return { valid: false, reason: "Token expired", code: 401 }
 			}

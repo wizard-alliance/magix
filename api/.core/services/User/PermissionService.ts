@@ -54,7 +54,9 @@ export class PermissionService {
 	}
 
 	// Update permission metadata
-	update = async (key: string, value: string | null): Promise<boolean> => {
+	update = async (keyOrId: string | number, value: string | null): Promise<boolean> => {
+		const key = typeof keyOrId === "number" ? await this.getKeyById(keyOrId) : keyOrId
+		if (!key) return false
 		const normalized = this.normalize(key)
 		const result = await this.db
 			.updateTable("permissions")
@@ -65,12 +67,20 @@ export class PermissionService {
 	}
 
 	// Remove a defined permission
-	undefine = async (key: string): Promise<boolean> => {
+	undefine = async (keyOrId: string | number): Promise<boolean> => {
+		const key = typeof keyOrId === "number" ? await this.getKeyById(keyOrId) : keyOrId
+		if (!key) return false
 		const normalized = this.normalize(key)
 		if (this.implicitPerms.has(normalized) || this.bypassPerms.has(normalized)) return false
 		await this.db.deleteFrom("permissions").where("key", "=", normalized).execute()
 		this.definedPermsCache = null
 		return true
+	}
+
+	// Get permission key by ID
+	private getKeyById = async (id: number): Promise<string | null> => {
+		const row = await this.db.selectFrom("permissions").select("key").where("ID", "=", id).executeTakeFirst()
+		return row?.key ?? null
 	}
 
 	// Check if a permission is defined (valid)

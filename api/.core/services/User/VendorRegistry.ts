@@ -32,14 +32,6 @@ export class VendorRegistry {
 
 	get = (vendor: string) => this.vendors[vendor]
 
-	getInfo = (vendor: string) => {
-		const resolved = this.get(vendor)
-		if (!resolved) {
-			return { error: "Unknown vendor", code: 404 }
-		}
-		return { vendor: resolved.info() }
-	}
-
 	/** Encode state for OAuth redirect */
 	encodeState = (data: OAuthState): string => {
 		return Buffer.from(JSON.stringify(data)).toString("base64url")

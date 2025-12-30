@@ -12,40 +12,53 @@ export class SettingsRoutes {
 	
 	public routes = async () => {
 		const options = { protected: false, register: false, tableName: this.tableName }
+		const optionsAdmin = { 
+			protected: true, 
+			register: false, 
+			tableName: this.tableName, 
+			perms: ["administrator"]
+		}
 		
 		api.Router.set("GET", `${this.routeName}`, this.get, options)
-		api.Router.set("PUT", `${this.routeName}`, this.update, options)
-		api.Router.set("DELETE", `${this.routeName}`, this.delete, options)
-		api.Router.set("POST", `${this.routeName}`, this.create, options)
 		api.Router.set("GET", `${this.routeName}s`, this.getMany, options)
+		
+		api.Router.set("PUT", `${this.routeName}`, this.update, optionsAdmin)
+		api.Router.set("DELETE", `${this.routeName}`, this.delete, optionsAdmin)
+		api.Router.set("POST", `${this.routeName}`, this.create, optionsAdmin)
 	}
 
 	get = async ($: any, req: Request) => {
-		const params = api.Router.getParams(req, this.tableName)
-		if(params.isEmpty) { return { code: 422, error: 'Missing request data' } }
-		return await this.CRUD.get(this.tableName, params.params)
+		const p = api.Router.getParams(req, this.tableName)
+		const where = { ...p.params, ...p.query }
+		if (!Object.keys(where).length) return { code: 422, error: "Missing request data" }
+		const result = await this.CRUD.get(this.tableName, where)
+		return result ?? { code: 404, error: "Setting not found" }
 	}
 
 	getMany = async ($: any, req: Request) => {
-		const params = api.Router.getParams(req, this.tableName)
-		return await this.CRUD.getMany(this.tableName, params.params)
+		const p = api.Router.getParams(req, this.tableName)
+		return await this.CRUD.getMany(this.tableName, { ...p.params, ...p.query })
 	}
 
 	update = async ($: any, req: Request) => {
-		const params = api.Router.getParams(req, this.tableName)
-		if(params.isEmpty) { return { code: 422, error: 'Missing request data' } }
-		return await this.CRUD.update(this.tableName, params.params, params.body)
+		const p = api.Router.getParams(req, this.tableName)
+		const key = p.query?.key ?? p.body?.key
+		if (!key) return { code: 422, error: "Setting key required" }
+		const { key: _, ...data } = p.body
+		return await this.CRUD.update(this.tableName, data, { key })
 	}
 
 	create = async ($: any, req: Request) => {
-		const params = api.Router.getParams(req, this.tableName)
-		if(params.isEmpty) { return { code: 422, error: 'Missing request data' } }
-		return await this.CRUD.create(this.tableName, params.params)
+		const p = api.Router.getParams(req, this.tableName)
+		if (!p.body?.key) return { code: 422, error: "Setting key required" }
+		return await this.CRUD.create(this.tableName, p.body)
 	}
 
 	delete = async ($: any, req: Request) => {
-		const params = api.Router.getParams(req, this.tableName)
-		if(params.isEmpty) { return { code: 422, error: 'Missing request data' } }
-		return await this.CRUD.delete(this.tableName, params.params)
+		const p = api.Router.getParams(req, this.tableName)
+		const where = { ...p.params, ...p.query, ...p.body }
+		if (!Object.keys(where).length) return { code: 422, error: "Missing request data" }
+		const result = await this.CRUD.delete(this.tableName, where)
+		return result ?? { code: 404, error: "Setting not found" }
 	}
 }

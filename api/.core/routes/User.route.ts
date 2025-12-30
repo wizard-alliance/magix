@@ -60,13 +60,18 @@ export class AuthRoute {
 
 	get = async ($: any, req: Request) => {
 		const params = api.Router.getParams(req, this.tableName)
-		if(params.isEmpty) { return { code: 422, error: 'Missing request data' } }
-		return await this.CRUD.get(this.tableName, params.params)
+		if (params.isEmpty) return { code: 422, error: "Missing request data" }
+		const id = Number(params.params.id)
+		if (!id) return { code: 422, error: "User ID required" }
+		return await api.User.Auth.get(id) ?? { code: 404, error: "User not found" }
 	}
 
 	getMany = async ($: any, req: Request) => {
 		const params = api.Router.getParams(req, this.tableName)
-		return await this.CRUD.getMany(this.tableName, params.params)
+		const rows = await this.CRUD.getMany(this.tableName, params.params)
+		if (!Array.isArray(rows)) return rows
+		const users = await Promise.all(rows.map((r: any) => api.User.Auth.get(r.id)))
+		return users.filter(Boolean)
 	}
 
 	update = async ($: any, req: Request) => {
@@ -119,7 +124,6 @@ export class AuthRoute {
 		return await api.User.Auth.me(token ?? "")
 	}
 
-	// WIP
 	refresh = async ($: $, req: Request, res: Response) => {
 		$ = api.Router.getParams(req)
 		const refreshToken = $.body.refresh_token ?? $.body.refreshToken ?? ""
@@ -137,7 +141,7 @@ export class AuthRoute {
 		$ = api.Router.getParams(req)
 		const token = this.parseAccessToken($.headers as Record<string, any>)
 		const me = token ? await api.User.Auth.me(token) : null
-		const userId = me && "user" in me ? me.user.id : undefined
+		const userId = me && "id" in me ? me.id : undefined
 		return userId ? await api.User.Auth.logoutAllDevices(userId) : { error: "User not resolved", code: 400 }
 	}
 
@@ -150,15 +154,10 @@ export class AuthRoute {
 		$ = api.Router.getParams(req)
 		const token = this.parseAccessToken($.headers as Record<string, any>)
 		const me = token ? await api.User.Auth.me(token) : null
-		if (!me || (me as any).error) {
-			return me ?? { error: "Unauthorized", code: 401 }
-		}
-
-		const userId = (me as any).user?.id
-		if (!userId) return { error: "Unauthorized", code: 401 }
+		if (!me || "error" in me) return me ?? { error: "Unauthorized", code: 401 }
 
 		return await api.User.Auth.changePassword({
-			userId,
+			userId: me.id,
 			currentPassword: $.body.current_password ?? "",
 			newPassword: $.body.new_password ?? "",
 			logoutAll: $.body.logout_all ?? true,
@@ -169,14 +168,9 @@ export class AuthRoute {
 		$ = api.Router.getParams(req)
 		const token = this.parseAccessToken($.headers as Record<string, any>)
 		const me = token ? await api.User.Auth.me(token) : null
-		if (!me || (me as any).error) {
-			return me ?? { error: "Unauthorized", code: 401 }
-		}
+		if (!me || "error" in me) return me ?? { error: "Unauthorized", code: 401 }
 
-		const userId = (me as any).user?.id
-		if (!userId) return { error: "Unauthorized", code: 401 }
-
-		return await api.User.Auth.updateProfile(userId, {
+		return await api.User.Auth.updateProfile(me.id, {
 			first_name: $.body.first_name ?? null,
 			last_name: $.body.last_name ?? null,
 			phone: $.body.phone ?? null,
@@ -187,8 +181,8 @@ export class AuthRoute {
 
 	vendorInfo = async ($: $, req: Request, res: Response) => {
 		$ = api.Router.getParams(req)
-		const vendor = $.params?.vendor as string | null
-		return vendor ? api.User.Auth.getVendorInfo(vendor) : { error: "Unknown vendor", code: 404 }
+		const vendor = api.User.Auth.vendors.get($.params?.vendor as string)
+		return vendor ? { vendor: vendor.info() } : { error: "Unknown vendor", code: 404 }
 	}
 
 	vendorRedirect = async ($: $, req: Request, res: Response) => {

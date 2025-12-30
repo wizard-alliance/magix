@@ -58,6 +58,27 @@
 		refreshExpires = refresh.expiresAt || ""
 	}
 
+	const clearAccess = () => {
+		if (!browser) return
+		setAccessToken("")
+		accessToken = ""
+		accessExpires = ""
+	}
+
+	const clearRefresh = () => {
+		if (!browser) return
+		setRefreshToken("")
+		refreshToken = ""
+		refreshExpires = ""
+	}
+
+	const handleActionKey = (event: KeyboardEvent, action: () => void) => {
+		if (event.key === "Enter" || event.key === " ") {
+			event.preventDefault()
+			action()
+		}
+	}
+
 	const handleClear = () => {
 		if (!browser) return
 		setAccessToken("")
@@ -136,11 +157,19 @@
 	<aside class="sidebar">
 		<div class="card meta-card">
 			<div class="meta-row">
-				<strong>Base URL</strong>
-				<a href={baseUrl} target="_blank" rel="noopener noreferrer">{baseUrl}</a>
-			</div>
-			<div class="meta-row">
-				<strong>Access token</strong>
+				<span
+					><strong>Access token</strong>
+					<span
+						class="token-clear"
+						role="button"
+						tabindex="0"
+						aria-label="Clear access token"
+						on:click={clearAccess}
+						on:keydown={(event) => handleActionKey(event, clearAccess)}
+					>
+						x
+					</span>
+				</span>
 				<span>{shortenToken(accessToken) || "none"}</span>
 			</div>
 			<div class="meta-row">
@@ -148,7 +177,19 @@
 				<span>{accessExpires ? new Date(accessExpires).toLocaleString() : "unknown"}</span>
 			</div>
 			<div class="meta-row">
-				<strong>Refresh token</strong>
+				<span>
+					<strong>Refresh token</strong>
+					<span
+						class="token-clear"
+						role="button"
+						tabindex="0"
+						aria-label="Clear refresh token"
+						on:click={clearRefresh}
+						on:keydown={(event) => handleActionKey(event, clearRefresh)}
+					>
+						x
+					</span>
+				</span>
 				<span>{shortenToken(refreshToken) || "none"}</span>
 			</div>
 			<div class="meta-row">
@@ -211,6 +252,36 @@
 	.chevron {
 		opacity: 0.8;
 		font-size: 12px;
+	}
+
+	.token-clear {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		text-align: center;
+		width: 22px;
+		height: 22px;
+		margin-left: 6px;
+		border: 1px solid #3a3c4a;
+		border-radius: 999px;
+		background: transparent;
+		color: #f5f5f7;
+		font-size: 12px;
+		cursor: pointer;
+		transition:
+			border-color 120ms ease,
+			background 120ms ease,
+			color 120ms ease,
+			box-shadow 120ms ease;
+	}
+
+	.token-clear:hover,
+	.token-clear:focus-visible {
+		border-color: #4a7dff;
+		background: rgba(74, 125, 255, 0.08);
+		color: #fff;
+		box-shadow: 0 0 0 2px rgba(74, 125, 255, 0.2);
+		outline: none;
 	}
 
 	.nav-menu {

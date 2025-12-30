@@ -31,7 +31,7 @@ export type UserDeviceContext = {
 }
 
 export type AuthPayload = {
-	user: User
+	user: UserFull
 	tokens: SessionTokens
 }
 

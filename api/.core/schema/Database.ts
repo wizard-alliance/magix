@@ -50,7 +50,7 @@ export type UserPermissionDBRow = {
 export type UserSettingDBRow = {
 	id?: number
 	user_id: number
-	name: string
+	key: string
 	value: string | null
 	created: string | null
 	updated: string | null
@@ -215,7 +215,7 @@ export const schemaColumns = {
 	user_settings: {
 		id: 'number',
 		user_id: 'number',
-		name: 'string',
+		key: 'string',
 		value: 'string',
 		created: 'date',
 		updated: 'date'

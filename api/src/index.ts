@@ -16,13 +16,13 @@ api.Router.set("GET", "user/:id/settings", cb, {
 	params: [{ id: "number" }, { slug: "string" }]
 })
 
-api.User.Auth.permissions.grant(93, [
-	"administrator", 
-	"user.manage", 
-	"user.view", 
-	"user.edit", 
-	"user.delete",
-])
+// api.User.Auth.permissions.grant(93, [
+// 	"administrator", 
+// 	"user.manage", 
+// 	"user.view", 
+// 	"user.edit", 
+// 	"user.delete",
+// ])
 
 // api.Mail.test("user@example.com")
 // api.Mail.test("user@example.com", "welcome")
