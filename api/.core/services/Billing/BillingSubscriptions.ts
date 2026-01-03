@@ -10,6 +10,7 @@ const toShape = (row: BillingSubscriptionDBRow): BillingSubscription => ({
 	currentPeriodEnd: row.current_period_end,
 	cancelAtPeriodEnd: row.cancel_at_period_end === 1,
 	canceledAt: row.canceled_at,
+	pausedAt: row.paused_at,
 	status: row.status,
 	created: row.created,
 	updated: row.updated,

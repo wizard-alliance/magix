@@ -2,37 +2,40 @@
 	import { browser } from "$app/environment"
 
 	let loading = false
-	let customerId = "1"
-	let orderId = "1"
-	let subscriptionId = "1"
+	let userId = "1"
 	let planId = "1"
-	let amount = "9.99"
+	let subscriptionId = "sub_123"
+	let orderId = "ord_456"
+	let amount = "1999"
 	let currency = "USD"
-	let status = "paid"
 
 	const randomize = () => {
-		customerId = String(Math.floor(1 + Math.random() * 100))
-		orderId = String(Math.floor(1 + Math.random() * 1000))
-		subscriptionId = String(Math.floor(1 + Math.random() * 500))
+		userId = String(Math.floor(1 + Math.random() * 100))
 		planId = String(Math.floor(1 + Math.random() * 10))
-		amount = (Math.random() * 99 + 1).toFixed(2)
-		currency = ["USD", "EUR", "GBP", "CAD", "AUD"][Math.floor(Math.random() * 5)]
-		status = ["pending", "paid", "failed"][Math.floor(Math.random() * 3)]
+		subscriptionId = `sub_${Math.random().toString(36).slice(2, 10)}`
+		orderId = `ord_${Math.random().toString(36).slice(2, 10)}`
+		amount = String(Math.floor(499 + Math.random() * 5000))
+		currency = ["USD", "EUR", "GBP", "NOK"][Math.floor(Math.random() * 4)]
 	}
 
-	const events = [
+	const coreEvents = [
 		{ name: "order_created", label: "Order Created" },
 		{ name: "order_refunded", label: "Order Refunded" },
 		{ name: "subscription_created", label: "Subscription Created" },
-		{ name: "subscription_updated", label: "Subscription Updated" },
-		{ name: "subscription_canceled", label: "Subscription Canceled" },
-		{ name: "subscription_resumed", label: "Subscription Resumed" },
+		{ name: "subscription_cancelled", label: "Subscription Cancelled" },
 		{ name: "subscription_expired", label: "Subscription Expired" },
-		{ name: "subscription_paused", label: "Subscription Paused" },
-		{ name: "subscription_unpaused", label: "Subscription Unpaused" },
 		{ name: "subscription_payment_success", label: "Payment Success" },
 		{ name: "subscription_payment_failed", label: "Payment Failed" },
+	]
+
+	const optionalEvents = [
+		{ name: "subscription_updated", label: "Subscription Updated" },
+		{ name: "subscription_resumed", label: "Subscription Resumed" },
+		{ name: "subscription_paused", label: "Subscription Paused" },
+		{ name: "subscription_unpaused", label: "Subscription Unpaused" },
 		{ name: "subscription_payment_recovered", label: "Payment Recovered" },
+		{ name: "subscription_payment_refunded", label: "Payment Refunded" },
+		{ name: "subscription_plan_changed", label: "Plan Changed" },
 	]
 
 	const triggerEvent = async (eventName: string) => {
@@ -42,16 +45,23 @@
 			method: "post",
 			path: "/billing/webhook",
 			body: {
-				meta: { event_name: eventName },
+				meta: {
+					event_name: eventName,
+					custom_data: { user_id: userId, plan_id: planId },
+				},
 				data: {
-					id: "test_" + Date.now(),
-					customer_id: Number(customerId),
-					order_id: Number(orderId),
-					subscription_id: Number(subscriptionId),
-					plan_id: Number(planId),
-					amount: Math.round(parseFloat(amount) * 100),
-					currency,
-					status,
+					attributes: {
+						id: eventName.includes("order") ? orderId : subscriptionId,
+						subscription_id: subscriptionId,
+						user_name: "Test User",
+						user_email: "test@example.com",
+						total: Number(amount),
+						currency,
+						status: "active",
+						current_period_start: new Date().toISOString(),
+						renews_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+						cancelled: eventName === "subscription_cancelled",
+					},
 				},
 			},
 		})
@@ -65,52 +75,53 @@
 
 	<h3>Event Parameters</h3>
 	<div style="margin-bottom: 1rem;">
-		<button type="button" on:click={randomize}>🎲 Randomize Fields</button>
+		<button type="button" on:click={randomize}>🎲 Randomize</button>
 	</div>
 	<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin-bottom: 1rem;">
 		<div class="field">
-			<label for="customerId">Customer ID</label>
-			<input id="customerId" type="text" bind:value={customerId} />
+			<label for="userId">User ID (custom_data)</label>
+			<input id="userId" type="text" bind:value={userId} />
 		</div>
 		<div class="field">
-			<label for="orderId">Order ID</label>
-			<input id="orderId" type="text" bind:value={orderId} />
-		</div>
-		<div class="field">
-			<label for="subscriptionId">Subscription ID</label>
-			<input id="subscriptionId" type="text" bind:value={subscriptionId} />
-		</div>
-		<div class="field">
-			<label for="planId">Plan ID</label>
+			<label for="planId">Plan ID (custom_data)</label>
 			<input id="planId" type="text" bind:value={planId} />
 		</div>
 		<div class="field">
-			<label for="amount">Amount ($)</label>
-			<input id="amount" type="text" bind:value={amount} placeholder="9.99" />
+			<label for="subscriptionId">LS Subscription ID</label>
+			<input id="subscriptionId" type="text" bind:value={subscriptionId} />
+		</div>
+		<div class="field">
+			<label for="orderId">LS Order ID</label>
+			<input id="orderId" type="text" bind:value={orderId} />
+		</div>
+		<div class="field">
+			<label for="amount">Amount (cents)</label>
+			<input id="amount" type="text" bind:value={amount} />
 		</div>
 		<div class="field">
 			<label for="currency">Currency</label>
 			<input id="currency" type="text" bind:value={currency} />
 		</div>
-		<div class="field">
-			<label for="status">Status</label>
-			<select id="status" bind:value={status}>
-				<option value="pending">pending</option>
-				<option value="paid">paid</option>
-				<option value="failed">failed</option>
-				<option value="refunded">refunded</option>
-				<option value="canceled">canceled</option>
-			</select>
-		</div>
 	</div>
 
 	<hr />
 
-	<h3>Trigger Events</h3>
-	<p>POST /billing/webhook</p>
-
+	<h3>Core Events</h3>
+	<p>These are the main events you'll use</p>
 	<div class="stack" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem;">
-		{#each events as event}
+		{#each coreEvents as event}
+			<button type="button" disabled={loading} on:click={() => triggerEvent(event.name)}>
+				{event.label}
+			</button>
+		{/each}
+	</div>
+
+	<hr />
+
+	<h3>Optional Events</h3>
+	<p>Additional events (stubs or situational)</p>
+	<div class="stack" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem;">
+		{#each optionalEvents as event}
 			<button type="button" disabled={loading} on:click={() => triggerEvent(event.name)}>
 				{event.label}
 			</button>

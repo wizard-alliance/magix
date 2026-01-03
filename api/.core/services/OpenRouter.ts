@@ -130,7 +130,7 @@ export class OpenRouter {
 					data?.message ||
 					response.statusText ||
 					"Unknown error"
-				console.log(response)
+				// console.log(response)
 				throw new Error(`OpenRouter HTTP ${response.status}: ${msg}`)
 			}
 

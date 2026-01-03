@@ -44,13 +44,12 @@ export class AuthService {
 		}
 
 		const user = await api.User.Repo.get(identifier)
+
 		// Query DB for pw
 		const dbPassword = await this.db.selectFrom("users").select("password")
 			.where((eb) => eb.or([ eb("email", "=", identifier), eb("username", "=", identifier) ]))
 			.executeTakeFirst()
 			.then((r) => r?.password ?? null)
-				
-		console.log(dbPassword);
 
 		if( !dbPassword ) {
 			return { error: "Invalid credentials", code: 401 }
@@ -204,7 +203,6 @@ export class AuthService {
 		}
 
 		const user = await api.User.Repo.get(verification.payload.sub)
-		console.log(user)
 
 		if (!user || user.info.deletedAt) {
 			return { valid: false, reason: "Account not found or deleted", code: 404, user: null }

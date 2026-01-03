@@ -34,7 +34,7 @@ export class UserRepo {
 		const user = await this.db.selectFrom("users")
 			.selectAll()
 			.where((eb) => eb.or([
-				eb("id", "=", Number(idOrIdentifier)), 
+				eb("id", "=", api.Utils.toNumber(idOrIdentifier)), 
 				eb("email", "=", normalized), 
 				eb("username", "=", normalized)
 			]))

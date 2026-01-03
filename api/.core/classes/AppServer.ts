@@ -103,7 +103,12 @@ export class AppServer {
 			})
 		)
 
-		api.Express.use(api.$Express.json())
+		api.Express.use(api.$Express.json({
+			verify: (req: any, _res: any, buf: Buffer) => {
+				// Store raw body for webhook signature verification
+				req.rawBody = buf.toString()
+			}
+		}))
 		api.Express.use(api.$Express.urlencoded({ extended: true }))
 
 		// Enable uploads directory serving

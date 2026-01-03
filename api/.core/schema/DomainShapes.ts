@@ -122,21 +122,27 @@ export type BillingPaymentProvider = {
 	updated: string | null
 }
 
-export type BillingPlan = {
+export type BillingProduct = {
 	id: number
 	name: string
-	providerPriceId: string | null
+	type: string
+	providerId: string | null
+	providerVariantId: string | null
 	price: number
 	currency: string
+	interval: string
+	intervalCount: number
+	trialDays: number
+	sortOrder: number
 	description: string | null
 	isActive: boolean
 	created: string | null
 	updated: string | null
 }
 
-export type BillingPlanFeature = {
+export type BillingProductFeature = {
 	id: number
-	planId: number
+	productId: number
 	featureName: string
 	description: string | null
 	created: string | null
@@ -145,13 +151,14 @@ export type BillingPlanFeature = {
 export type BillingSubscription = {
 	id: number
 	customerId: number
-	planId: number
+	planId?: number | null
 	providerSubscriptionId: string
 	currentPeriodStart: string
 	currentPeriodEnd: string
 	cancelAtPeriodEnd: boolean
 	canceledAt: string | null
-	status: 'active' | 'canceled' | 'trial'
+	pausedAt: string | null
+	status: string
 	created: string | null
 	updated: string | null
 }
@@ -163,8 +170,8 @@ export type BillingCustomerFull = BillingCustomer & {
 	orders: BillingOrder[]
 }
 
-export type BillingPlanFull = BillingPlan & {
-	features: BillingPlanFeature[]
+export type BillingProductFull = BillingProduct & {
+	features: BillingProductFeature[]
 }
 
 // Organization

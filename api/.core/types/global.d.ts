@@ -36,7 +36,8 @@ declare global {
 			verifyPassword: typeof import('../helpers/hashing.js').verifyPassword
 			cloneValue: typeof import('../helpers/Utils.js').cloneValue
 			applyWhere: typeof import('../helpers/Utils.js').applyWhere
-			applyOptions: typeof import('../helpers/Utils.js').applyOptions
+			applyOptions: typeof import('../helpers/Utils.js').applyOptions,
+			toNumber: typeof import('../helpers/Utils.js').toNumber,
 		}
 
 		// Services

@@ -10,6 +10,19 @@ const isEmptyValue = (value: unknown): boolean => {
 	return false
 }
 
+export const toNumber = (val: unknown): number => {
+	if (typeof val === `number`) return Number.isFinite(val) ? val : 0
+	if (typeof val === `bigint`) {
+		const num = Number(val)
+		return Number.isFinite(num) ? num : 0
+	}
+	if (typeof val === `string`) {
+		const num = Number(val.trim())
+		return Number.isFinite(num) ? num : 0
+	}
+	return 0
+}
+
 export const maybeJSONString = (input: any): any => {
 	try {
 		return JSON.parse(input)
@@ -134,6 +147,7 @@ export const cloneValue = <T>(input: T): T => {
 export const applyWhere = (q: any, params: Record<string, any>) => {
 	for (const [k, v] of Object.entries(params)) {
 		if (v === undefined) continue
+		if (typeof v === "number" && !Number.isFinite(v)) continue
 		if (Array.isArray(v)) {
 			if (!v.length) continue
 			q = q.where(k as any, "in", v as any)

@@ -11,7 +11,7 @@ import type { DatabaseSchema } from '../schema/Database.js'
 import { tableColumnSets } from '../schema/Database.js'
 
 // Enable BigInt JSON serialization (Kysely returns BigInt for insert IDs)
-BigInt.prototype.toJSON = function() { return Number(this) }
+BigInt.prototype.toJSON = function() { return api.Utils.toNumber(this) }
 
 export const globalColumnWhitelist = new Set<string>(
 	Object.values(tableColumnSets).flatMap((set) => Array.from(set))
@@ -152,6 +152,10 @@ export class DatabaseClient {
 					.map((entry) => normalizeValue(entry))
 					.filter((entry) => entry !== undefined)
 				return normalizedArray.length ? normalizedArray : undefined
+			}
+			if (typeof value === "bigint") {
+				const num = api.Utils.toNumber(value)
+				return num !== 0 ? num : undefined
 			}
 			if (typeof value === "string") {
 				const trimmed = value.trim()

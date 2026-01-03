@@ -11,7 +11,8 @@ import {
 	maybeJSONString, maybeJSONDecode,
 	removeKeysDeep, removeEmptyValuesDeep,
 	encapsulate, splitFromTags, createSlug,
-	cloneValue, applyWhere, applyOptions
+	cloneValue, applyWhere, applyOptions,
+	toNumber
 } from "@api/core/helpers/Utils.js"
 
 import { convertRecursiveObjToStr, convertObjToStr } from "@api/core/helpers/Obj.js"
@@ -68,7 +69,7 @@ scope.api.Utils = {
 	generateHash,
 	hashPassword,
 	verifyPassword,
-
+	toNumber,
 	cloneValue,
 	applyWhere,
 	applyOptions,

@@ -13,24 +13,31 @@ export class BillingRoute {
 		api.Router.set("POST", `${this.route}/customer`, this.createCustomer, adminOpts)
 		api.Router.set("PUT", `${this.route}/customer`, this.updateCustomer, adminOpts)
 		api.Router.set("DELETE", `${this.route}/customer`, this.deleteCustomer, adminOpts)
+		api.Router.set("GET", `${this.route}/customer/portal`, this.getCustomerPortal, opts)
 
 		// Plans
 		api.Router.set("GET", `${this.route}/plan`, this.getPlan)
-		api.Router.set("GET", `${this.route}/plans`, this.getPlans)
-		api.Router.set("POST", `${this.route}/plan`, this.createPlan, adminOpts)
-		api.Router.set("PUT", `${this.route}/plan`, this.updatePlan, adminOpts)
-		api.Router.set("DELETE", `${this.route}/plan`, this.deletePlan, adminOpts)
+		api.Router.set("GET", `${this.route}/products`, this.getProducts)
+		api.Router.set("POST", `${this.route}/product`, this.createProduct, adminOpts)
+		api.Router.set("PUT", `${this.route}/product`, this.updateProduct, adminOpts)
+		api.Router.set("DELETE", `${this.route}/product`, this.deleteProduct, adminOpts)
 
-		// Plan Features
-		api.Router.set("GET", `${this.route}/plan/feature`, this.getPlanFeature, adminOpts)
-		api.Router.set("GET", `${this.route}/plan/features`, this.getPlanFeatures)
-		api.Router.set("POST", `${this.route}/plan/feature`, this.createPlanFeature, adminOpts)
-		api.Router.set("PUT", `${this.route}/plan/feature`, this.updatePlanFeature, adminOpts)
-		api.Router.set("DELETE", `${this.route}/plan/feature`, this.deletePlanFeature, adminOpts)
+		// Product Features
+		api.Router.set("GET", `${this.route}/product/feature`, this.getProductFeature, adminOpts)
+		api.Router.set("GET", `${this.route}/product/features`, this.getProductFeatures)
+		api.Router.set("POST", `${this.route}/product/feature`, this.createProductFeature, adminOpts)
+		api.Router.set("PUT", `${this.route}/product/feature`, this.updateProductFeature, adminOpts)
+		api.Router.set("DELETE", `${this.route}/product/feature`, this.deleteProductFeature, adminOpts)
 
 		// Subscriptions
 		api.Router.set("GET", `${this.route}/subscription`, this.getSubscription, opts)
 		api.Router.set("GET", `${this.route}/subscriptions`, this.getSubscriptions, adminOpts)
+		api.Router.set("POST", `${this.route}/subscription/cancel`, this.cancelSubscription, opts)
+		api.Router.set("POST", `${this.route}/subscription/pause`, this.pauseSubscription, opts)
+		api.Router.set("POST", `${this.route}/subscription/resume`, this.resumeSubscription, opts)
+
+		// Checkout
+		api.Router.set("POST", `${this.route}/checkout`, this.createCheckout, opts)
 
 		// Orders
 		api.Router.set("GET", `${this.route}/order`, this.getOrder, opts)
@@ -39,6 +46,21 @@ export class BillingRoute {
 		// Invoices
 		api.Router.set("GET", `${this.route}/invoice`, this.getInvoice, opts)
 		api.Router.set("GET", `${this.route}/invoices`, this.getInvoices, adminOpts)
+
+		// LemonSqueezy Admin (direct LS API access)
+		api.Router.set("GET", `${this.route}/ls/status`, this.lsStatus, adminOpts)
+		api.Router.set("GET", `${this.route}/ls/store`, this.lsGetStore, adminOpts)
+		api.Router.set("GET", `${this.route}/ls/products`, this.lsGetProducts, adminOpts)
+		api.Router.set("GET", `${this.route}/ls/product`, this.lsGetProduct, adminOpts)
+		api.Router.set("GET", `${this.route}/ls/variants`, this.lsGetVariants, adminOpts)
+		api.Router.set("GET", `${this.route}/ls/variant`, this.lsGetVariant, adminOpts)
+		api.Router.set("GET", `${this.route}/ls/subscriptions`, this.lsGetSubscriptions, adminOpts)
+		api.Router.set("GET", `${this.route}/ls/subscription`, this.lsGetSubscription, adminOpts)
+		api.Router.set("GET", `${this.route}/ls/orders`, this.lsGetOrders, adminOpts)
+		api.Router.set("GET", `${this.route}/ls/customers`, this.lsGetCustomers, adminOpts)
+		api.Router.set("GET", `${this.route}/ls/customer`, this.lsGetCustomer, adminOpts)
+		api.Router.set("POST", `${this.route}/ls/sync`, this.lsSync, adminOpts)
+		api.Router.set("POST", `${this.route}/ls/sync/products`, this.lsSyncProducts, adminOpts)
 
 		// Webhook (public for MoR)
 		api.Router.set("POST", `${this.route}/webhook`, this.webhook)
@@ -77,71 +99,71 @@ export class BillingRoute {
 		return await api.Billing.Customers.delete({ id })
 	}
 
-	// Plans
-	getPlan = async (_: any, req: Request) => {
+	// Products
+	getProduct = async (_: any, req: Request) => {
 		const p = api.getParams(req)
 		const id = Number(p.id)
-		if (!id) return { code: 422, error: "Plan ID required" }
-		return await api.Billing.Plans.get({ id }) ?? { code: 404, error: "Plan not found" }
+		if (!id) return { code: 422, error: "Product ID required" }
+		return await api.Billing.Products.get({ id }) ?? { code: 404, error: "Product not found" }
 	}
 
-	getPlans = async (_: any, req: Request) => {
+	getProducts = async (_: any, req: Request) => {
 		const p = api.getParams(req)
-		return await api.Billing.Plans.getMany({ is_active: 1 }, { limit: Number(p.limit) || 100, offset: Number(p.offset) || 0 })
+		return await api.Billing.Products.getMany({ is_active: 1 }, { limit: Number(p.limit) || 100, offset: Number(p.offset) || 0 })
 	}
 
-	createPlan = async (_: any, req: Request) => {
+	createProduct = async (_: any, req: Request) => {
 		const p = api.getParams(req)
-		return await api.Billing.Plans.set(p)
+		return await api.Billing.Products.set(p)
 	}
 
-	updatePlan = async ($: any, req: Request) => {
+	updateProduct = async ($: any, req: Request) => {
 		const p = api.getParams(req)
 		const id = Number(p.id)
-		if (!id) return { code: 422, error: "Plan ID required" }
+		if (!id) return { code: 422, error: "Product ID required" }
 		const { id: _id, ...data } = p
-		return await api.Billing.Plans.update(data, { id })
+		return await api.Billing.Products.update(data, { id })
 	}
 
-	deletePlan = async (_: any, req: Request) => {
+	deleteProduct = async (_: any, req: Request) => {
 		const p = api.getParams(req)
 		const id = Number(p.id)
-		if (!id) return { code: 422, error: "Plan ID required" }
-		return await api.Billing.Plans.delete({ id })
+		if (!id) return { code: 422, error: "Product ID required" }
+		return await api.Billing.Products.delete({ id })
 	}
 
-	// Plan Features
-	getPlanFeature = async (_: any, req: Request) => {
+	// Product Features
+	getProductFeature = async (_: any, req: Request) => {
 		const p = api.getParams(req)
 		const id = Number(p.id)
 		if (!id) return { code: 422, error: "Feature ID required" }
-		return await api.Billing.Plans.getFeature({ id }) ?? { code: 404, error: "Feature not found" }
+		return await api.Billing.Products.getFeature({ id }) ?? { code: 404, error: "Feature not found" }
 	}
 
-	getPlanFeatures = async (_: any, req: Request) => {
+	getProductFeatures = async (_: any, req: Request) => {
 		const p = api.getParams(req)
-		const plan_id = Number(p.plan_id)
-		return await api.Billing.Plans.getFeatures(plan_id ? { plan_id } : {})
+		const product_id = Number(p.product_id)
+		return await api.Billing.Products.getFeatures(product_id ? { product_id } : {})
 	}
 
-	createPlanFeature = async (_: any, req: Request) => {
+	createProductFeature = async (_: any, req: Request) => {
 		const p = api.getParams(req)
-		return await api.Billing.Plans.setFeature(p)
+		return await api.Billing.Products.setFeature(p)
 	}
 
-	updatePlanFeature = async ($: any, req: Request) => {
+	updateProductFeature = async ($: any, req: Request) => {
 		const p = api.getParams(req)
 		const id = Number(p.id)
 		if (!id) return { code: 422, error: "Feature ID required" }
 		const { id: _id, ...data } = p
-		return await api.Billing.Plans.updateFeature(data, { id })
+		return await api.Billing.Products.updateFeature(data, { id })
 	}
 
-	deletePlanFeature = async (_: any, req: Request) => {
+	deleteProductFeature = async (_: any, req: Request) => {
 		const p = api.getParams(req)
 		const id = Number(p.id)
 		if (!id) return { code: 422, error: "Feature ID required" }
-		return await api.Billing.Plans.deleteFeature({ id })
+		return await api.Billing.Products.deleteFeature({ id })
 	}
 
 	// Subscriptions
@@ -155,6 +177,79 @@ export class BillingRoute {
 	getSubscriptions = async (_: any, req: Request) => {
 		const p = api.getParams(req)
 		return await api.Billing.Subscriptions.getMany({}, { limit: Number(p.limit) || 100, offset: Number(p.offset) || 0 })
+	}
+
+	cancelSubscription = async ($: any, req: Request) => {
+		const p = api.getParams(req)
+		const id = Number(p.id)
+		if (!id) return { code: 422, error: "Subscription ID required" }
+		const sub = await api.Billing.Subscriptions.get({ id })
+		if (!sub) return { code: 404, error: "Subscription not found" }
+		if (!sub.providerSubscriptionId) return { code: 400, error: "No provider subscription linked" }
+		try {
+			await api.Billing.Providers.LS.cancelSubscription(sub.providerSubscriptionId)
+			return { success: true }
+		} catch (e: any) {
+			return { code: 500, error: e.message }
+		}
+	}
+
+	pauseSubscription = async ($: any, req: Request) => {
+		const p = api.getParams(req)
+		const id = Number(p.id)
+		if (!id) return { code: 422, error: "Subscription ID required" }
+		const sub = await api.Billing.Subscriptions.get({ id })
+		if (!sub) return { code: 404, error: "Subscription not found" }
+		if (!sub.providerSubscriptionId) return { code: 400, error: "No provider subscription linked" }
+		try {
+			await api.Billing.Providers.LS.pauseSubscription(sub.providerSubscriptionId)
+			return { success: true }
+		} catch (e: any) {
+			return { code: 500, error: e.message }
+		}
+	}
+
+	resumeSubscription = async ($: any, req: Request) => {
+		const p = api.getParams(req)
+		const id = Number(p.id)
+		if (!id) return { code: 422, error: "Subscription ID required" }
+		const sub = await api.Billing.Subscriptions.get({ id })
+		if (!sub) return { code: 404, error: "Subscription not found" }
+		if (!sub.providerSubscriptionId) return { code: 400, error: "No provider subscription linked" }
+		try {
+			await api.Billing.Providers.LS.resumeSubscription(sub.providerSubscriptionId)
+			return { success: true }
+		} catch (e: any) {
+			return { code: 500, error: e.message }
+		}
+	}
+
+	// Checkout
+	createCheckout = async ($: any, req: Request) => {
+		const p = api.getParams(req)
+		const variantId = p.variant_id || p.variantId
+		if (!variantId) return { code: 422, error: "Variant ID required" }
+		try {
+			const result = await api.Billing.Providers.LS.createCheckout({
+				variantId,
+				email: p.email || $.user?.email,
+				name: p.name || $.user?.name,
+				customData: { user_id: $.user?.id, plan_id: p.plan_id },
+				redirectUrl: p.redirect_url,
+			})
+			return result
+		} catch (e: any) {
+			return { code: 500, error: e.message }
+		}
+	}
+
+	// Customer Portal
+	getCustomerPortal = async ($: any, req: Request) => {
+		const customer = await api.Billing.Customers.get({ user_id: $.user?.id })
+		if (!customer) return { code: 404, error: "No billing customer found" }
+		// Need LS customer ID - would need to store this
+		// For now, return error indicating this needs setup
+		return { code: 501, error: "Customer portal requires LS customer ID mapping" }
 	}
 
 	// Orders
@@ -185,8 +280,138 @@ export class BillingRoute {
 
 	// Webhook for LemonSqueezy
 	webhook = async (_: any, req: Request) => {
+		const signature = req.headers[`x-signature`] as string
+		const rawBody = (req as any).rawBody as string
+
+		// In production, verify signature
+		if (signature && rawBody) {
+			try {
+				const { eventName, data, customData } = await api.Billing.Providers.LS.handleWebhook(rawBody, signature)
+				return await api.Billing.Events.process({ event: eventName as any, data, customData })
+			} catch (e: any) {
+				return { code: 401, error: e.message }
+			}
+		}
+
+		// Dev/test mode: accept unverified webhooks
 		const p = api.getParams(req)
-		// TODO: Validate signature from LemonSqueezy
-		return await api.Billing.Events.process({ event: p.meta?.event_name, data: p.data })
+		return await api.Billing.Events.process({
+			event: p.meta?.event_name,
+			data: p.data?.attributes ?? p.data ?? {},
+			customData: p.meta?.custom_data ?? {},
+		})
+	}
+
+	// ─────────────────────────────────────────────────────────────
+	// LemonSqueezy Admin Routes
+	// ─────────────────────────────────────────────────────────────
+
+	lsStatus = async () => {
+		return { enabled: api.Billing.Providers.LS.isEnabled() }
+	}
+
+	lsGetStore = async () => {
+		try {
+			return await api.Billing.Providers.LS.getStore()
+		} catch (e: any) {
+			return { code: 500, error: e.message }
+		}
+	}
+
+	lsGetProducts = async () => {
+		try {
+			return await api.Billing.Providers.LS.getProducts()
+		} catch (e: any) {
+			return { code: 500, error: e.message }
+		}
+	}
+
+	lsGetProduct = async (_: any, req: Request) => {
+		const p = api.getParams(req)
+		if (!p.id) return { code: 422, error: "Product ID required" }
+		try {
+			return await api.Billing.Providers.LS.getProduct(p.id)
+		} catch (e: any) {
+			return { code: 500, error: e.message }
+		}
+	}
+
+	lsGetVariants = async (_: any, req: Request) => {
+		const p = api.getParams(req)
+		try {
+			return await api.Billing.Providers.LS.getVariants(p.product_id)
+		} catch (e: any) {
+			return { code: 500, error: e.message }
+		}
+	}
+
+	lsGetVariant = async (_: any, req: Request) => {
+		const p = api.getParams(req)
+		if (!p.id) return { code: 422, error: "Variant ID required" }
+		try {
+			return await api.Billing.Providers.LS.getVariant(p.id)
+		} catch (e: any) {
+			return { code: 500, error: e.message }
+		}
+	}
+
+	lsGetSubscriptions = async () => {
+		try {
+			return await api.Billing.Providers.LS.getSubscriptions()
+		} catch (e: any) {
+			return { code: 500, error: e.message }
+		}
+	}
+
+	lsGetSubscription = async (_: any, req: Request) => {
+		const p = api.getParams(req)
+		if (!p.id) return { code: 422, error: "Subscription ID required" }
+		try {
+			return await api.Billing.Providers.LS.getSubscription(p.id)
+		} catch (e: any) {
+			return { code: 500, error: e.message }
+		}
+	}
+
+	lsGetOrders = async () => {
+		try {
+			return await api.Billing.Providers.LS.getOrders()
+		} catch (e: any) {
+			return { code: 500, error: e.message }
+		}
+	}
+
+	lsGetCustomers = async () => {
+		try {
+			return await api.Billing.Providers.LS.getCustomers()
+		} catch (e: any) {
+			return { code: 500, error: e.message }
+		}
+	}
+
+	lsGetCustomer = async (_: any, req: Request) => {
+		const p = api.getParams(req)
+		if (!p.id) return { code: 422, error: "Customer ID required" }
+		try {
+			return await api.Billing.Providers.LS.getCustomer(p.id)
+		} catch (e: any) {
+			return { code: 500, error: e.message }
+		}
+	}
+
+	lsSync = async () => {
+		try {
+			return await api.Billing.Providers.LS.sync()
+		} catch (e: any) {
+			return { code: 500, error: e.message }
+		}
+	}
+
+	lsSyncProducts = async () => {
+		try {
+			return await api.Billing.Providers.LS.syncProducts()
+		} catch (e: any) {
+			return { code: 500, error: e.message }
+		}
 	}
 }

@@ -60,20 +60,26 @@ export type BillingPaymentProviderDBRow = {
 	deleted_at: string | null
 }
 
-export type BillingPlanFeatureDBRow = {
+export type BillingProductFeatureDBRow = {
 	id?: number
-	plan_id: number
+	product_id: number
 	feature_name: string
 	description: string | null
 	created: string | null
 }
 
-export type BillingPlanDBRow = {
+export type BillingProductDBRow = {
 	id?: number
 	name: string
-	provider_price_id: string | null
+	type: string
+	provider_id: string | null
+	provider_variant_id: string | null
 	price: number
 	currency: string
+	interval: string
+	interval_count: number
+	trial_days: number
+	sort_order: number
 	description: string | null
 	is_active: number
 	created: string | null
@@ -84,16 +90,17 @@ export type BillingPlanDBRow = {
 export type BillingSubscriptionDBRow = {
 	id?: number
 	customer_id: number
-	plan_id: number
+	plan_id?: number | null
 	provider_subscription_id: string
 	current_period_start: string
 	current_period_end: string
 	cancel_at_period_end: number
 	canceled_at: string | null
+	paused_at: string | null
 	created: string | null
 	updated: string | null
 	deleted_at: string | null
-	status: 'active' | 'canceled' | 'trial'
+	status: string
 }
 
 // Global tables
@@ -234,8 +241,8 @@ export type DatabaseSchema = {
 	billing_invoices: BillingInvoiceDBRow
 	billing_orders: BillingOrderDBRow
 	billing_payment_providers: BillingPaymentProviderDBRow
-	billing_plan_features: BillingPlanFeatureDBRow
-	billing_plans: BillingPlanDBRow
+	billing_product_features: BillingProductFeatureDBRow
+	billing_products: BillingProductDBRow
 	billing_subscriptions: BillingSubscriptionDBRow
 	// Global tables
 	global_audit_logs: GlobalAuditLogDBRow
@@ -347,20 +354,26 @@ export const schemaColumns = {
 		deleted_at: 'date'
 	},
 
-	billing_plan_features: {
+	billing_product_features: {
 		id: 'number',
-		plan_id: 'number',
+		product_id: 'number',
 		feature_name: 'string',
 		description: 'string',
 		created: 'date'
 	},
 
-	billing_plans: {
+	billing_products: {
 		id: 'number',
 		name: 'string',
-		provider_price_id: 'string',
+		type: 'string',
+		provider_id: 'string',
+		provider_variant_id: 'string',
 		price: 'number',
 		currency: 'string',
+		interval: 'string',
+		interval_count: 'number',
+		trial_days: 'number',
+		sort_order: 'number',
 		description: 'string',
 		is_active: 'number',
 		created: 'date',
@@ -377,6 +390,7 @@ export const schemaColumns = {
 		current_period_end: 'date',
 		cancel_at_period_end: 'number',
 		canceled_at: 'date',
+		paused_at: 'date',
 		created: 'date',
 		updated: 'date',
 		deleted_at: 'date',
@@ -557,8 +571,8 @@ export const tableColumnSets: ColumnSetMap = {
 	billing_invoices: createColumnSet(schemaColumns.billing_invoices),
 	billing_orders: createColumnSet(schemaColumns.billing_orders),
 	billing_payment_providers: createColumnSet(schemaColumns.billing_payment_providers),
-	billing_plan_features: createColumnSet(schemaColumns.billing_plan_features),
-	billing_plans: createColumnSet(schemaColumns.billing_plans),
+	billing_product_features: createColumnSet(schemaColumns.billing_product_features),
+	billing_products: createColumnSet(schemaColumns.billing_products),
 	billing_subscriptions: createColumnSet(schemaColumns.billing_subscriptions),
 	// Global tables
 	global_audit_logs: createColumnSet(schemaColumns.global_audit_logs),
@@ -584,8 +598,8 @@ export type TableMap = {
 	billing_invoices: string
 	billing_orders: string
 	billing_payment_providers: string
-	billing_plan_features: string
-	billing_plans: string
+	billing_product_features: string
+	billing_products: string
 	billing_subscriptions: string
 	// Global tables
 	global_audit_logs: string
@@ -612,8 +626,8 @@ export const TableMap: TableMap = {
 	billing_invoices: "billing_invoices",
 	billing_orders: "billing_orders",
 	billing_payment_providers: "billing_payment_providers",
-	billing_plan_features: "billing_plan_features",
-	billing_plans: "billing_plans",
+	billing_product_features: "billing_product_features",
+	billing_products: "billing_products",
 	billing_subscriptions: "billing_subscriptions",
 	// Global tables
 	global_audit_logs: "global_audit_logs",

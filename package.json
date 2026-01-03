@@ -4,6 +4,8 @@
 	"type": "module",
 	"scripts": {
 		
+		"tunnel": "cd api && npm run tunnel",
+
 		"init": "node ./.magix/commands/init.mjs",
 		"reinit": "FORCE=1 node ./.magix/commands/init.mjs",
 		"update": "node ./.magix/commands/update.mjs",
@@ -24,7 +26,8 @@
 
 		"dev": "npm-run-all -p dev:app dev:api",
 		"dev:app": "cd app && npm run dev",
-		"dev:api": "cd api && npm run dev",
+		"dev:api": "npm-run-all -p dev:api:server tunnel",
+		"dev:api:server": "cd api && npm run dev",
 		"dev:electron": "cd electron && npm run dev",
 
 		"build": "npm run prebuild && npm-run-all build:app build:api",

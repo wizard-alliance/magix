@@ -29,6 +29,8 @@ CREATE TABLE `billing_customers` (
   `updated` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Timestamp when the record was last updated',
   `deleted_at` datetime DEFAULT NULL COMMENT 'Soft delete timestamp',
   PRIMARY KEY (`id`),
+  UNIQUE KEY `idx_user_id` (`user_id`),
+  UNIQUE KEY `idx_company_id` (`company_id`),
   KEY `fk_billing_customers_user` (`user_id`),
   KEY `fk_billing_customers_company` (`company_id`),
   CONSTRAINT `fk_billing_customers_company` FOREIGN KEY (`company_id`) REFERENCES `user_organization` (`id`) ON DELETE CASCADE,
@@ -98,33 +100,39 @@ CREATE TABLE `billing_payment_providers` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Holds payment provider details and configurations.';
 
 
-DROP TABLE IF EXISTS `billing_plan_features`;
-CREATE TABLE `billing_plan_features` (
+DROP TABLE IF EXISTS `billing_product_features`;
+CREATE TABLE `billing_product_features` (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT 'Primary Key for billing_plan_features table',
-  `plan_id` bigint NOT NULL COMMENT 'FK referencing billing_plans(id)',
+  `product_id` bigint NOT NULL COMMENT 'FK referencing billing_plans(id)',
   `feature_name` varchar(255) NOT NULL COMMENT 'Name of the feature in this plan',
   `description` text COMMENT 'Additional info describing the feature',
   `created` datetime DEFAULT CURRENT_TIMESTAMP COMMENT 'Timestamp when the feature record was created',
   PRIMARY KEY (`id`),
-  KEY `idx_billing_plan_features_plan` (`plan_id`),
-  CONSTRAINT `fk_billing_plan_features_plan` FOREIGN KEY (`plan_id`) REFERENCES `billing_plans` (`id`) ON DELETE CASCADE
+  KEY `idx_billing_plan_features_plan` (`product_id`),
+  CONSTRAINT `fk_billing_plan_features_plan` FOREIGN KEY (`product_id`) REFERENCES `billing_products` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Defines features included in subscription plans.';
 
 
-DROP TABLE IF EXISTS `billing_plans`;
-CREATE TABLE `billing_plans` (
+DROP TABLE IF EXISTS `billing_products`;
+CREATE TABLE `billing_products` (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT 'Primary Key for billing_plans table',
-  `name` varchar(255) NOT NULL COMMENT 'Name of the subscription plan (e.g., Basic, Pro)',
-  `provider_price_id` varchar(255) DEFAULT NULL COMMENT 'Price identifier from the external provider (e.g., Stripe)',
-  `price` decimal(10,2) NOT NULL DEFAULT '0.00' COMMENT 'Recurring or fixed cost of the plan',
-  `currency` varchar(10) NOT NULL DEFAULT 'USD' COMMENT 'ISO currency code for the plan price',
+  `name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL COMMENT 'Name of the subscription plan (e.g., Basic, Pro)',
+  `type` varchar(50) NOT NULL DEFAULT 'subscription' COMMENT 'subscription, one_time, lead_magnet, pwyw',
+  `provider_id` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL COMMENT 'MoR product identifier from the external provider (e.g., Stripe)',
+  `provider_variant_id` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL COMMENT 'MoR variant identifier from the external provider (e.g., Stripe)',
+  `price` float NOT NULL DEFAULT '0' COMMENT 'Recurring or fixed cost of the plan',
+  `currency` varchar(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT 'USD' COMMENT 'ISO currency code for the plan price',
+  `interval` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT '' COMMENT 'day, week, month, year',
+  `interval_count` int NOT NULL DEFAULT '1' COMMENT 'Number of intervals per cycle',
+  `trial_days` int NOT NULL DEFAULT '0' COMMENT 'Free trial length in days',
+  `sort_order` int NOT NULL DEFAULT '0' COMMENT 'Display order',
   `description` text COMMENT 'Description of the plan features or details',
   `is_active` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'Indicates if the plan is currently available',
   `created` datetime DEFAULT CURRENT_TIMESTAMP COMMENT 'Timestamp when the plan record was created',
   `updated` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Timestamp when the plan record was last updated',
   `deleted_at` datetime DEFAULT NULL COMMENT 'Soft delete timestamp for the plan',
   PRIMARY KEY (`id`),
-  UNIQUE KEY `unique_plan_name` (`name`)
+  UNIQUE KEY `provider_variant_id` (`provider_variant_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Lists subscription plans with pricing and descriptions.';
 
 
@@ -132,22 +140,23 @@ DROP TABLE IF EXISTS `billing_subscriptions`;
 CREATE TABLE `billing_subscriptions` (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT 'Primary Key for billing_subscriptions table',
   `customer_id` bigint NOT NULL COMMENT 'FK referencing billing_customers(id)',
-  `plan_id` bigint NOT NULL COMMENT 'FK referencing billing_plans(id)',
+  `plan_id` bigint DEFAULT NULL,
   `provider_subscription_id` varchar(255) NOT NULL COMMENT 'Identifier for this subscription in the provider system',
   `current_period_start` datetime NOT NULL COMMENT 'Start timestamp of the current billing cycle',
   `current_period_end` datetime NOT NULL COMMENT 'End timestamp of the current billing cycle',
   `cancel_at_period_end` tinyint(1) DEFAULT '0' COMMENT 'If set to 1, subscription will end when current period ends',
+  `deleted_at` datetime DEFAULT NULL COMMENT 'Soft delete timestamp for the subscription record',
   `canceled_at` datetime DEFAULT NULL COMMENT 'Timestamp when the subscription was canceled, if any',
+  `paused_at` datetime DEFAULT NULL COMMENT 'Timestamp when the subscription was paused, if any',
   `created` datetime DEFAULT CURRENT_TIMESTAMP COMMENT 'Timestamp when the subscription record was created',
   `updated` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Timestamp when the subscription record was last updated',
-  `deleted_at` datetime DEFAULT NULL COMMENT 'Soft delete timestamp for the subscription record',
-  `status` enum('active','canceled','trial') CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT 'active' COMMENT 'Current status of the subscription',
+  `status` varchar(50) NOT NULL DEFAULT 'active',
   PRIMARY KEY (`id`),
   UNIQUE KEY `unique_provider_subscription` (`provider_subscription_id`),
   KEY `idx_billing_subscriptions_customer` (`customer_id`),
   KEY `idx_billing_subscriptions_plan` (`plan_id`),
   CONSTRAINT `fk_billing_subscriptions_customer` FOREIGN KEY (`customer_id`) REFERENCES `billing_customers` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_billing_subscriptions_plan` FOREIGN KEY (`plan_id`) REFERENCES `billing_plans` (`id`) ON DELETE CASCADE
+  CONSTRAINT `fk_billing_subscriptions_plan` FOREIGN KEY (`plan_id`) REFERENCES `billing_products` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Tracks active, canceled, and trial subscriptions.';
 
 
@@ -468,4 +477,4 @@ CREATE TABLE `users` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Stores user account information and credentials.';
 
 
--- 2025-12-31 05:36:28 UTC
+-- 2026-01-03 13:52:48 UTC

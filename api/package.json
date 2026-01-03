@@ -5,6 +5,7 @@
 	"type": "module",
 	"author": "The Wizard Alliance",
 	"scripts": {
+		"tunnel": "cloudflared tunnel run mor-ls-local",
 		"clear": "rimraf .dist",
 		"dev": "cross-env NODE_ENV=development tsx watch --tsconfig tsconfig.json --watch src --watch .core --inspect=9230 src/index.ts --clear-screen=false",
 		"build": "npm run clear && tsc -p tsconfig.json",
