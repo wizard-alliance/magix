@@ -47,6 +47,8 @@ declare global {
 		Tickrate: import('../services/Tickrate.js').Tickrate
 		User: import('../services/UserService.js').UserService
 		WS: import('../services/WebSocketServer.js').WebSocketServerManager
+		Billing: import('../services/BillingService.js').BillingService
+		Organization: import('../services/OrganizationService.js').OrganizationService
 	}
 
 	var api: ApiGlobal

@@ -10,6 +10,8 @@ import { createPool } from "mysql2"
 import type { DatabaseSchema } from '../schema/Database.js'
 import { tableColumnSets } from '../schema/Database.js'
 
+// Enable BigInt JSON serialization (Kysely returns BigInt for insert IDs)
+BigInt.prototype.toJSON = function() { return Number(this) }
 
 export const globalColumnWhitelist = new Set<string>(
 	Object.values(tableColumnSets).flatMap((set) => Array.from(set))
@@ -290,7 +292,7 @@ export class DatabaseClient {
 		}
 
 		return await this.$
-			.selectFrom("settings")
+			.selectFrom("global_settings")
 			.select(["value"])
 			.where("key", "=", "server_version")
 			.executeTakeFirst()

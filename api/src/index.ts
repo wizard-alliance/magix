@@ -16,7 +16,7 @@ api.Router.set("GET", "user/:id/settings", cb, {
 	params: [{ id: "number" }, { slug: "string" }]
 })
 
-// api.User.Auth.permissions.grant(93, [
+// api.User.Permissions.grant(93, [
 // 	"administrator", 
 // 	"user.manage", 
 // 	"user.view", 

@@ -27,6 +27,8 @@ import { MailService } from "@api/core/services/MailService.js"
 import { WebSocketServerManager } from "@api/core/services/WebSocketServer.js"
 import { Tickrate } from "@api/core/services/Tickrate.js"
 import { UserService } from "@api/core/services/UserService.js"
+import { BillingService } from "@api/core/services/BillingService.js"
+import { OrganizationService } from "@api/core/services/OrganizationService.js"
 
 import { Config } from "@api/core/config/env.js"
 import { magixConfig } from "@magix/config" 
@@ -80,6 +82,8 @@ scope.api.Tickrate = new Tickrate()
 scope.api.User = new UserService()
 scope.api.Cache = new CacheManager()
 scope.api.WS = new WebSocketServerManager()
+scope.api.Billing = new BillingService()
+scope.api.Organization = new OrganizationService()
 
 scope.api.Logger = new Logger({ basePath: "../.logs", scope: 'api', label: 'API' })
 scope.api.LoggerApp = new Logger({ basePath: "../.logs", scope: 'app', label: 'App' })

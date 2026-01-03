@@ -26,6 +26,7 @@ export type User = {
 	created: string | null
 	updated: string | null
 	tosAccepted?: boolean
+	deletedAt?: string | null
 }
 
 export type UserDeviceSession = {
@@ -58,4 +59,122 @@ export type UserFull = {
 	permissions: string[]
 	devices: UserDevice[]
 	settings: UserSetting[]
+}
+
+// Billing domain shapes
+export type BillingCustomer = {
+	id: number
+	userId: number | null
+	companyId: number | null
+	isGuest: boolean
+	billingName: string | null
+	billingEmail: string | null
+	billingPhone: string | null
+	billingAddress: {
+		line1: string | null
+		line2: string | null
+		city: string | null
+		state: string | null
+		zip: string | null
+		country: string | null
+		latitude: number | null
+		longitude: number | null
+	}
+	vatId: string | null
+	created: string | null
+	updated: string | null
+}
+
+export type BillingInvoice = {
+	id: number
+	orderId: number
+	customerId: number
+	billingInfoSnapshot: Record<string, any> | null
+	billingOrderSnapshot: Record<string, any> | null
+	snapshotVersion: string
+	pdfUrl: string | null
+	created: string | null
+}
+
+export type BillingOrder = {
+	id: number
+	customerId: number
+	type: 'subscription' | 'purchase' | 'refund' | 'adjustment' | 'trial'
+	subscriptionId: number | null
+	providerId: number
+	providerOrderId: string
+	amount: number
+	currency: string
+	status: 'pending' | 'paid' | 'failed' | 'refunded' | 'canceled'
+	paymentMethod: string | null
+	paidAt: string | null
+	created: string | null
+	updated: string | null
+	parentOrderId: number | null
+	idempotencyKey: string | null
+}
+
+export type BillingPaymentProvider = {
+	id: number
+	name: string
+	config: Record<string, any> | null
+	created: string | null
+	updated: string | null
+}
+
+export type BillingPlan = {
+	id: number
+	name: string
+	providerPriceId: string | null
+	price: number
+	currency: string
+	description: string | null
+	isActive: boolean
+	created: string | null
+	updated: string | null
+}
+
+export type BillingPlanFeature = {
+	id: number
+	planId: number
+	featureName: string
+	description: string | null
+	created: string | null
+}
+
+export type BillingSubscription = {
+	id: number
+	customerId: number
+	planId: number
+	providerSubscriptionId: string
+	currentPeriodStart: string
+	currentPeriodEnd: string
+	cancelAtPeriodEnd: boolean
+	canceledAt: string | null
+	status: 'active' | 'canceled' | 'trial'
+	created: string | null
+	updated: string | null
+}
+
+// Full domain shapes (with related data)
+export type BillingCustomerFull = BillingCustomer & {
+	subscriptions: BillingSubscription[]
+	invoices: BillingInvoice[]
+	orders: BillingOrder[]
+}
+
+export type BillingPlanFull = BillingPlan & {
+	features: BillingPlanFeature[]
+}
+
+// Organization
+export type Organization = {
+	id: number
+	ownerId: number
+	parentOrg: number | null
+	name: string
+	description: string | null
+	vatId: string | null
+	created: string | null
+	updated: string | null
 }

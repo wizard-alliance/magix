@@ -1,3 +1,4 @@
+-- Adminer 5.4.1 MySQL 8.0.30 dump
 
 SET NAMES utf8;
 SET time_zone = '+00:00';
@@ -6,8 +7,180 @@ SET sql_mode = 'NO_AUTO_VALUE_ON_ZERO';
 
 SET NAMES utf8mb4;
 
-DROP TABLE IF EXISTS `permissions`;
-CREATE TABLE `permissions` (
+DROP TABLE IF EXISTS `billing_customers`;
+CREATE TABLE `billing_customers` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT 'Primary Key for billing_customers table',
+  `user_id` bigint DEFAULT NULL COMMENT 'Foreign key to users.id (if customer is a user)',
+  `company_id` bigint DEFAULT NULL COMMENT 'Foreign key to companies.id (if customer is a company)',
+  `is_guest` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'Set to 1 if customer is a guest',
+  `billing_name` varchar(255) DEFAULT NULL COMMENT 'Customer billing name',
+  `billing_email` varchar(255) DEFAULT NULL COMMENT 'Customer billing email address',
+  `billing_phone` varchar(30) DEFAULT NULL COMMENT 'Customer billing phone number',
+  `billing_address_line1` varchar(255) DEFAULT NULL COMMENT 'Billing address line 1',
+  `billing_address_line2` varchar(255) DEFAULT NULL COMMENT 'Billing address line 2',
+  `billing_city` varchar(100) DEFAULT NULL COMMENT 'Billing city',
+  `billing_state` varchar(100) DEFAULT NULL COMMENT 'Billing state',
+  `billing_zip` varchar(20) DEFAULT NULL COMMENT 'Billing ZIP/postal code',
+  `billing_country` varchar(100) DEFAULT NULL COMMENT 'Billing country',
+  `billing_latitude` decimal(10,7) DEFAULT NULL COMMENT 'Latitude for billing location',
+  `billing_longitude` decimal(10,7) DEFAULT NULL COMMENT 'Longitude for billing location',
+  `vat_id` varchar(50) DEFAULT NULL COMMENT 'VAT or tax ID number if applicable',
+  `created` datetime DEFAULT CURRENT_TIMESTAMP COMMENT 'Timestamp when the record was created',
+  `updated` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Timestamp when the record was last updated',
+  `deleted_at` datetime DEFAULT NULL COMMENT 'Soft delete timestamp',
+  PRIMARY KEY (`id`),
+  KEY `fk_billing_customers_user` (`user_id`),
+  KEY `fk_billing_customers_company` (`company_id`),
+  CONSTRAINT `fk_billing_customers_company` FOREIGN KEY (`company_id`) REFERENCES `user_organization` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_billing_customers_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `chk_exclusive_customer_type` CHECK ((((`is_guest` = 1) and (`user_id` is null) and (`company_id` is null)) or ((`is_guest` = 0) and (((`user_id` is not null) and (`company_id` is null)) or ((`user_id` is null) and (`company_id` is not null))))))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Links users, companies, or guests to billing details.';
+
+
+DROP TABLE IF EXISTS `billing_invoices`;
+CREATE TABLE `billing_invoices` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT 'Primary Key for billing_invoices table',
+  `order_id` bigint NOT NULL COMMENT 'FK referencing billing_orders(id)',
+  `customer_id` bigint NOT NULL COMMENT 'FK referencing billing_customers(id)',
+  `billing_info_snapshot` json DEFAULT NULL COMMENT 'Snapshot of billing info - JSON due to future compatability',
+  `billing_order_snapshot` json DEFAULT NULL COMMENT 'Snapshot of billing info - JSON due to future compatability',
+  `snapshot_version` varchar(10) NOT NULL DEFAULT '1.0.0' COMMENT 'Snapshot version',
+  `pdf_url` varchar(255) DEFAULT NULL COMMENT 'Optional URL to a PDF copy of the invoice',
+  `created` datetime DEFAULT CURRENT_TIMESTAMP COMMENT 'Timestamp when the invoice record was created',
+  PRIMARY KEY (`id`),
+  KEY `idx_billing_invoices_order` (`order_id`),
+  KEY `idx_billing_invoices_customer` (`customer_id`),
+  CONSTRAINT `fk_billing_invoices_customer` FOREIGN KEY (`customer_id`) REFERENCES `billing_customers` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_billing_invoices_order` FOREIGN KEY (`order_id`) REFERENCES `billing_orders` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Immutable storage for finalized invoices for completed orders.';
+
+
+DROP TABLE IF EXISTS `billing_orders`;
+CREATE TABLE `billing_orders` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT 'Primary Key for billing_orders table',
+  `customer_id` bigint NOT NULL COMMENT 'FK referencing billing_customers(id)',
+  `type` enum('subscription','purchase','refund','adjustment','trial') NOT NULL DEFAULT 'purchase' COMMENT 'Type of order',
+  `subscription_id` bigint DEFAULT NULL COMMENT 'FK referencing billing_subscriptions(id), if applicable',
+  `provider_id` bigint NOT NULL COMMENT 'FK referencing billing_payment_providers(id)',
+  `provider_order_id` varchar(255) NOT NULL COMMENT 'Order ID from external provider',
+  `amount` decimal(10,2) NOT NULL COMMENT 'Monetary amount for this order',
+  `currency` varchar(10) NOT NULL DEFAULT 'USD' COMMENT 'ISO currency code for the order amount',
+  `status` enum('pending','paid','failed','refunded','canceled') NOT NULL DEFAULT 'pending' COMMENT 'Order status',
+  `payment_method` varchar(255) DEFAULT NULL COMMENT 'Payment method used (e.g., card, Klarna)',
+  `paid_at` datetime DEFAULT NULL COMMENT 'Timestamp when payment was completed',
+  `created` datetime DEFAULT CURRENT_TIMESTAMP COMMENT 'Timestamp when the order record was created',
+  `updated` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Timestamp when the order record was last updated',
+  `deleted_at` datetime DEFAULT NULL COMMENT 'Soft delete timestamp',
+  `parent_order_id` bigint DEFAULT NULL COMMENT 'FK referencing billing_orders(id) for refunds/partials',
+  `idempotency_key` varchar(255) DEFAULT NULL COMMENT 'Prevents duplicate order creation',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `unique_provider_order` (`provider_id`,`provider_order_id`),
+  UNIQUE KEY `idempotency_key` (`idempotency_key`),
+  KEY `idx_billing_orders_subscription` (`subscription_id`),
+  KEY `idx_billing_orders_customer` (`customer_id`),
+  KEY `fk_billing_orders_parent` (`parent_order_id`),
+  CONSTRAINT `fk_billing_orders_customer` FOREIGN KEY (`customer_id`) REFERENCES `billing_customers` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_billing_orders_parent` FOREIGN KEY (`parent_order_id`) REFERENCES `billing_orders` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_billing_orders_provider` FOREIGN KEY (`provider_id`) REFERENCES `billing_payment_providers` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_billing_orders_subscription` FOREIGN KEY (`subscription_id`) REFERENCES `billing_subscriptions` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Tracks all payment transactions.';
+
+
+DROP TABLE IF EXISTS `billing_payment_providers`;
+CREATE TABLE `billing_payment_providers` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT 'Primary Key for billing_payment_providers table',
+  `name` varchar(100) NOT NULL COMMENT 'Name of the payment provider (e.g., Stripe)',
+  `config` text COMMENT 'Configuration details for this payment provider',
+  `created` datetime DEFAULT CURRENT_TIMESTAMP COMMENT 'Timestamp when the provider record was created',
+  `updated` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Timestamp when the provider record was last updated',
+  `deleted_at` datetime DEFAULT NULL COMMENT 'Soft delete timestamp for the provider record',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Holds payment provider details and configurations.';
+
+
+DROP TABLE IF EXISTS `billing_plan_features`;
+CREATE TABLE `billing_plan_features` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT 'Primary Key for billing_plan_features table',
+  `plan_id` bigint NOT NULL COMMENT 'FK referencing billing_plans(id)',
+  `feature_name` varchar(255) NOT NULL COMMENT 'Name of the feature in this plan',
+  `description` text COMMENT 'Additional info describing the feature',
+  `created` datetime DEFAULT CURRENT_TIMESTAMP COMMENT 'Timestamp when the feature record was created',
+  PRIMARY KEY (`id`),
+  KEY `idx_billing_plan_features_plan` (`plan_id`),
+  CONSTRAINT `fk_billing_plan_features_plan` FOREIGN KEY (`plan_id`) REFERENCES `billing_plans` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Defines features included in subscription plans.';
+
+
+DROP TABLE IF EXISTS `billing_plans`;
+CREATE TABLE `billing_plans` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT 'Primary Key for billing_plans table',
+  `name` varchar(255) NOT NULL COMMENT 'Name of the subscription plan (e.g., Basic, Pro)',
+  `provider_price_id` varchar(255) DEFAULT NULL COMMENT 'Price identifier from the external provider (e.g., Stripe)',
+  `price` decimal(10,2) NOT NULL DEFAULT '0.00' COMMENT 'Recurring or fixed cost of the plan',
+  `currency` varchar(10) NOT NULL DEFAULT 'USD' COMMENT 'ISO currency code for the plan price',
+  `description` text COMMENT 'Description of the plan features or details',
+  `is_active` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'Indicates if the plan is currently available',
+  `created` datetime DEFAULT CURRENT_TIMESTAMP COMMENT 'Timestamp when the plan record was created',
+  `updated` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Timestamp when the plan record was last updated',
+  `deleted_at` datetime DEFAULT NULL COMMENT 'Soft delete timestamp for the plan',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `unique_plan_name` (`name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Lists subscription plans with pricing and descriptions.';
+
+
+DROP TABLE IF EXISTS `billing_subscriptions`;
+CREATE TABLE `billing_subscriptions` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT 'Primary Key for billing_subscriptions table',
+  `customer_id` bigint NOT NULL COMMENT 'FK referencing billing_customers(id)',
+  `plan_id` bigint NOT NULL COMMENT 'FK referencing billing_plans(id)',
+  `provider_subscription_id` varchar(255) NOT NULL COMMENT 'Identifier for this subscription in the provider system',
+  `current_period_start` datetime NOT NULL COMMENT 'Start timestamp of the current billing cycle',
+  `current_period_end` datetime NOT NULL COMMENT 'End timestamp of the current billing cycle',
+  `cancel_at_period_end` tinyint(1) DEFAULT '0' COMMENT 'If set to 1, subscription will end when current period ends',
+  `canceled_at` datetime DEFAULT NULL COMMENT 'Timestamp when the subscription was canceled, if any',
+  `created` datetime DEFAULT CURRENT_TIMESTAMP COMMENT 'Timestamp when the subscription record was created',
+  `updated` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Timestamp when the subscription record was last updated',
+  `deleted_at` datetime DEFAULT NULL COMMENT 'Soft delete timestamp for the subscription record',
+  `status` enum('active','canceled','trial') CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT 'active' COMMENT 'Current status of the subscription',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `unique_provider_subscription` (`provider_subscription_id`),
+  KEY `idx_billing_subscriptions_customer` (`customer_id`),
+  KEY `idx_billing_subscriptions_plan` (`plan_id`),
+  CONSTRAINT `fk_billing_subscriptions_customer` FOREIGN KEY (`customer_id`) REFERENCES `billing_customers` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_billing_subscriptions_plan` FOREIGN KEY (`plan_id`) REFERENCES `billing_plans` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Tracks active, canceled, and trial subscriptions.';
+
+
+DROP TABLE IF EXISTS `global_audit_logs`;
+CREATE TABLE `global_audit_logs` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT 'Primary Key for global_audit_logs table',
+  `user_id` bigint NOT NULL COMMENT 'FK referencing users(id)',
+  `action` varchar(255) NOT NULL COMMENT 'Descriptive name of the action performed',
+  `target_table` varchar(255) NOT NULL COMMENT 'The database table the action was performed on',
+  `target_id` bigint NOT NULL COMMENT 'Primary Key of the record in target_table',
+  `created` datetime DEFAULT CURRENT_TIMESTAMP COMMENT 'Timestamp when this audit log entry was created',
+  `deleted_at` datetime DEFAULT NULL,
+  `ip_address` varchar(45) DEFAULT NULL COMMENT 'IP address of the user performing the action',
+  `details` text COMMENT 'Additional details about the event',
+  PRIMARY KEY (`id`),
+  KEY `idx_audit_logs_user` (`user_id`),
+  CONSTRAINT `global_audit_logs_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Logs system activities for auditing and security.';
+
+
+DROP TABLE IF EXISTS `global_cron_log`;
+CREATE TABLE `global_cron_log` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `job_name` varchar(255) NOT NULL,
+  `event_type` varchar(50) NOT NULL,
+  `event_details` text,
+  `event_time` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+
+DROP TABLE IF EXISTS `global_permissions`;
+CREATE TABLE `global_permissions` (
   `ID` bigint NOT NULL AUTO_INCREMENT,
   `created` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -15,7 +188,22 @@ CREATE TABLE `permissions` (
   `value` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
   PRIMARY KEY (`ID`),
   UNIQUE KEY `uk_settings_key` (`key`)
-) ENGINE=InnoDB AUTO_INCREMENT=47 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+
+DROP TABLE IF EXISTS `global_settings`;
+CREATE TABLE `global_settings` (
+  `ID` bigint NOT NULL AUTO_INCREMENT,
+  `version` bigint DEFAULT NULL,
+  `autoload` tinyint NOT NULL DEFAULT '0' COMMENT 'If this item should autoload with app init',
+  `created` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `key` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `value` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
+  PRIMARY KEY (`ID`),
+  UNIQUE KEY `uk_settings_key` (`key`),
+  KEY `idx_settings_autoload` (`autoload`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 
 DROP TABLE IF EXISTS `rp_channels`;
@@ -34,7 +222,7 @@ CREATE TABLE `rp_channels` (
   PRIMARY KEY (`ID`),
   UNIQUE KEY `guild_id_description` (`guild_id`,`description`),
   KEY `idx_channel_parent` (`parent_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=18 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 
 DROP TABLE IF EXISTS `rp_characters`;
@@ -64,7 +252,7 @@ CREATE TABLE `rp_characters` (
   UNIQUE KEY `uk_users_username_version` (`username`,`version`),
   KEY `fk_users_guild` (`guild_id`),
   CONSTRAINT `fk_users_guild` FOREIGN KEY (`guild_id`) REFERENCES `rp_guilds` (`ID`) ON DELETE SET NULL
-) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 
 DROP TABLE IF EXISTS `rp_guilds`;
@@ -77,7 +265,7 @@ CREATE TABLE `rp_guilds` (
   `name` varchar(255) NOT NULL,
   `order` int NOT NULL DEFAULT '0' COMMENT 'Order position',
   PRIMARY KEY (`ID`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 
 DROP TABLE IF EXISTS `rp_messages`;
@@ -100,22 +288,7 @@ CREATE TABLE `rp_messages` (
   FULLTEXT KEY `ft_messages_content` (`content`),
   CONSTRAINT `fk_messages_author` FOREIGN KEY (`author_id`) REFERENCES `rp_characters` (`ID`) ON DELETE SET NULL,
   CONSTRAINT `fk_messages_guild` FOREIGN KEY (`guild_id`) REFERENCES `rp_guilds` (`ID`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
-
-DROP TABLE IF EXISTS `settings`;
-CREATE TABLE `settings` (
-  `ID` bigint NOT NULL AUTO_INCREMENT,
-  `version` bigint DEFAULT NULL,
-  `autoload` tinyint NOT NULL DEFAULT '0' COMMENT 'If this item should autoload with app init',
-  `created` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  `key` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-  `value` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
-  PRIMARY KEY (`ID`),
-  UNIQUE KEY `uk_settings_key` (`key`),
-  KEY `idx_settings_autoload` (`autoload`)
-) ENGINE=InnoDB AUTO_INCREMENT=21 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 
 DROP TABLE IF EXISTS `user_devices`;
@@ -136,7 +309,7 @@ CREATE TABLE `user_devices` (
   KEY `ip` (`ip`),
   KEY `user_id` (`user_id`),
   CONSTRAINT `user_devices_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=111 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Stores device information for users';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Stores device information for users';
 
 
 DROP TABLE IF EXISTS `user_notifications`;
@@ -150,7 +323,24 @@ CREATE TABLE `user_notifications` (
   PRIMARY KEY (`id`),
   KEY `idx_user_notifications_user` (`user_id`),
   CONSTRAINT `fk_user_notifications_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Manages notifications sent to users.';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Manages notifications sent to users.';
+
+
+DROP TABLE IF EXISTS `user_organization`;
+CREATE TABLE `user_organization` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT 'Primary Key for companies table',
+  `owner_id` bigint NOT NULL COMMENT 'FK referencing users(id); owner of this company',
+  `parent_org` bigint DEFAULT NULL COMMENT 'Optional Parent organization',
+  `name` varchar(255) NOT NULL COMMENT 'Company name',
+  `description` text COMMENT 'Description or summary of the company',
+  `vat_id` varchar(50) DEFAULT NULL COMMENT 'Company VAT ID if applicable',
+  `created` datetime DEFAULT CURRENT_TIMESTAMP COMMENT 'Timestamp when the company record was created',
+  `updated` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Timestamp when the company record was last updated',
+  `deleted_at` datetime DEFAULT NULL COMMENT 'Soft delete timestamp for the company record',
+  PRIMARY KEY (`id`),
+  KEY `idx_companies_user` (`owner_id`),
+  CONSTRAINT `fk_companies_user` FOREIGN KEY (`owner_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Stores company details linked to user accounts.';
 
 
 DROP TABLE IF EXISTS `user_permissions`;
@@ -164,14 +354,14 @@ CREATE TABLE `user_permissions` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `unique_site_setting` (`user_id`,`name`),
   KEY `idx_site_settings_site` (`user_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Stores permissions for users.';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Stores permissions for users.';
 
 
 DROP TABLE IF EXISTS `user_settings`;
 CREATE TABLE `user_settings` (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT 'Primary Key for site_settings table',
   `user_id` bigint NOT NULL COMMENT 'FK referencing sites(id)',
-  `key` varchar(255) NOT NULL COMMENT 'Setting name/key',
+  `key` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT 'Setting name/key',
   `value` text COMMENT 'Value/content of the setting',
   `created` datetime DEFAULT CURRENT_TIMESTAMP COMMENT 'Timestamp when the setting record was created',
   `updated` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Timestamp when the setting record was last updated',
@@ -179,7 +369,7 @@ CREATE TABLE `user_settings` (
   UNIQUE KEY `unique_site_setting` (`user_id`,`key`),
   KEY `idx_site_settings_site` (`user_id`),
   CONSTRAINT `user_settings_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Stores site-specific settings and preferences.';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Stores site-specific settings and preferences.';
 
 
 DROP TABLE IF EXISTS `user_tokens_access`;
@@ -195,7 +385,7 @@ CREATE TABLE `user_tokens_access` (
   KEY `refresh_token_id` (`refresh_token_id`),
   CONSTRAINT `user_tokens_access_ibfk_5` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT,
   CONSTRAINT `user_tokens_access_ibfk_6` FOREIGN KEY (`refresh_token_id`) REFERENCES `user_tokens_refresh` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=250 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Stores short-lived access tokens for user authentication.';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Stores short-lived access tokens for user authentication.';
 
 
 DROP TABLE IF EXISTS `user_tokens_blacklist`;
@@ -212,7 +402,7 @@ CREATE TABLE `user_tokens_blacklist` (
   UNIQUE KEY `token` (`token`),
   KEY `user_id` (`user_id`),
   CONSTRAINT `user_tokens_blacklist_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Stores blacklisted tokens for user authentication.';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Stores blacklisted tokens for user authentication.';
 
 
 DROP TABLE IF EXISTS `user_tokens_refresh`;
@@ -231,7 +421,7 @@ CREATE TABLE `user_tokens_refresh` (
   KEY `device_id` (`device_id`),
   CONSTRAINT `user_tokens_refresh_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT,
   CONSTRAINT `user_tokens_refresh_ibfk_3` FOREIGN KEY (`device_id`) REFERENCES `user_devices` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=207 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Stores long-term refresh tokens for user authentication.';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Stores long-term refresh tokens for user authentication.';
 
 
 DROP TABLE IF EXISTS `user_tokens_single`;
@@ -275,5 +465,7 @@ CREATE TABLE `users` (
   UNIQUE KEY `unique_username` (`username`),
   UNIQUE KEY `unique_email` (`email`),
   KEY `idx_user_email` (`email`)
-) ENGINE=InnoDB AUTO_INCREMENT=99 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Stores user account information and credentials.';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Stores user account information and credentials.';
 
+
+-- 2025-12-31 05:36:28 UTC

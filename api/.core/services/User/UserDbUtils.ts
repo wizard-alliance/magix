@@ -15,7 +15,5 @@ export const parseUtcDateTimeMs = (value: Date | string | number): number => {
 
 export const extractInsertId = (result: any): number | null => {
 	const raw = result?.insertId ?? result?.insertedId
-	if (typeof raw === "bigint") return Number(raw)
-	if (typeof raw === "number") return raw
-	return null
+	return raw ? Number(raw) : null
 }

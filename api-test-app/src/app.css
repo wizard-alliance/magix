@@ -88,6 +88,12 @@ header {
 	padding: 0 20px;
 	background: var(--bg);
 	border-bottom: 1px solid var(--border);
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	height: 80px;
+	z-index: 100;
 }
 
 .logo {
@@ -110,8 +116,12 @@ header {
 	flex-direction: column;
 	gap: 16px;
 	height: calc(100vh - 80px);
+	position: fixed;
+	top: 80px;
+	width: 580px;
 	overflow: hidden;
 	overflow-y: auto;
+	z-index: 50;
 }
 
 .sidebar .card:first-child {

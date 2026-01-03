@@ -1,14 +1,14 @@
 import type { Request } from "express"
 import { CrudMethods } from "../services/CrudMethods.js"
 
-import type { SettingDBRow } from "../schema/Database.js"
+import type { GlobalSettingDBRow } from "../schema/Database.js"
 import type { Settings } from "../schema/DomainShapes.js"
 
 export class SettingsRoutes {
-	private readonly tableName: string = "settings"
+	private readonly tableName: string = "global_settings"
 	public readonly routeName = "setting"
 	public readonly version = api.Config("API_VERSION") || '1'
-	private readonly CRUD = new CrudMethods<Settings, SettingDBRow>()
+	private readonly CRUD = new CrudMethods<Settings, GlobalSettingDBRow>()
 	
 	public routes = async () => {
 		const options = { protected: false, register: false, tableName: this.tableName }

@@ -18,7 +18,7 @@ export class PermissionRoute {
 	}
 
 	listDefined = async () => {
-		const perms = await api.User.Auth.permissions.listDefined()
+		const perms = await api.User.Permissions.listDefined()
 		return { permissions: perms }
 	}
 
@@ -28,7 +28,7 @@ export class PermissionRoute {
 		const value = $.body.value ?? null
 		if (!key) return { error: "Permission key required", code: 400 }
 
-		const created = await api.User.Auth.permissions.define(key, value)
+		const created = await api.User.Permissions.define(key, value)
 		return created
 			? { success: true, key }
 			: { error: "Permission already exists", code: 409 }
@@ -41,7 +41,7 @@ export class PermissionRoute {
 		const value = $.body.value ?? null
 		if (!id && !key) return { error: "Permission key or id required", code: 400 }
 
-		const updated = await api.User.Auth.permissions.update(id ?? key, value)
+		const updated = await api.User.Permissions.update(id ?? key, value)
 		return updated
 			? { success: true }
 			: { error: "Permission not found", code: 404 }
@@ -53,7 +53,7 @@ export class PermissionRoute {
 		const key = $.body.key ?? $.body.name ?? $.params.key
 		if (!id && !key) return { error: "Permission key or id required", code: 400 }
 
-		const deleted = await api.User.Auth.permissions.undefine(id ?? key)
+		const deleted = await api.User.Permissions.undefine(id ?? key)
 		return deleted
 			? { success: true }
 			: { error: "Cannot remove implicit/bypass permission", code: 400 }
@@ -63,7 +63,7 @@ export class PermissionRoute {
 		const userId = Number(req.params.userId)
 		if (!userId) return { error: "User ID required", code: 400 }
 
-		const perms = await api.User.Auth.permissions.list(userId)
+		const perms = await api.User.Permissions.list(userId)
 		return { userId, permissions: perms }
 	}
 
@@ -74,7 +74,7 @@ export class PermissionRoute {
 		if (!userId) return { error: "User ID required", code: 400 }
 		if (!perms) return { error: "Permission(s) required", code: 400 }
 
-		const result = await api.User.Auth.permissions.grant(userId, perms)
+		const result = await api.User.Permissions.grant(userId, perms)
 		return result
 	}
 
@@ -85,7 +85,7 @@ export class PermissionRoute {
 		if (!userId) return { error: "User ID required", code: 400 }
 		if (!perms) return { error: "Permission(s) required", code: 400 }
 
-		const revoked = await api.User.Auth.permissions.revoke(userId, perms)
+		const revoked = await api.User.Permissions.revoke(userId, perms)
 		return { success: revoked }
 	}
 }

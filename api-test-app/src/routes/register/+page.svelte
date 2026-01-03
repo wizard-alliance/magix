@@ -7,6 +7,14 @@
 	let tosAccepted = true
 	let loading = false
 
+	const randomize = () => {
+		const rand = Math.random().toString(36).slice(2, 8)
+		username = `user_${rand}`
+		email = `${username}@example.com`
+		password = Math.random().toString(36).slice(2, 14)
+		tosAccepted = true
+	}
+
 	const handleRegister = async () => {
 		if (!browser) return
 		loading = true
@@ -23,6 +31,9 @@
 <section class="panel">
 	<h2>Register</h2>
 	<form on:submit|preventDefault={handleRegister}>
+		<div style="margin-bottom: 1rem;">
+			<button type="button" on:click={randomize}>🎲 Randomize Fields</button>
+		</div>
 		<div class="field">
 			<label for="email">Email</label>
 			<input id="email" type="email" bind:value={email} autocomplete="email" />

@@ -29,7 +29,7 @@ export const requireAuth = (options: GuardOptions = {}): RequestHandler => {
 		}
 
 		if (options.perms && options.perms.length) {
-			const has = await api.User.Auth.permissions.has(validation.user.id!, options.perms)
+			const has = await api.User.Permissions.has(validation.user.id!, options.perms)
 			if (!has) {
 				return api.Router.error({ error: "Forbidden: Insufficient permissions", code: 403 }, res, req, $)
 			}

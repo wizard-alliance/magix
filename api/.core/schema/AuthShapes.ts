@@ -1,6 +1,7 @@
 
-import type { UserDBRow } from "./Database.js"
-import { User } from "./DomainShapes.js"
+// import type { UserDBRow } from "./Database.js"
+// import { User } from "./DomainShapes.js"
+import type { UserFull } from "./DomainShapes.js"
 
 /**
  * TYPES: VENDOR AUTH

@@ -1,4 +1,123 @@
-export type SettingDBRow = {
+// Billing tables
+export type BillingCustomerDBRow = {
+	id?: number
+	user_id: number | null
+	company_id: number | null
+	is_guest: number
+	billing_name: string | null
+	billing_email: string | null
+	billing_phone: string | null
+	billing_address_line1: string | null
+	billing_address_line2: string | null
+	billing_city: string | null
+	billing_state: string | null
+	billing_zip: string | null
+	billing_country: string | null
+	billing_latitude: number | null
+	billing_longitude: number | null
+	vat_id: string | null
+	created: string | null
+	updated: string | null
+	deleted_at: string | null
+}
+
+export type BillingInvoiceDBRow = {
+	id?: number
+	order_id: number
+	customer_id: number
+	billing_info_snapshot: string | null
+	billing_order_snapshot: string | null
+	snapshot_version: string
+	pdf_url: string | null
+	created: string | null
+}
+
+export type BillingOrderDBRow = {
+	id?: number
+	customer_id: number
+	type: 'subscription' | 'purchase' | 'refund' | 'adjustment' | 'trial'
+	subscription_id: number | null
+	provider_id: number
+	provider_order_id: string
+	amount: number
+	currency: string
+	status: 'pending' | 'paid' | 'failed' | 'refunded' | 'canceled'
+	payment_method: string | null
+	paid_at: string | null
+	created: string | null
+	updated: string | null
+	deleted_at: string | null
+	parent_order_id: number | null
+	idempotency_key: string | null
+}
+
+export type BillingPaymentProviderDBRow = {
+	id?: number
+	name: string
+	config: string | null
+	created: string | null
+	updated: string | null
+	deleted_at: string | null
+}
+
+export type BillingPlanFeatureDBRow = {
+	id?: number
+	plan_id: number
+	feature_name: string
+	description: string | null
+	created: string | null
+}
+
+export type BillingPlanDBRow = {
+	id?: number
+	name: string
+	provider_price_id: string | null
+	price: number
+	currency: string
+	description: string | null
+	is_active: number
+	created: string | null
+	updated: string | null
+	deleted_at: string | null
+}
+
+export type BillingSubscriptionDBRow = {
+	id?: number
+	customer_id: number
+	plan_id: number
+	provider_subscription_id: string
+	current_period_start: string
+	current_period_end: string
+	cancel_at_period_end: number
+	canceled_at: string | null
+	created: string | null
+	updated: string | null
+	deleted_at: string | null
+	status: 'active' | 'canceled' | 'trial'
+}
+
+// Global tables
+export type GlobalAuditLogDBRow = {
+	id?: number
+	user_id: number
+	action: string
+	target_table: string
+	target_id: number
+	created: string | null
+	deleted_at: string | null
+	ip_address: string | null
+	details: string | null
+}
+
+export type GlobalCronLogDBRow = {
+	id?: number
+	job_name: string
+	event_type: string
+	event_details: string | null
+	event_time: string | null
+}
+
+export type GlobalSettingDBRow = {
 	ID?: number
 	version?: number
 	autoload: number
@@ -8,7 +127,7 @@ export type SettingDBRow = {
 	value: string | null
 }
 
-export type PermissionDBRow = {
+export type GlobalPermissionDBRow = {
 	ID?: number
 	created?: string
 	updated?: string
@@ -16,6 +135,7 @@ export type PermissionDBRow = {
 	value: string | null
 }
 
+// User tables
 export type UserDeviceDBRow = {
 	id?: number
 	user_id: number
@@ -36,6 +156,18 @@ export type UserNotificationDBRow = {
 	message: string
 	read: number
 	created: string | null
+}
+
+export type UserOrganizationDBRow = {
+	id?: number
+	owner_id: number
+	parent_org: number | null
+	name: string
+	description: string | null
+	vat_id: string | null
+	created: string | null
+	updated: string | null
+	deleted_at: string | null
 }
 
 export type UserPermissionDBRow = {
@@ -97,11 +229,24 @@ export type UserTokenSingleDBRow = {
 }
 
 export type DatabaseSchema = {
-	settings: SettingDBRow
-	permissions: PermissionDBRow
+	// Billing tables
+	billing_customers: BillingCustomerDBRow
+	billing_invoices: BillingInvoiceDBRow
+	billing_orders: BillingOrderDBRow
+	billing_payment_providers: BillingPaymentProviderDBRow
+	billing_plan_features: BillingPlanFeatureDBRow
+	billing_plans: BillingPlanDBRow
+	billing_subscriptions: BillingSubscriptionDBRow
+	// Global tables
+	global_audit_logs: GlobalAuditLogDBRow
+	global_cron_log: GlobalCronLogDBRow
+	global_permissions: GlobalPermissionDBRow
+	global_settings: GlobalSettingDBRow
+	// User tables
 	users: UserDBRow
 	user_devices: UserDeviceDBRow
 	user_notifications: UserNotificationDBRow
+	user_organization: UserOrganizationDBRow
 	user_permissions: UserPermissionDBRow
 	user_settings: UserSettingDBRow
 	user_tokens_access: UserTokenAccessDBRow
@@ -140,8 +285,136 @@ export type UserDBRow = {
 
 
 export const schemaColumns = {
-	settings: {
+	// Billing tables
+	billing_customers: {
+		id: 'number',
+		user_id: 'number',
+		company_id: 'number',
+		is_guest: 'number',
+		billing_name: 'string',
+		billing_email: 'string',
+		billing_phone: 'string',
+		billing_address_line1: 'string',
+		billing_address_line2: 'string',
+		billing_city: 'string',
+		billing_state: 'string',
+		billing_zip: 'string',
+		billing_country: 'string',
+		billing_latitude: 'number',
+		billing_longitude: 'number',
+		vat_id: 'string',
+		created: 'date',
+		updated: 'date',
+		deleted_at: 'date'
+	},
+
+	billing_invoices: {
+		id: 'number',
+		order_id: 'number',
+		customer_id: 'number',
+		billing_info_snapshot: 'string',
+		billing_order_snapshot: 'string',
+		snapshot_version: 'string',
+		pdf_url: 'string',
+		created: 'date'
+	},
+
+	billing_orders: {
+		id: 'number',
+		customer_id: 'number',
+		type: 'string',
+		subscription_id: 'number',
+		provider_id: 'number',
+		provider_order_id: 'string',
+		amount: 'number',
+		currency: 'string',
+		status: 'string',
+		payment_method: 'string',
+		paid_at: 'date',
+		created: 'date',
+		updated: 'date',
+		deleted_at: 'date',
+		parent_order_id: 'number',
+		idempotency_key: 'string'
+	},
+
+	billing_payment_providers: {
+		id: 'number',
+		name: 'string',
+		config: 'string',
+		created: 'date',
+		updated: 'date',
+		deleted_at: 'date'
+	},
+
+	billing_plan_features: {
+		id: 'number',
+		plan_id: 'number',
+		feature_name: 'string',
+		description: 'string',
+		created: 'date'
+	},
+
+	billing_plans: {
+		id: 'number',
+		name: 'string',
+		provider_price_id: 'string',
+		price: 'number',
+		currency: 'string',
+		description: 'string',
+		is_active: 'number',
+		created: 'date',
+		updated: 'date',
+		deleted_at: 'date'
+	},
+
+	billing_subscriptions: {
+		id: 'number',
+		customer_id: 'number',
+		plan_id: 'number',
+		provider_subscription_id: 'string',
+		current_period_start: 'date',
+		current_period_end: 'date',
+		cancel_at_period_end: 'number',
+		canceled_at: 'date',
+		created: 'date',
+		updated: 'date',
+		deleted_at: 'date',
+		status: 'string'
+	},
+
+	// Global tables
+	global_audit_logs: {
+		id: 'number',
+		user_id: 'number',
+		action: 'string',
+		target_table: 'string',
+		target_id: 'number',
+		created: 'date',
+		deleted_at: 'date',
+		ip_address: 'string',
+		details: 'string'
+	},
+
+	global_cron_log: {
+		id: 'number',
+		job_name: 'string',
+		event_type: 'string',
+		event_details: 'string',
+		event_time: 'date'
+	},
+
+	global_permissions: {
 		ID: 'number',
+		created: 'date',
+		updated: 'date',
+		key: 'string',
+		value: 'string'
+	},
+
+	global_settings: {
+		ID: 'number',
+		version: 'number',
 		autoload: 'number',
 		created: 'date',
 		updated: 'date',
@@ -149,14 +422,7 @@ export const schemaColumns = {
 		value: 'string'
 	},
 
-	permissions: {
-		ID: 'number',
-		created: 'date',
-		updated: 'date',
-		key: 'string',
-		value: 'string'
-	},
-
+	// User tables
 	users: {
 		id: 'number',
 		username: 'string',
@@ -201,6 +467,18 @@ export const schemaColumns = {
 		message: 'string',
 		read: 'number',
 		created: 'date'
+	},
+
+	user_organization: {
+		id: 'number',
+		owner_id: 'number',
+		parent_org: 'number',
+		name: 'string',
+		description: 'string',
+		vat_id: 'string',
+		created: 'date',
+		updated: 'date',
+		deleted_at: 'date'
 	},
 
 	user_permissions: {
@@ -274,11 +552,24 @@ const createColumnSet = <T extends Record<string, ColumnType>>(columns: T) => {
 }
 
 export const tableColumnSets: ColumnSetMap = {
-	settings: createColumnSet(schemaColumns.settings),
-	permissions: createColumnSet(schemaColumns.permissions),
+	// Billing tables
+	billing_customers: createColumnSet(schemaColumns.billing_customers),
+	billing_invoices: createColumnSet(schemaColumns.billing_invoices),
+	billing_orders: createColumnSet(schemaColumns.billing_orders),
+	billing_payment_providers: createColumnSet(schemaColumns.billing_payment_providers),
+	billing_plan_features: createColumnSet(schemaColumns.billing_plan_features),
+	billing_plans: createColumnSet(schemaColumns.billing_plans),
+	billing_subscriptions: createColumnSet(schemaColumns.billing_subscriptions),
+	// Global tables
+	global_audit_logs: createColumnSet(schemaColumns.global_audit_logs),
+	global_cron_log: createColumnSet(schemaColumns.global_cron_log),
+	global_permissions: createColumnSet(schemaColumns.global_permissions),
+	global_settings: createColumnSet(schemaColumns.global_settings),
+	// User tables
 	users: createColumnSet(schemaColumns.users),
 	user_devices: createColumnSet(schemaColumns.user_devices),
 	user_notifications: createColumnSet(schemaColumns.user_notifications),
+	user_organization: createColumnSet(schemaColumns.user_organization),
 	user_permissions: createColumnSet(schemaColumns.user_permissions),
 	user_settings: createColumnSet(schemaColumns.user_settings),
 	user_tokens_access: createColumnSet(schemaColumns.user_tokens_access),
@@ -288,11 +579,24 @@ export const tableColumnSets: ColumnSetMap = {
 }
 
 export type TableMap = {
-	settings: string
-	permissions: string
+	// Billing tables
+	billing_customers: string
+	billing_invoices: string
+	billing_orders: string
+	billing_payment_providers: string
+	billing_plan_features: string
+	billing_plans: string
+	billing_subscriptions: string
+	// Global tables
+	global_audit_logs: string
+	global_cron_log: string
+	global_permissions: string
+	global_settings: string
+	// User tables
 	users: string
 	user_devices: string
 	user_notifications: string
+	user_organization: string
 	user_permissions: string
 	user_settings: string
 	user_tokens_access: string
@@ -303,11 +607,24 @@ export type TableMap = {
 
 
 export const TableMap: TableMap = {
-	settings: "settings",
-	permissions: "permissions",
+	// Billing tables
+	billing_customers: "billing_customers",
+	billing_invoices: "billing_invoices",
+	billing_orders: "billing_orders",
+	billing_payment_providers: "billing_payment_providers",
+	billing_plan_features: "billing_plan_features",
+	billing_plans: "billing_plans",
+	billing_subscriptions: "billing_subscriptions",
+	// Global tables
+	global_audit_logs: "global_audit_logs",
+	global_cron_log: "global_cron_log",
+	global_permissions: "global_permissions",
+	global_settings: "global_settings",
+	// User tables
 	users: "users",
 	user_devices: "user_devices",
 	user_notifications: "user_notifications",
+	user_organization: "user_organization",
 	user_permissions: "user_permissions",
 	user_settings: "user_settings",
 	user_tokens_access: "user_tokens_access",

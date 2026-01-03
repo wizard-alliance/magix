@@ -19,7 +19,7 @@ export class PermissionService {
 	getDefined = async (): Promise<Set<string>> => {
 		if (this.definedPermsCache) return this.definedPermsCache
 		const rows = await this.db
-			.selectFrom("permissions")
+			.selectFrom("global_permissions")
 			.select(["key"])
 			.execute()
 		this.definedPermsCache = new Set([...this.implicitPerms, ...this.bypassPerms, ...rows.map((r) => r.key)])
@@ -29,7 +29,7 @@ export class PermissionService {
 	// List all defined permissions with metadata
 	listDefined = async (): Promise<Array<{ key: string; value: string | null }>> => {
 		const rows = await this.db
-			.selectFrom("permissions")
+			.selectFrom("global_permissions")
 			.select(["key", "value"])
 			.execute()
 		return rows
@@ -39,14 +39,14 @@ export class PermissionService {
 	define = async (key: string, value?: string): Promise<boolean> => {
 		const normalized = this.normalize(key)
 		const existing = await this.db
-			.selectFrom("permissions")
+			.selectFrom("global_permissions")
 			.select(["ID"])
 			.where("key", "=", normalized)
 			.executeTakeFirst()
 		if (existing) return false
 
 		await this.db
-			.insertInto("permissions")
+			.insertInto("global_permissions")
 			.values({ key: normalized, value: value ?? null })
 			.execute()
 		this.definedPermsCache = null
@@ -59,7 +59,7 @@ export class PermissionService {
 		if (!key) return false
 		const normalized = this.normalize(key)
 		const result = await this.db
-			.updateTable("permissions")
+			.updateTable("global_permissions")
 			.set({ value })
 			.where("key", "=", normalized)
 			.executeTakeFirst()
@@ -72,14 +72,14 @@ export class PermissionService {
 		if (!key) return false
 		const normalized = this.normalize(key)
 		if (this.implicitPerms.has(normalized) || this.bypassPerms.has(normalized)) return false
-		await this.db.deleteFrom("permissions").where("key", "=", normalized).execute()
+		await this.db.deleteFrom("global_permissions").where("key", "=", normalized).execute()
 		this.definedPermsCache = null
 		return true
 	}
 
 	// Get permission key by ID
 	private getKeyById = async (id: number): Promise<string | null> => {
-		const row = await this.db.selectFrom("permissions").select("key").where("ID", "=", id).executeTakeFirst()
+		const row = await this.db.selectFrom("global_permissions").select("key").where("ID", "=", id).executeTakeFirst()
 		return row?.key ?? null
 	}
 

@@ -30,7 +30,6 @@ export class AuthRoute {
 
 		// User routes
 		api.Router.set(["POST"], `${this.userRoute}/me`, this.me, this.userOptions)
-		api.Router.set(["POST"], `${this.userRoute}/profile`, this.updateProfile, this.userOptions)
 
 		// CRUD routes
 		api.Router.set("GET", `${this.userRoute}/user`, this.get, this.adminOptions)
@@ -62,12 +61,12 @@ export class AuthRoute {
 		const p = api.Router.getParams(req, this.tableName)
 		const id = Number(p.params.id ?? p.query.id)
 		if (!id) return { code: 422, error: "User ID required" }
-		return await api.User.Auth.get(id) ?? { code: 404, error: "User not found" }
+		return await api.User.Repo.get(id) ?? { code: 404, error: "User not found" }
 	}
 
 	getMany = async ($: any, req: Request) => {
 		const p = api.Router.getParams(req, this.tableName)
-		return await api.User.Auth.list({ limit: Number(p.query.limit) || 100, offset: Number(p.query.offset) || 0 })
+		return await api.User.Repo.list({ limit: Number(p.query.limit) || 100, offset: Number(p.query.offset) || 0 })
 	}
 
 	update = async ($: any, req: Request) => {
@@ -79,12 +78,12 @@ export class AuthRoute {
 		for (const [k, v] of Object.entries(p.body)) {
 			if (k !== "id" && v !== "" && v !== null && v !== undefined) data[k] = v
 		}
-		return await api.User.Auth.update(id, data)
+		return await api.User.Repo.update(id, data)
 	}
 
 	create = async ($: any, req: Request) => {
 		const p = api.Router.getParams(req, this.tableName)
-		return await api.User.Auth.create({
+		return await api.User.Repo.create({
 			email: p.body.email,
 			username: p.body.username,
 			password: p.body.password,
@@ -97,7 +96,7 @@ export class AuthRoute {
 		const p = api.Router.getParams(req, this.tableName)
 		const id = Number(p.params.id ?? p.query.id ?? p.body.id)
 		if (!id) return { code: 422, error: "User ID required" }
-		return await api.User.Auth.delete(id)
+		return await api.User.Repo.delete(id)
 	}
 
 	login = async ($: $, req: Request, res: Response) => {
@@ -129,7 +128,7 @@ export class AuthRoute {
 	me = async ($: $, req: Request, res: Response) => {
 		$ = api.Router.getParams(req)
 		const token = this.parseAccessToken($.headers as Record<string, any>)
-		return await api.User.Auth.me(token ?? "")
+		return await api.User.Repo.me(token ?? "")
 	}
 
 	refresh = async ($: $, req: Request, res: Response) => {
@@ -148,7 +147,7 @@ export class AuthRoute {
 	logoutAllDevices = async ($: $, req: Request, res: Response) => {
 		$ = api.Router.getParams(req)
 		const token = this.parseAccessToken($.headers as Record<string, any>)
-		const me = token ? await api.User.Auth.me(token) : null
+		const me = token ? await api.User.Repo.me(token) : null
 		const userId = me && "id" in me ? me.id : undefined
 		return userId ? await api.User.Auth.logoutAllDevices(userId) : { error: "User not resolved", code: 400 }
 	}
@@ -161,35 +160,20 @@ export class AuthRoute {
 	changePassword = async ($: $, req: Request, res: Response) => {
 		$ = api.Router.getParams(req)
 		const token = this.parseAccessToken($.headers as Record<string, any>)
-		const me = token ? await api.User.Auth.me(token) : null
+		const me = token ? await api.User.Repo.me(token) : null
 		if (!me || "error" in me) return me ?? { error: "Unauthorized", code: 401 }
 
-		return await api.User.Auth.changePassword({
-			userId: me.id,
-			currentPassword: $.body.current_password ?? "",
-			newPassword: $.body.new_password ?? "",
-			logoutAll: $.body.logout_all ?? true,
-		})
-	}
-
-	updateProfile = async ($: $, req: Request, res: Response) => {
-		$ = api.Router.getParams(req)
-		const token = this.parseAccessToken($.headers as Record<string, any>)
-		const me = token ? await api.User.Auth.me(token) : null
-		if (!me || "error" in me) return me ?? { error: "Unauthorized", code: 401 }
-
-		return await api.User.Auth.updateProfile(me.id, {
-			first_name: $.body.first_name ?? null,
-			last_name: $.body.last_name ?? null,
-			phone: $.body.phone ?? null,
-			company: $.body.company ?? null,
-			address: $.body.address ?? null,
-		})
+		return await api.User.Repo.changePassword(
+			me.id,
+			$.body.current_password ?? "",
+			$.body.new_password ?? "",
+			$.body.logout_all ?? true,
+		)
 	}
 
 	vendorInfo = async ($: $, req: Request, res: Response) => {
 		$ = api.Router.getParams(req)
-		const vendor = api.User.Auth.vendors.get($.params?.vendor as string)
+		const vendor = api.User.Vendors.get($.params?.vendor as string)
 		return vendor ? { vendor: vendor.info() } : { error: "Unknown vendor", code: 404 }
 	}
 
@@ -202,12 +186,12 @@ export class AuthRoute {
 			return { error: "Unknown vendor", code: 404 }
 		}
 
-		const vendor = api.User.Auth.vendors.get(vendorName)
+		const vendor = api.User.Vendors.get(vendorName)
 		if (!vendor || !vendor.isEnabled()) {
 			return { error: "Vendor not enabled", code: 400 }
 		}
 
-		const state = api.User.Auth.vendors.encodeState({
+		const state = api.User.Vendors.encodeState({
 			returnUrl,
 			csrf: crypto.randomUUID(),
 			vendor: vendorName,
@@ -225,7 +209,7 @@ export class AuthRoute {
 		const stateParam = req.query.state as string | undefined
 		const error = req.query.error as string | undefined
 
-		const state = stateParam ? api.User.Auth.vendors.decodeState(stateParam) : null
+		const state = stateParam ? api.User.Vendors.decodeState(stateParam) : null
 		const returnUrl = state?.returnUrl || "/"
 
 		const buildRedirect = (base: string, params: Record<string, string>) => {
@@ -247,7 +231,7 @@ export class AuthRoute {
 			return redirectError("invalid_request")
 		}
 
-		const vendor = api.User.Auth.vendors.get(vendorName)
+		const vendor = api.User.Vendors.get(vendorName)
 		if (!vendor || !vendor.isEnabled()) {
 			return redirectError("vendor_disabled")
 		}
