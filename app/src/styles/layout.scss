@@ -1,0 +1,141 @@
+.scrollable {
+	overflow-y: auto;
+}
+
+.scrollable-hidden {
+	overflow-y: auto;
+	scrollbar-width: none;
+	-ms-overflow-style: none;
+
+	&::-webkit-scrollbar {
+		display: none;
+	}
+}
+
+.app>header {
+	position: absolute;
+	height: var(--header-height);
+	width: 100%;
+
+	border-bottom: var(--border);
+	background-color: var(--primary-color);
+	z-index: 100;
+	
+	.logo {
+		text-decoration: none;
+		--size: calc(var(--gutter) * 11);
+
+		flex-basis: var(--size);
+		max-width: var(--size);
+		width: var(--size);
+
+		display: flex;
+		text-align: center;
+		align-content: center;
+		justify-content: center;
+		align-self: center;
+
+		.logo-graphic {
+			text-decoration: none;
+			font-weight: 600;
+			color: var(--primary-color);
+			background-size: contain;
+			background-repeat: no-repeat;
+			background-color: var(--gray);
+			border-radius: var(--border-radius);
+			font-size: 0.8rem;
+			width: 40px;
+			height: 20px;
+		}
+	}
+
+	nav {
+		display: flex;
+		align-items: center;
+		gap: calc(var(--gutter) * 1);
+
+		a {
+			display: inline-block;
+
+			text-decoration: none;
+			color: var(--text-color-secondary);
+			font-weight: 500;
+			font-size: 0.9rem;
+
+			padding: 6px 12px;
+			background: transparent;
+			border-radius: var(--border-radius);
+			border: 1.5px solid transparent;
+
+			&.active {
+				color: var(--text-color);
+				background: var(--secondary-color);
+				border-color: transparent;
+			}
+
+			&:not(.active):hover {
+				color: var(--text-color);
+				border-color: var(--tertiary-color);
+			}
+		}
+	}
+}
+
+.sidebar-1 {
+	position: absolute;
+	width: var(--sidebar-1-width);
+	top: var(--header-height);
+	left: 0;
+	bottom: 0;
+	background-color: var(--primary-color);
+	border-right: var(--border);
+	z-index: 100;
+
+	.list {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		padding: calc(var(--gutter) * 2) 0;
+		gap: calc(var(--gutter) * 2);
+	}
+}
+
+.sidebar-2 {
+	position: absolute;
+	width: var(--sidebar-2-width);
+	top: var(--header-height);
+	bottom: 0;
+	right: 0;
+	background-color: var(--primary-color);
+	border-left: var(--border);
+	z-index: 20;
+}
+
+.app > .main {
+	position: absolute;
+	width: var(--main-width);
+	top: var(--header-height);
+	left: var(--sidebar-1-width);
+	bottom: 0;
+	right: 0;
+
+	z-index: 50;
+
+	display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    flex-direction: row;
+    align-content: flex-start;
+	
+	overflow: hidden;
+	overflow-y: auto;
+}
+
+// Set animation speed for layout changes
+.app {
+	transition: 
+		width var(--animationDefaultSpeed) var(--animationEasing), 
+		height var(--animationDefaultSpeed) var(--animationEasing), 
+		transform var(--animationDefaultSpeed) var(--animationEasing);
+}

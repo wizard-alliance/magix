@@ -16,7 +16,7 @@ export class BillingRoute {
 		api.Router.set("GET", `${this.route}/customer/portal`, this.getCustomerPortal, opts)
 
 		// Plans
-		api.Router.set("GET", `${this.route}/plan`, this.getPlan)
+		api.Router.set("GET", `${this.route}/product`, this.getProduct)
 		api.Router.set("GET", `${this.route}/products`, this.getProducts)
 		api.Router.set("POST", `${this.route}/product`, this.createProduct, adminOpts)
 		api.Router.set("PUT", `${this.route}/product`, this.updateProduct, adminOpts)

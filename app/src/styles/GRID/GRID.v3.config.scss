@@ -1,0 +1,23 @@
+/*
+* GRID 
+* @version: 3.1
+* @description: Lightweight Flex-Grid system
+* @author: Magic
+*/
+
+$coord: "top", "left", "bottom", "right";
+
+$columns: 12;
+
+$sizes: (
+	"xs": 0rem,
+	"sm": 30rem,
+	"md": 40rem,
+	"lg": 64rem,
+	"xl": 80rem,
+);
+
+:root {
+	--gutter: 1.5rem;
+	--container: 1400px;
+}

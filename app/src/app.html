@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" href="%sveltekit.assets%/favicon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+	<script src="https://kit.fontawesome.com/159a50cc80.js" crossorigin="anonymous"></script>
+    %sveltekit.head%
+  </head>
+  <body data-sveltekit-preload-data="hover" data-app-type="electron">
+    <script>
+		const runtime = "%sveltekit.env.PUBLIC_APP_TARGET%"
+		if (runtime && document?.body) document.body.dataset.appType = runtime
+	</script>
+    <div style="display: contents">%sveltekit.body%</div>
+  </body>
+</html>
