@@ -31,6 +31,7 @@ export const createAppClient = () => ({
 		pageTitle: `Loading...`,
 		pageTitleFull: (pageTitle?: string) => `${app.Config.name} - ${pageTitle || app.Config.pageTitle}`,
 		runtime,
+		apiBaseUrl: runtime !== 'electron' ? 'http://localhost:4000/api/v1' : '/api/v1',
 	},
 	
 	Settings: new SettingsClient(),

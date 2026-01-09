@@ -139,3 +139,10 @@
 		height var(--animationDefaultSpeed) var(--animationEasing), 
 		transform var(--animationDefaultSpeed) var(--animationEasing);
 }
+
+.app > .notify-container {
+	position: absolute;
+	bottom: calc( var(--gutter) * 2 );
+	right: calc( var(--gutter) * 2 );
+	z-index: 2000;
+}

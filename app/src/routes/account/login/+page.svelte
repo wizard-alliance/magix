@@ -8,30 +8,69 @@
 	import loginSplash from "$images/login-splash.png"
 
 	let form = { identifier: "", password: "", remember: false }
-	let status = ""
 	let loading = false
 
 	onMount(() => {
 		app.Config.pageTitle = "Login"
 		app.UI.sidebarSetWidth(1, 0)
 		app.UI.sidebarSetWidth(2, 0)
+		verifyLogin()
 	})
 
 	const submit = async () => {
 		loading = true
-		status = ""
 		try {
 			await app.Auth.login(form)
 			goto("/")
 		} catch (error) {
-			status = `${(error as Error).message}`
+			app.Notify.error((error as Error).message)
 		} finally {
 			loading = false
 		}
 	}
 
 	const vendorLogin = (vendor: string) => {
-		status = `Connecting to ${vendor}...`
+		app.Notify.info(`Connecting to ${vendor} ...`, "Please wait")
+		if (vendor.toLocaleLowerCase() === "discord") {
+			setTimeout(() => {
+				const returnUrl = encodeURIComponent(window.location.href)
+				const loginUrl = `${app.Config.apiBaseUrl}/account/auth/vendor/discord/redirect?returnUrl=${returnUrl}`
+				console.log("Redirecting to:", loginUrl)
+				window.location.href = loginUrl
+			}, 600)
+		}
+	}
+
+	const verifyLogin = async () => {
+		// Get URL Params
+		const params = new URLSearchParams(window.location.search)
+		const tokens = {
+			access: {
+				token: (params.get("access_token") ?? "").trim(),
+				expires: (params.get("access_expires") ?? "").trim(),
+			},
+			refresh: {
+				token: (params.get("refresh_token") ?? "").trim(),
+				expires: (params.get("refresh_expires") ?? "").trim(),
+			},
+		}
+
+		const error = (params.get("error") ?? "").trim()
+
+		if (error) {
+			app.Notify.error(`Login failed: ${error}`, "Error", 60)
+		} else if (tokens.access.token && tokens.refresh.token) {
+			// const status = await app.Auth.verifyRefreshToken(tokens.refresh.token, tokens.access.token)
+			// if (status.success) {
+			// }
+			// else {
+
+			// }
+
+			app.Notify.success("Login successful!", "Success", 10)
+			history.replaceState({}, "", window.location.pathname)
+			// goto("/account/profile")
+		}
 	}
 </script>
 
@@ -40,12 +79,6 @@
 		<div class="col-xs-12 margin-bottom-2">
 			<h2>Welcome!</h2>
 		</div>
-
-		{#if status}
-			<div class="col-xs-12">
-				<p class="status">{status}</p>
-			</div>
-		{/if}
 
 		<div class="col-xs-12 margin-bottom-2">
 			<Button color="secondary" on:click={() => vendorLogin(`discord`)} icon="fab fa-discord">Log in with Discord</Button>
@@ -79,16 +112,6 @@
 <div class="col-xs hidden-xs visible-md auth-side" style:--bg-image="url({loginSplash})"></div>
 
 <style lang="scss" scoped>
-	// :global(.page-account-login) {
-	// 	--sidebar-1-width: 0px;
-	// 	--sidebar-2-width: 0px;
-	// }
-
-	// :global(.sidebar) {
-	// 	border-color: transparent;
-	// }
-
-	/* login styling */
 	.auth-form-col {
 		padding: calc(var(--gutter) * 2) calc(var(--gutter) * 8);
 		margin-left: auto;
@@ -145,11 +168,6 @@
 
 	.link-muted {
 		color: var(--gray);
-		font-size: 13px;
-	}
-
-	.status {
-		color: var(--red);
 		font-size: 13px;
 	}
 

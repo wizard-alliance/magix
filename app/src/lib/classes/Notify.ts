@@ -14,33 +14,24 @@ export class Notify {
 	private containerNode: HTMLElement | null = null
 	private defaultDuration = 5
 
-	constructor() {
-		if (typeof document !== 'undefined') {
-			if (document.readyState === 'loading') {
-				document.addEventListener('DOMContentLoaded', () => this.init())
-			} else {
-				this.init()
-			}
-		}
-	}
-
-	private init() {
-		this.containerNode = this.createContainer()
-	}
-
-	private createContainer(): HTMLElement {
+	private getContainer(): HTMLElement {
 		if (this.containerNode) return this.containerNode
+		
+		const parent = document.body.querySelector('.app')
+		if (!parent) throw new Error('App container not found for notifications')
+			
 		const container = document.createElement('div')
 		container.className = 'notify-container'
-		document.body.appendChild(container)
+		parent.appendChild(container)
+		this.containerNode = container
 		return container
 	}
 
 	create(params: createPayload) {
-		if (!this.containerNode) return
+		const container = this.getContainer()
 		app.$.Success(params.message, this.prefix)
 
-		this.containerNode.innerHTML = '' // Clear existing notifications
+		container.innerHTML = ''
 
 		let dismissed = false
 		const dismiss = () => {
@@ -50,7 +41,7 @@ export class Notify {
 		}
 
 		const notify = mount(NotifyBanner, {
-			target: this.containerNode,
+			target: container,
 			props: {
 				title: params.title,
 				message: params.message,
