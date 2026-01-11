@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { app } from "$lib/app"
+	import { goto } from "$app/navigation"
 	import { onMount } from "svelte"
-	import { page } from "$app/stores"
 	import Input from "$components/fields/input.svelte"
 	import Button from "$components/button.svelte"
 	import loginSplash from "$images/login-splash.png"
@@ -10,6 +10,7 @@
 	let newPassword = ""
 	let confirmPassword = ""
 	let submitted = false
+	let resetComplete = false
 	let loading = false
 	let step: "request" | "confirm" = "request"
 	let token = ""
@@ -32,10 +33,8 @@
 	const requestReset = async () => {
 		loading = true
 		try {
-			// API endpoint not implemented yet
-			// await app.Auth.requestPasswordReset(email)
-			app.Notify.info("Password reset is not yet available", "Coming Soon")
-			// submitted = true
+			await app.Auth.requestPasswordReset(email)
+			submitted = true
 		} catch (error) {
 			app.Notify.error((error as Error).message)
 		} finally {
@@ -49,9 +48,8 @@
 		}
 		loading = true
 		try {
-			// API endpoint not implemented yet
-			// await app.Auth.confirmPasswordReset(token, newPassword)
-			app.Notify.info("Password reset is not yet available", "Coming Soon")
+			await app.Auth.confirmPasswordReset(token, newPassword)
+			resetComplete = true
 		} catch (error) {
 			app.Notify.error((error as Error).message)
 		} finally {
@@ -63,14 +61,20 @@
 <div class="col-xs-12 col-sm-12 col-md-6 col-lg-5 center-xs auth-form-col">
 	<div class="row center-xs auth-form">
 		<div class="col-xs-12 margin-bottom-2">
-			<h2>{step === "request" ? "Reset Password" : "Set New Password"}</h2>
+			<h2>{step === "request" ? "Reset Password" : resetComplete ? "Password Reset" : "Set New Password"}</h2>
 		</div>
 
 		{#if submitted}
 			<div class="col-xs-12 success-message">
-				<i class="fas fa-check-circle"></i>
+				<i class="fas fa-envelope"></i>
 				<p>If an account exists for <strong>{email}</strong>, you'll receive a password reset link shortly.</p>
 				<a href="/account/login" class="back-link">Back to login</a>
+			</div>
+		{:else if resetComplete}
+			<div class="col-xs-12 success-message">
+				<i class="fas fa-check-circle"></i>
+				<p>Your password has been reset successfully.</p>
+				<a href="/account/login" class="back-link">Sign in with your new password</a>
 			</div>
 		{:else if step === "request"}
 			<p class="col-xs-12 hint margin-bottom-2">Enter your email and we'll send you a link to reset your password.</p>

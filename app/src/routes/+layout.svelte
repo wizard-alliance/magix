@@ -15,6 +15,8 @@
 	let menuOpen = false
 	let currentUser: any = null
 	let prevRouteClass = ""
+	let sidebar1: any = null
+	let sidebar2: any = null
 
 	$: routeClass = `page-${$page.url.pathname.split(`/`).filter(Boolean).join(`-`) || `home`}`
 	$: if (typeof document !== `undefined`) {
@@ -38,6 +40,9 @@
 	})
 
 	onMount(() => {
+		app.UI.sidebarInit()
+		sidebar1 = app.State.ui.sidebar1
+		sidebar2 = app.State.ui.sidebar2
 		navLinks = app.Misc.Navigation.list()
 		title = app.Config.pageTitleFull()
 
@@ -97,13 +102,21 @@
 		</div>
 	</header>
 
-	<aside class="sidebar sidebar-1 sidebar-guilds scrollable-hidden"></aside>
+	<aside class="sidebar sidebar-1 sidebar-guilds scrollable-hidden">
+		{#if $sidebar1}
+			<svelte:component this={$sidebar1.component} {...$sidebar1.props} />
+		{/if}
+	</aside>
 
 	<main class="main">
 		<slot />
 	</main>
 
-	<aside class="sidebar sidebar-2 sidebar-status scrollable"></aside>
+	<aside class="sidebar sidebar-2 sidebar-status scrollable">
+		{#if $sidebar2}
+			<svelte:component this={$sidebar2.component} {...$sidebar2.props} />
+		{/if}
+	</aside>
 </div>
 
 <style>

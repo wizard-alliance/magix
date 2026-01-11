@@ -28,6 +28,11 @@ export class AuthRoute {
 		api.Router.set(["POST"], `${this.authRoute}/logout/all-devices`, this.logoutAllDevices, this.userOptions)
 		api.Router.set(["POST"], `${this.authRoute}/logout/all-users`, this.logoutAllUsers, this.adminOptions)
 
+		// Password reset & account activation
+		api.Router.set(["POST"], `${this.userRoute}/reset`, this.requestReset)
+		api.Router.set(["POST"], `${this.userRoute}/reset/confirm`, this.confirmReset)
+		api.Router.set(["GET"], `${this.userRoute}/confirm`, this.confirmActivation)
+
 		// User routes
 		api.Router.set(["POST"], `${this.userRoute}/me`, this.me, this.userOptions)
 
@@ -272,5 +277,40 @@ export class AuthRoute {
 			vendor,
 			payload: $.body ?? {},
 		})
+	}
+
+	requestReset = async ($: $, req: Request, res: Response) => {
+		$ = api.Router.getParams(req)
+		return await api.User.Auth.requestPasswordReset($.body.email ?? "")
+	}
+
+	confirmReset = async ($: $, req: Request, res: Response) => {
+		$ = api.Router.getParams(req)
+		return await api.User.Auth.confirmPasswordReset(
+			$.body.token ?? "",
+			$.body.password ?? $.body.new_password ?? ""
+		)
+	}
+
+	confirmActivation = async ($: $, req: Request, res: Response) => {
+		$ = api.Router.getParams(req)
+		const token = (req.query.token as string) ?? $.body.token ?? ""
+		const result = await api.User.Auth.confirmActivation(token)
+
+		// For GET requests, redirect to login page with message
+		if (req.method === "GET") {
+			const baseUrl = api.Config("WEB_URL") || "http://localhost:5173"
+			const params = new URLSearchParams()
+			if ("success" in result) {
+				params.set("activated", "true")
+				params.set("message", result.message)
+			} else {
+				params.set("error", result.error)
+			}
+			res.redirect(`${baseUrl}/account/login?${params.toString()}`)
+			return null
+		}
+
+		return result
 	}
 }

@@ -1,6 +1,6 @@
 import type { AuthPayload, UserDBRow } from '../../types/types'
 
-type LoginInput = { identifier: string; password: string }
+type LoginInput = { identifier: string; password: string; remember?: boolean }
 type RegisterInput = { email: string; username: string; password: string; tos_accepted?: boolean }
 
 const IS_SECURE = typeof location !== 'undefined' && location.protocol === 'https:'
@@ -11,15 +11,21 @@ export class AuthClient {
 	private keys = {
 		access: 'auth_access_token',
 		refresh: 'auth_refresh_token',
+		remember: 'auth_remember',
 	}
 
 	/**
-	 * Set a secure cookie
+	 * Set a secure cookie (session cookie if days=0)
 	 */
-	private setCookie(name: string, value: string, days = 7) {
+	private setCookie(name: string, value: string, days?: number) {
 		if (!isBrowser) return
-		const expires = new Date(Date.now() + days * 864e5).toUTCString()
-		document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; ${COOKIE_OPTS}`
+		if (days && days > 0) {
+			const expires = new Date(Date.now() + days * 864e5).toUTCString()
+			document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; ${COOKIE_OPTS}`
+		} else {
+			// Session cookie - no expires means it's deleted when browser closes
+			document.cookie = `${name}=${encodeURIComponent(value)}; ${COOKIE_OPTS}`
+		}
 	}
 
 	/**
@@ -40,6 +46,13 @@ export class AuthClient {
 	}
 
 	/**
+	 * Check if "remember me" is enabled
+	 */
+	private isRemembered(): boolean {
+		return this.getCookie(this.keys.remember) === '1'
+	}
+
+	/**
 	 * Update current user in app state
 	 */
 	private updateUser(user: UserDBRow | null) {
@@ -49,10 +62,17 @@ export class AuthClient {
 	/**
 	 * Persist session tokens and user data
 	 */
-	private persistSession(payload: AuthPayload) {
+	private persistSession(payload: AuthPayload, remember = false) {
 		const { tokens, user } = payload
-		this.setCookie(this.keys.access, tokens.access.token)
-		this.setCookie(this.keys.refresh, tokens.refresh.token, 30)
+		if (remember) {
+			this.setCookie(this.keys.remember, '1', 30)
+			this.setCookie(this.keys.access, tokens.access.token, 7)
+			this.setCookie(this.keys.refresh, tokens.refresh.token, 30)
+		} else {
+			this.deleteCookie(this.keys.remember)
+			this.setCookie(this.keys.access, tokens.access.token) // session cookie
+			this.setCookie(this.keys.refresh, tokens.refresh.token) // session cookie
+		}
 		this.updateUser(user)
 	}
 
@@ -62,6 +82,7 @@ export class AuthClient {
 	private clearSession() {
 		this.deleteCookie(this.keys.access)
 		this.deleteCookie(this.keys.refresh)
+		this.deleteCookie(this.keys.remember)
 		this.updateUser(null)
 	}
 
@@ -90,24 +111,23 @@ export class AuthClient {
 	 * Login with identifier (email/username) and password
 	 */
 	async login(payload: LoginInput) {
+		const { remember, ...body } = payload
 		const data = await app.Request.post<AuthPayload>('/account/auth/login', {
-			body: payload,
+			body,
 			useAuth: false,
 		})
-		if (data) this.persistSession(data)
+		if (data) this.persistSession(data, remember)
 		return data
 	}
 
 	/**
-	 * Register a new account
+	 * Register a new account (requires email activation before login)
 	 */
 	async register(payload: RegisterInput) {
-		const data = await app.Request.post<AuthPayload>('/account/register', {
+		return app.Request.post<{ success: boolean; message: string }>('/account/register', {
 			body: payload,
 			useAuth: false,
 		})
-		if (data) this.persistSession(data)
-		return data
 	}
 
 	/**
@@ -135,12 +155,13 @@ export class AuthClient {
 		const refreshToken = this.getRefreshToken()
 		if (!refreshToken) return null
 		try {
+			const remember = this.isRemembered()
 			const data = await app.Request.post<AuthPayload>('/account/auth/refresh', {
 				body: { refresh_token: refreshToken },
 				useAuth: false,
 				allowRefresh: false,
 			})
-			if (data) this.persistSession(data)
+			if (data) this.persistSession(data, remember)
 			return data
 		} catch {
 			this.clearSession()
@@ -188,12 +209,12 @@ export class AuthClient {
 	/**
 	 * Login via third-party vendor (OAuth)
 	 */
-	async vendorLogin(vendor: string, payload: Record<string, any>) {
+	async vendorLogin(vendor: string, payload: Record<string, any>, remember = true) {
 		const data = await app.Request.post<AuthPayload>(`/account/auth/vendor/${vendor}`, {
 			body: payload,
 			useAuth: false,
 		})
-		if (data) this.persistSession(data)
+		if (data) this.persistSession(data, remember)
 		return data
 	}
 
@@ -216,13 +237,41 @@ export class AuthClient {
 
 	/**
 	 * Handle vendor OAuth callback - store tokens from URL params
+	 * Note: OAuth logins default to "remember me" since user initiated redirect flow
 	 */
-	async handleVendorCallback(tokens: { access: string; refresh: string }) {
+	async handleVendorCallback(tokens: { access: string; refresh: string }, remember = true) {
 		if (!tokens.access || !tokens.refresh) return false
-		this.setCookie(this.keys.access, tokens.access)
-		this.setCookie(this.keys.refresh, tokens.refresh, 30)
+		if (remember) {
+			this.setCookie(this.keys.remember, '1', 30)
+			this.setCookie(this.keys.access, tokens.access, 7)
+			this.setCookie(this.keys.refresh, tokens.refresh, 30)
+		} else {
+			this.deleteCookie(this.keys.remember)
+			this.setCookie(this.keys.access, tokens.access)
+			this.setCookie(this.keys.refresh, tokens.refresh)
+		}
 		const user = await this.me()
 		return !!user
+	}
+
+	/**
+	 * Request password reset - sends email with reset link
+	 */
+	async requestPasswordReset(email: string) {
+		return app.Request.post<{ success: boolean; message: string }>('/account/reset', {
+			body: { email },
+			useAuth: false,
+		})
+	}
+
+	/**
+	 * Confirm password reset with token
+	 */
+	async confirmPasswordReset(token: string, password: string) {
+		return app.Request.post<{ success: boolean; message: string }>('/account/reset/confirm', {
+			body: { token, password },
+			useAuth: false,
+		})
 	}
 
 	/**
@@ -243,6 +292,7 @@ export class AuthClient {
 		const data = {
 			accessToken: this.getAccessToken(),
 			refreshToken: this.getRefreshToken(),
+			remember: this.isRemembered(),
 			stateUser: app.State.currentUser,
 			isLoggedIn: this.isLoggedIn(),
 		}

@@ -41,6 +41,14 @@ export class RequestClient {
 	}
 
 	/**
+	 * Extract error message from API response
+	 */
+	private extractErrorMessage(error: any): string {
+		const body = error?.response?.body
+		return body?.errorMessage ?? body?.error ?? body?.message ?? error?.message ?? 'An unexpected error occurred'
+	}
+
+	/**
 	 * Make API call with auto-refresh on 401
 	 */
 	async call<T = any>(method: HttpMethod, path: string, options: InternalOptions = {}): Promise<T> {
@@ -55,7 +63,7 @@ export class RequestClient {
 				const refreshed = await this.refreshSession()
 				if (refreshed) return await this.attempt<T>(method, url, options, true)
 			}
-			throw error
+			throw new Error(this.extractErrorMessage(error))
 		}
 	}
 

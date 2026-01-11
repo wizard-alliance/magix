@@ -22,7 +22,15 @@
 	const handleErrors = async () => {
 		const params = new URLSearchParams(window.location.search)
 		const error = params.get("error")?.trim()
+		const activated = params.get("activated")?.trim()
+		const message = params.get("message")?.trim()
 		let errorType = null
+
+		// Handle successful activation redirect
+		if (activated === "true") {
+			app.Notify.success(message || "Account activated! You can now log in.", "Success", 10)
+			return history.replaceState({}, "", window.location.pathname)
+		}
 
 		if (error && params.get("access_token") && params.get("refresh_token")) {
 			errorType = "vendor_login"

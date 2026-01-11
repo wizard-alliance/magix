@@ -1,8 +1,9 @@
 <script lang="ts">
 	import { app } from "$lib/app"
 	import { goto } from "$app/navigation"
-	import { onMount } from "svelte"
+	import { onMount, onDestroy } from "svelte"
 	import { get } from "svelte/store"
+	import ProfileSidebar from "$components/sections/sidebar/ProfileSidebar.svelte"
 
 	let user: any = null
 	let status = ""
@@ -23,7 +24,14 @@
 
 	onMount(() => {
 		app.Config.pageTitle = "Profile"
+		app.UI.sidebarSetContent(2, ProfileSidebar, { message: "Hello World" }, "20%")
+		app.UI.sidebarSetContent(1, ProfileSidebar, { message: "Hello World" }, "20%")
+
 		ensureUser()
+	})
+
+	onDestroy(() => {
+		app.UI.sidebarClearContent(1)
 	})
 
 	const logout = async () => {

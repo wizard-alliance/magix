@@ -111,6 +111,19 @@
 	z-index: 20;
 }
 
+.sidebar-1,
+.sidebar-2 {
+	transition: 
+		width var(--animationDefaultSpeed) var(--animationEasing),
+		background-color var(--animationDefaultSpeed) var(--animationEasing),
+		border-color var(--animationDefaultSpeed) var(--animationEasing);
+
+	&.sidebar-hidden {
+		background-color: transparent;
+		border-color: transparent;
+	}
+}
+
 .app > .main {
 	position: absolute;
 	width: var(--main-width);

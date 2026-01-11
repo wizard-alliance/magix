@@ -1,5 +1,6 @@
+import { randomUUID } from "crypto"
 import type { UserDBRow } from "../../schema/Database.js"
-import { nowUtcDateTime } from "./UserDbUtils.js"
+import { nowUtcDateTime, futureUtcDateTime } from "./UserDbUtils.js"
 import type { UserFull } from "../../schema/DomainShapes.js"
 
 export const normalizeEmail = (value?: string | number | null) => `${value ?? ""}`.trim().toLowerCase()
@@ -126,19 +127,79 @@ export class UserRepo {
 		return user || null
 	}
 
-	/** Create a new user */
-	create = async (input: UserCreateInput): Promise<{ id: number } | { error: string; code: number }> => {
+	/** Validate user creation input */
+	validateCreate = async (input: UserCreateInput): Promise<{ error: false } | { error: true; message: string; code: number }> => {
 		const email = normalizeEmail(input.email)
 		const username = normalizeUsername(input.username)
-		if (!email || !username || !input.password) {
-			return { error: "Email, username, and password required", code: 400 }
+
+		// Required fields
+		if (!email) {
+			return { error: true, message: "Email is required", code: 400 }
+		}
+		if (!username) {
+			return { error: true, message: "Username is required", code: 400 }
+		}
+		if (!input.password) {
+			return { error: true, message: "Password is required", code: 400 }
 		}
 
-		const existing = await this.exists(email, username)
-		if (existing) return { error: "User already exists", code: 409 }
+		// Email format
+		const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+		if (!emailRegex.test(email)) {
+			return { error: true, message: "Invalid email format", code: 400 }
+		}
 
+		// Username rules
+		if (username.length < 3) {
+			return { error: true, message: "Username must be at least 3 characters", code: 400 }
+		}
+		if (username.length > 32) {
+			return { error: true, message: "Username must be 32 characters or less", code: 400 }
+		}
+		if (!/^[a-zA-Z0-9_-]+$/.test(username)) {
+			return { error: true, message: "Username can only contain letters, numbers, underscores, and hyphens", code: 400 }
+		}
+
+		// Password strength
+		if (input.password.length < 8) {
+			return { error: true, message: "Password must be at least 8 characters", code: 400 }
+		}
+
+		// Check for existing email
+		const existingEmail = await this.db.selectFrom("users")
+			.select("id")
+			.where("email", "=", email)
+			.executeTakeFirst()
+		if (existingEmail) {
+			return { error: true, message: "An account with this email already exists", code: 409 }
+		}
+
+		// Check for existing username
+		const existingUsername = await this.db.selectFrom("users")
+			.select("id")
+			.where("username", "=", username)
+			.executeTakeFirst()
+		if (existingUsername) {
+			return { error: true, message: "This username is already taken", code: 409 }
+		}
+
+		return { error: false }
+	}
+
+	/** Create a new user */
+	create = async (input: UserCreateInput): Promise<{ id: number; activationToken: string } | { error: string; code: number }> => {
+		const validation = await this.validateCreate(input)
+		if (validation.error) {
+			return { error: validation.message, code: validation.code }
+		}
+
+		const email = normalizeEmail(input.email)
+		const username = normalizeUsername(input.username)
 		const password = await api.Utils.hashPassword(input.password)
 		const now = nowUtcDateTime()
+		const activationToken = randomUUID()
+		const activationExpires = futureUtcDateTime(24 * 60 * 60 * 1000) // 24 hours
+
 		const result = await this.db
 			.insertInto("users")
 			.values({
@@ -148,7 +209,9 @@ export class UserRepo {
 				first_name: input.firstName ?? null,
 				last_name: input.lastName ?? null,
 				tos_accepted: input.tosAccepted ? 1 : 0,
-				activated: 1,
+				activated: 0,
+				activation_token: activationToken,
+				activation_token_expiration: activationExpires,
 				disabled: 0,
 				created: now,
 				updated: now,
@@ -156,7 +219,7 @@ export class UserRepo {
 			.executeTakeFirst()
 
 		const id = result?.insertId ? Number(result?.insertId) : null
-		return id ? { id } : { error: "Failed to create user", code: 500 }
+		return id ? { id, activationToken } : { error: "Failed to create user", code: 500 }
 	}
 
 	/** Update user fields */

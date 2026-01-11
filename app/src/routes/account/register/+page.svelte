@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { app } from "$lib/app"
-	import { goto } from "$app/navigation"
 	import { onMount } from "svelte"
 	import Input from "$components/fields/input.svelte"
 	import Checkbox from "$components/fields/checkbox.svelte"
@@ -17,6 +16,7 @@
 		tos_accepted: false,
 	}
 	let loading = false
+	let submitted = false
 
 	onMount(() => {
 		app.Config.pageTitle = "Register"
@@ -35,8 +35,7 @@
 		try {
 			const { confirmPassword, ...payload } = form
 			await app.Auth.register(payload)
-			app.Notify.success("Account created!", "Welcome", 5)
-			goto("/")
+			submitted = true
 		} catch (error) {
 			app.Notify.error((error as Error).message)
 		} finally {
@@ -51,36 +50,44 @@
 			<h2>Create Account</h2>
 		</div>
 
-		<form on:submit|preventDefault={submit} class="col-xs-12">
-			<div class="row">
-				<div class="col-xs-6">
-					<Input label="First Name" placeholder="John" bind:value={form.first_name} />
-				</div>
-				<div class="col-xs-6">
-					<Input label="Last Name" placeholder="Doe" bind:value={form.last_name} />
-				</div>
+		{#if submitted}
+			<div class="col-xs-12 success-message">
+				<i class="fas fa-envelope"></i>
+				<p>Account created! Please check your email at <strong>{form.email}</strong> to activate your account.</p>
+				<a href="/account/login" class="back-link">Go to login</a>
 			</div>
+		{:else}
+			<form on:submit|preventDefault={submit} class="col-xs-12">
+				<div class="row">
+					<div class="col-xs-6">
+						<Input label="First Name" placeholder="John" bind:value={form.first_name} />
+					</div>
+					<div class="col-xs-6">
+						<Input label="Last Name" placeholder="Doe" bind:value={form.last_name} />
+					</div>
+				</div>
 
-			<Input label="Email" type="email" placeholder="your@email.com" bind:value={form.email} required />
+				<Input label="Email" type="email" placeholder="your@email.com" bind:value={form.email} required />
 
-			<Input label="Username" placeholder="Choose a username" bind:value={form.username} required />
+				<Input label="Username" placeholder="Choose a username" bind:value={form.username} required />
 
-			<Input label="Password" type="password" placeholder="Create a password" bind:value={form.password} required />
+				<Input label="Password" type="password" placeholder="Create a password" bind:value={form.password} required />
 
-			<Input label="Confirm Password" type="password" placeholder="Confirm your password" bind:value={form.confirmPassword} required />
+				<Input label="Confirm Password" type="password" placeholder="Confirm your password" bind:value={form.confirmPassword} required />
 
-			<div class="margin-bottom-2">
-				<Checkbox label="I accept the Terms of Service" bind:checked={form.tos_accepted} />
+				<div class="margin-bottom-2">
+					<Checkbox label="I accept the Terms of Service" bind:checked={form.tos_accepted} />
+				</div>
+
+				<Button type="submit" color="primary" disabled={loading} icon={loading ? "fas fa-spinner fa-spin" : ""}>
+					{loading ? "Creating account..." : "Create Account"}
+				</Button>
+			</form>
+
+			<div class="col-xs-12">
+				<p class="hint">Already have an account? <a href="/account/login">Sign in</a></p>
 			</div>
-
-			<Button type="submit" color="primary" disabled={loading} icon={loading ? "fas fa-spinner fa-spin" : ""}>
-				{loading ? "Creating account..." : "Create Account"}
-			</Button>
-		</form>
-
-		<div class="col-xs-12">
-			<p class="hint">Already have an account? <a href="/account/login">Sign in</a></p>
-		</div>
+		{/if}
 	</div>
 </div>
 
@@ -129,5 +136,32 @@
 		color: var(--gray);
 		font-size: 13px;
 		user-select: none;
+	}
+
+	.success-message {
+		text-align: center;
+		padding: calc(var(--gutter) * 2);
+		background: var(--secondary-color);
+		border-radius: var(--border-radius);
+
+		i {
+			font-size: 48px;
+			color: var(--accent-color, #3b82f6);
+			margin-bottom: var(--gutter);
+		}
+
+		p {
+			color: var(--gray);
+			margin-bottom: var(--gutter);
+		}
+
+		strong {
+			color: var(--white);
+		}
+	}
+
+	.back-link {
+		color: var(--accent-color);
+		font-size: 14px;
 	}
 </style>
