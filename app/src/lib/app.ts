@@ -76,6 +76,9 @@ export const app: AppClient = createAppClient()
 
 ;(globalThis as any).app = app
 
+// Initialize state stores
+app.State.currentUser = store.writable(null)
+
 app.Request = new RequestClient()
 app.Auth = new AuthClient()
 

@@ -14,8 +14,34 @@
 		app.Config.pageTitle = "Login"
 		app.UI.sidebarSetWidth(1, 0)
 		app.UI.sidebarSetWidth(2, 0)
-		verifyLogin()
+		verifyVendorLogin()
+
+		handleErrors()
 	})
+
+	const handleErrors = async () => {
+		const params = new URLSearchParams(window.location.search)
+		const error = params.get("error")?.trim()
+		let errorType = null
+
+		if (error && params.get("access_token") && params.get("refresh_token")) {
+			errorType = "vendor_login"
+		} else if (error) {
+			errorType = "general"
+		}
+
+		if (errorType === "vendor_login") {
+			app.Notify.error(`${error}`, "Login failed", 60)
+		}
+
+		if (errorType === "general") {
+			app.Notify.error(`${error}`, "Unexpected Login failure", 60)
+		}
+
+		if (errorType) {
+			return history.replaceState({}, "", window.location.pathname)
+		}
+	}
 
 	const submit = async () => {
 		loading = true
@@ -31,46 +57,34 @@
 
 	const vendorLogin = (vendor: string) => {
 		app.Notify.info(`Connecting to ${vendor} ...`, "Please wait")
-		if (vendor.toLocaleLowerCase() === "discord") {
+		loading = true
+		if (vendor.toLowerCase() === "discord") {
 			setTimeout(() => {
-				const returnUrl = encodeURIComponent(window.location.href)
-				const loginUrl = `${app.Config.apiBaseUrl}/account/auth/vendor/discord/redirect?returnUrl=${returnUrl}`
-				console.log("Redirecting to:", loginUrl)
-				window.location.href = loginUrl
+				const returnUrl = window.location.origin + window.location.pathname
+				window.location.href = app.Auth.getVendorRedirectUrl("discord", returnUrl)
 			}, 600)
 		}
 	}
 
-	const verifyLogin = async () => {
-		// Get URL Params
+	const verifyVendorLogin = async () => {
 		const params = new URLSearchParams(window.location.search)
-		const tokens = {
-			access: {
-				token: (params.get("access_token") ?? "").trim(),
-				expires: (params.get("access_expires") ?? "").trim(),
-			},
-			refresh: {
-				token: (params.get("refresh_token") ?? "").trim(),
-				expires: (params.get("refresh_expires") ?? "").trim(),
-			},
+		const accessToken = params.get("access_token")?.trim()
+		const refreshToken = params.get("refresh_token")?.trim()
+
+		// This means no vendor login attempt
+		if (!accessToken || !refreshToken) {
+			return
 		}
 
-		const error = (params.get("error") ?? "").trim()
-
-		if (error) {
-			app.Notify.error(`Login failed: ${error}`, "Error", 60)
-		} else if (tokens.access.token && tokens.refresh.token) {
-			// const status = await app.Auth.verifyRefreshToken(tokens.refresh.token, tokens.access.token)
-			// if (status.success) {
-			// }
-			// else {
-
-			// }
-
-			app.Notify.success("Login successful!", "Success", 10)
-			history.replaceState({}, "", window.location.pathname)
-			// goto("/account/profile")
+		history.replaceState({}, "", window.location.pathname)
+		const success = await app.Auth.handleVendorCallback({ access: accessToken, refresh: refreshToken })
+		console.log(success)
+		if (success) {
+			app.Notify.success("Login successful!", "Success", 5)
+			return goto("/")
 		}
+
+		app.Notify.error("Failed to verify session", "Error")
 	}
 </script>
 
@@ -81,7 +95,9 @@
 		</div>
 
 		<div class="col-xs-12 margin-bottom-2">
-			<Button color="secondary" on:click={() => vendorLogin(`discord`)} icon="fab fa-discord">Log in with Discord</Button>
+			<Button color="secondary" on:click={() => vendorLogin(`discord`)} icon={loading ? "fas fa-spinner fa-spin" : "fab fa-discord"} disabled={loading}>
+				{loading ? "Connecting..." : "Log in with Discord"}
+			</Button>
 		</div>
 
 		<div class="col-xs-12 divider margin-bottom-2"><span>Or Login with Email ^_^</span></div>
@@ -100,11 +116,13 @@
 				</div>
 			</div>
 
-			<Button type="submit" color="primary" disabled={loading}>Login</Button>
+			<Button type="submit" color="primary" disabled={loading} icon={loading ? "fas fa-spinner fa-spin" : ""}>
+				{loading ? "Logging in..." : "Login"}
+			</Button>
 		</form>
 
 		<div class="col-xs-12">
-			<p class="hint">Haven't sign up yet? <a href="/account/create">Sign up</a></p>
+			<p class="hint">Haven't sign up yet? <a href="/account/register">Sign up</a></p>
 		</div>
 	</div>
 </div>

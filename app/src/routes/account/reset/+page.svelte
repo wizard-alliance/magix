@@ -1,85 +1,182 @@
 <script lang="ts">
 	import { app } from "$lib/app"
 	import { onMount } from "svelte"
+	import { page } from "$app/stores"
+	import Input from "$components/fields/input.svelte"
+	import Button from "$components/button.svelte"
+	import loginSplash from "$images/login-splash.png"
 
 	let email = ""
-	let status = ""
+	let newPassword = ""
+	let confirmPassword = ""
+	let submitted = false
 	let loading = false
+	let step: "request" | "confirm" = "request"
+	let token = ""
 
 	onMount(() => {
 		app.Config.pageTitle = "Reset Password"
+		app.UI.sidebarSetWidth(1, 0)
+		app.UI.sidebarSetWidth(2, 0)
+
+		// Check for reset token in URL (step 2)
+		const params = new URLSearchParams(window.location.search)
+		const urlToken = params.get("token")
+		if (urlToken) {
+			token = urlToken
+			step = "confirm"
+			history.replaceState({}, "", window.location.pathname)
+		}
 	})
 
-	const submit = async () => {
+	const requestReset = async () => {
 		loading = true
-		status = ""
 		try {
-			// Placeholder until reset endpoint exists
-			status = `If an account exists for ${email}, a reset link will be sent.`
+			// API endpoint not implemented yet
+			// await app.Auth.requestPasswordReset(email)
+			app.Notify.info("Password reset is not yet available", "Coming Soon")
+			// submitted = true
 		} catch (error) {
-			status = `Unable to start reset: ${(error as Error).message}`
+			app.Notify.error((error as Error).message)
+		} finally {
+			loading = false
+		}
+	}
+
+	const confirmReset = async () => {
+		if (newPassword !== confirmPassword) {
+			return app.Notify.error("Passwords do not match")
+		}
+		loading = true
+		try {
+			// API endpoint not implemented yet
+			// await app.Auth.confirmPasswordReset(token, newPassword)
+			app.Notify.info("Password reset is not yet available", "Coming Soon")
+		} catch (error) {
+			app.Notify.error((error as Error).message)
 		} finally {
 			loading = false
 		}
 	}
 </script>
 
-<section class="panel">
-	<h1>Reset Password</h1>
-	<form class="stack" on:submit|preventDefault={submit}>
-		<label>
-			<span>Email</span>
-			<input type="email" name="email" bind:value={email} required />
-		</label>
-		<button type="submit" disabled={loading}>Send reset link</button>
-	</form>
-	{#if status}
-		<p class="status">{status}</p>
-	{/if}
-</section>
+<div class="col-xs-12 col-sm-12 col-md-6 col-lg-5 center-xs auth-form-col">
+	<div class="row center-xs auth-form">
+		<div class="col-xs-12 margin-bottom-2">
+			<h2>{step === "request" ? "Reset Password" : "Set New Password"}</h2>
+		</div>
 
-<style>
-	.panel {
-		max-width: 420px;
-		margin: 0 auto;
-		background: #0f0f14;
+		{#if submitted}
+			<div class="col-xs-12 success-message">
+				<i class="fas fa-check-circle"></i>
+				<p>If an account exists for <strong>{email}</strong>, you'll receive a password reset link shortly.</p>
+				<a href="/account/login" class="back-link">Back to login</a>
+			</div>
+		{:else if step === "request"}
+			<p class="col-xs-12 hint margin-bottom-2">Enter your email and we'll send you a link to reset your password.</p>
+
+			<form on:submit|preventDefault={requestReset} class="col-xs-12">
+				<Input label="Email" type="email" placeholder="your@email.com" bind:value={email} required />
+
+				<Button type="submit" color="primary" disabled={loading} icon={loading ? "fas fa-spinner fa-spin" : ""}>
+					{loading ? "Sending..." : "Send Reset Link"}
+				</Button>
+			</form>
+
+			<div class="col-xs-12">
+				<p class="hint">Remember your password? <a href="/account/login">Sign in</a></p>
+			</div>
+		{:else}
+			<p class="col-xs-12 hint margin-bottom-2">Enter your new password below.</p>
+
+			<form on:submit|preventDefault={confirmReset} class="col-xs-12">
+				<Input label="New Password" type="password" placeholder="Enter new password" bind:value={newPassword} required />
+
+				<Input label="Confirm Password" type="password" placeholder="Confirm new password" bind:value={confirmPassword} required />
+
+				<Button type="submit" color="primary" disabled={loading} icon={loading ? "fas fa-spinner fa-spin" : ""}>
+					{loading ? "Resetting..." : "Reset Password"}
+				</Button>
+			</form>
+
+			<div class="col-xs-12">
+				<p class="hint"><a href="/account/login">Back to login</a></p>
+			</div>
+		{/if}
+	</div>
+</div>
+
+<div class="col-xs hidden-xs visible-md auth-side" style:--bg-image="url({loginSplash})"></div>
+
+<style lang="scss" scoped>
+	.auth-form-col {
+		padding: calc(var(--gutter) * 2) calc(var(--gutter) * 8);
+		margin-left: auto;
+		margin-right: auto;
+		display: flex;
+		flex-direction: row;
+		flex-wrap: wrap;
+		align-content: center;
+		justify-content: center;
+		align-items: center;
+		& > div {
+			max-width: 360px;
+		}
+	}
+
+	.auth-form {
+		display: flex;
+		flex-direction: column;
+		gap: calc(var(--gutter) * 1.5);
+	}
+
+	.auth-form form {
+		display: flex;
+		flex-direction: column;
+		gap: calc(var(--gutter) * 1.5);
+	}
+
+	.auth-side {
+		background: var(--bg-image), radial-gradient(ellipse at center, #d0ffd8, #9febb9);
+		background-size: contain, cover;
+		background-position: center;
+		background-repeat: no-repeat;
+		height: 100%;
+		background-size:
+			clamp(300px, 70%, 500px) auto,
+			cover;
+	}
+
+	.hint {
+		color: var(--gray);
+		font-size: 13px;
+		user-select: none;
+	}
+
+	.success-message {
+		text-align: center;
 		padding: calc(var(--gutter) * 2);
-		border-radius: 12px;
-		border: 1px solid #222230;
+		background: var(--secondary-color);
+		border-radius: var(--border-radius);
+
+		i {
+			font-size: 48px;
+			color: var(--success-color, #22c55e);
+			margin-bottom: var(--gutter);
+		}
+
+		p {
+			color: var(--gray);
+			margin-bottom: var(--gutter);
+		}
+
+		strong {
+			color: var(--white);
+		}
 	}
 
-	.stack {
-		display: flex;
-		flex-direction: column;
-		gap: var(--gutter);
-	}
-
-	label {
-		display: flex;
-		flex-direction: column;
-		gap: 6px;
-	}
-
-	input {
-		background: #0d0d12;
-		border: 1px solid #2a2a35;
-		border-radius: 8px;
-		color: white;
-		padding: 10px 12px;
-	}
-
-	button {
-		background: linear-gradient(135deg, #f97316, #f59e0b);
-		color: white;
-		border: none;
-		border-radius: 10px;
-		padding: 12px;
-		cursor: pointer;
-		font-weight: 600;
-	}
-
-	.status {
-		margin-top: var(--gutter);
-		color: #fbbf24;
+	.back-link {
+		color: var(--accent-color);
+		font-size: 14px;
 	}
 </style>

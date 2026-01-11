@@ -7,61 +7,44 @@ type InternalOptions = RequestOptions & {
 	allowRefresh?: boolean
 }
 
-const getApp = () => (globalThis as any).app
-
 export class RequestClient {
 	private readonly apiBase = PUBLIC_API_URL || 'http://localhost:4000/api/v1'
 
-	private resolveToken() {
-		const direct = app.Auth.getAccessToken()
-
-		if (direct) return direct
-		if (typeof document !== 'undefined') {
-			const cookies = document.cookie?.split(';').map((c) => c.trim()) ?? []
-			const map = Object.fromEntries(
-				cookies
-					.map((entry) => entry.split('='))
-					.filter((pair) => pair.length === 2)
-					.map(([k, v]) => [k, decodeURIComponent(v)])
-			)
-			return map.accessToken || map.token || map.authToken || null
-		}
-		return null
+	/**
+	 * Resolve bearer token from Auth
+	 */
+	private resolveToken(): string | null {
+		return (globalThis as any).app?.Auth?.getAccessToken?.() ?? null
 	}
 
+	/**
+	 * Attempt token refresh via Auth
+	 */
 	private async refreshSession() {
-		return getApp().Auth.refresh()
+		return (globalThis as any).app?.Auth?.refresh?.()
 	}
 
-	private async attempt<T>(
-		method: HttpMethod,
-		url: string,
-		options: InternalOptions,
-		attachAuth = true
-	) {
+	/**
+	 * Execute HTTP request
+	 */
+	private async attempt<T>(method: HttpMethod, url: string, options: InternalOptions, attachAuth = true): Promise<T> {
 		let req = superagent[method](url)
-		if (options.query) {
-			req = req.query(options.query)
-		}
+		if (options.query) req = req.query(options.query)
 		if (attachAuth && options.useAuth !== false) {
 			const token = this.resolveToken()
-			if (token) {
-				req = req.set('Authorization', `Bearer ${token}`)
-			}
+			if (token) req = req.set('Authorization', `Bearer ${token}`)
 		}
-		if (options.headers) {
-			req = req.set(options.headers)
-		}
-		if (options.body) {
-			req = req.send(options.body)
-		}
+		if (options.headers) req = req.set(options.headers)
+		if (options.body) req = req.send(options.body)
 		const response = await req.accept('application/json')
 		return (response.body?.data ?? response.body) as T
 	}
 
-	async call<T>(method: HttpMethod, path: string, options: InternalOptions = {}) {
-		const normalizedPath = path.startsWith('/') ? path : `/${path}`
-		const url = `${this.apiBase}${normalizedPath}`
+	/**
+	 * Make API call with auto-refresh on 401
+	 */
+	async call<T = any>(method: HttpMethod, path: string, options: InternalOptions = {}): Promise<T> {
+		const url = `${this.apiBase}${path.startsWith('/') ? path : `/${path}`}`
 		const allowRefresh = options.allowRefresh !== false
 
 		try {
@@ -70,27 +53,25 @@ export class RequestClient {
 			const status = error?.status ?? error?.response?.status
 			if (options.useAuth !== false && allowRefresh && status === 401) {
 				const refreshed = await this.refreshSession()
-				if (refreshed) {
-					return await this.attempt<T>(method, url, options, true)
-				}
+				if (refreshed) return await this.attempt<T>(method, url, options, true)
 			}
 			throw error
 		}
 	}
 
-	get<T>(path: string, options: InternalOptions = {}) {
+	get<T = any>(path: string, options: InternalOptions = {}) {
 		return this.call<T>('get', path, options)
 	}
 
-	post<T>(path: string, options: InternalOptions = {}) {
+	post<T = any>(path: string, options: InternalOptions = {}) {
 		return this.call<T>('post', path, options)
 	}
 
-	put<T>(path: string, options: InternalOptions = {}) {
+	put<T = any>(path: string, options: InternalOptions = {}) {
 		return this.call<T>('put', path, options)
 	}
 
-	delete<T>(path: string, options: InternalOptions = {}) {
+	delete<T = any>(path: string, options: InternalOptions = {}) {
 		return this.call<T>('delete', path, options)
 	}
 }

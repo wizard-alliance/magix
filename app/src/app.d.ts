@@ -1,8 +1,12 @@
+import type { createAppClient } from '$lib/app'
+
+type AppClient = ReturnType<typeof createAppClient>
+
 declare global {
 	interface Window {
-		app: any
+		app: AppClient
 	}
-	const app: any
+	const app: AppClient
 }
 
 export {}

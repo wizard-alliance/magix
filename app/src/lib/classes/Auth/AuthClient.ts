@@ -1,203 +1,252 @@
-// import { app } from '../../app.js'
-import { LocalStorageClient } from '../Data/LocalStorageClient'
 import type { AuthPayload, UserDBRow } from '../../types/types'
 
-type LoginInput = {
-	identifier?: string
-	email?: string
-	username?: string
-	password?: string
-}
+type LoginInput = { identifier: string; password: string }
+type RegisterInput = { email: string; username: string; password: string; tos_accepted?: boolean }
 
-type RegisterInput = {
-	email?: string
-	username?: string
-	password?: string
-	firstName?: string
-	lastName?: string
-	tosAccepted?: boolean
-}
-
-type VendorPayload = Record<string, any>
+const IS_SECURE = typeof location !== 'undefined' && location.protocol === 'https:'
+const COOKIE_OPTS = `path=/; SameSite=Strict${IS_SECURE ? '; Secure' : ''}`
+const isBrowser = typeof document !== 'undefined'
 
 export class AuthClient {
-	private readonly storage = new LocalStorageClient()
-	private readonly keys = {
+	private keys = {
 		access: 'auth_access_token',
 		refresh: 'auth_refresh_token',
-		user: 'auth_user',
-		refreshExpires: 'auth_refresh_expires',
 	}
 
+	/**
+	 * Set a secure cookie
+	 */
+	private setCookie(name: string, value: string, days = 7) {
+		if (!isBrowser) return
+		const expires = new Date(Date.now() + days * 864e5).toUTCString()
+		document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; ${COOKIE_OPTS}`
+	}
+
+	/**
+	 * Get a cookie value
+	 */
+	private getCookie(name: string): string | null {
+		if (!isBrowser) return null
+		const match = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`))
+		return match ? decodeURIComponent(match[1]) : null
+	}
+
+	/**
+	 * Delete a cookie
+	 */
+	private deleteCookie(name: string) {
+		if (!isBrowser) return
+		document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; ${COOKIE_OPTS}`
+	}
+
+	/**
+	 * Update current user in app state
+	 */
 	private updateUser(user: UserDBRow | null) {
-		const store = app.State.currentUser
-		if (store && typeof store.set === 'function') {
-			store.set(user)
-		}
+		app.State.currentUser?.set?.(user)
 	}
 
+	/**
+	 * Persist session tokens and user data
+	 */
 	private persistSession(payload: AuthPayload) {
-		this.storage.setItem(this.keys.access, payload.tokens.access.token)
-		this.storage.setItem(this.keys.refresh, payload.tokens.refresh.token)
-		this.storage.setItem(this.keys.refreshExpires, payload.tokens.refresh.expiresAt.toString())
-		this.storage.setItem(this.keys.user, JSON.stringify(payload.user))
-		this.updateUser(payload.user)
+		const { tokens, user } = payload
+		this.setCookie(this.keys.access, tokens.access.token)
+		this.setCookie(this.keys.refresh, tokens.refresh.token, 30)
+		this.updateUser(user)
 	}
 
+	/**
+	 * Clear stored session data
+	 */
 	private clearSession() {
-		this.storage.remove(this.keys.access)
-		this.storage.remove(this.keys.refresh)
-		this.storage.remove(this.keys.refreshExpires)
-		this.storage.remove(this.keys.user)
+		this.deleteCookie(this.keys.access)
+		this.deleteCookie(this.keys.refresh)
 		this.updateUser(null)
 	}
 
-	private async call<T = any>(
-		method: 'get' | 'post',
-		path: string,
-		body?: Record<string, any>,
-		useAuth = true,
-		allowRefresh = true
-	) {
+	/**
+	 * Get the current access token
+	 */
+	getAccessToken(): string | null {
+		return this.getCookie(this.keys.access)
+	}
+
+	/**
+	 * Get the current refresh token
+	 */
+	getRefreshToken(): string | null {
+		return this.getCookie(this.keys.refresh)
+	}
+
+	/**
+	 * Check if user is logged in (has valid tokens)
+	 */
+	isLoggedIn(): boolean {
+		return !!this.getAccessToken()
+	}
+
+	/**
+	 * Login with identifier (email/username) and password
+	 */
+	async login(payload: LoginInput) {
+		const data = await app.Request.post<AuthPayload>('/account/auth/login', {
+			body: payload,
+			useAuth: false,
+		})
+		if (data) this.persistSession(data)
+		return data
+	}
+
+	/**
+	 * Register a new account
+	 */
+	async register(payload: RegisterInput) {
+		const data = await app.Request.post<AuthPayload>('/account/register', {
+			body: payload,
+			useAuth: false,
+		})
+		if (data) this.persistSession(data)
+		return data
+	}
+
+	/**
+	 * Get current authenticated user profile
+	 */
+	async me() {
+		const token = this.getAccessToken()
+		if (!token) return null
 		try {
-			return await app.Request.call(method, path, {
-				body,
-				useAuth,
-				allowRefresh,
-			})
-		} catch (error) {
-			app.$.Error((error as Error).message, 'AuthClient')
-			throw error
-		}
-	}
-
-	getAccessToken() {
-		return this.storage.getItem(this.keys.access)
-	}
-
-	getRefreshToken() {
-		return this.storage.getItem(this.keys.refresh)
-	}
-
-	getStoredUser(): UserDBRow | null {
-		const raw = this.storage.getItem(this.keys.user)
-		if (!raw) {
+			const data = await app.Request.post<UserDBRow>('/account/me')
+			if (data && !('error' in data)) {
+				this.updateUser(data)
+				return data
+			}
 			return null
-		}
-		try {
-			return JSON.parse(raw) as UserDBRow
 		} catch {
 			return null
 		}
 	}
 
-	async login(payload: LoginInput) {
-		const data = await this.call<AuthPayload>('post', '/auth/login', payload, false)
-		if (data) {
-			this.persistSession(data)
-		}
-		return data
-	}
-
-	async register(payload: RegisterInput) {
-		const data = await this.call<AuthPayload>('post', '/auth/register', payload, false)
-		if (data) {
-			this.persistSession(data)
-		}
-		return data
-	}
-
-	async me() {
-		const token = this.getAccessToken()
-		if (!token) {
-			return null
-		}
-		const data = await this.call<{ user: UserDBRow }>('get', '/auth/me')
-		if (data?.user) {
-			this.updateUser(data.user)
-			this.storage.setItem(this.keys.user, JSON.stringify(data.user))
-			return data.user
-		}
-		return null
-	}
-
+	/**
+	 * Refresh access token using refresh token
+	 */
 	async refresh() {
 		const refreshToken = this.getRefreshToken()
-		if (!refreshToken) {
-			return null
-		}
+		if (!refreshToken) return null
 		try {
-			const data = await this.call<AuthPayload>(
-				'post',
-				'/auth/refresh',
-				{ refreshToken },
-				false,
-				false
-			)
-			if (data) {
-				this.persistSession(data)
-			}
+			const data = await app.Request.post<AuthPayload>('/account/auth/refresh', {
+				body: { refresh_token: refreshToken },
+				useAuth: false,
+				allowRefresh: false,
+			})
+			if (data) this.persistSession(data)
 			return data
-		} catch (error) {
+		} catch {
 			this.clearSession()
 			return null
 		}
 	}
 
+	/**
+	 * Logout current session
+	 */
 	async logout() {
 		const refreshToken = this.getRefreshToken()
 		if (refreshToken) {
-			await this.call('post', '/auth/logout', { refreshToken }).catch(() => null)
+			await app.Request.post('/account/auth/logout', {
+				body: { refresh_token: refreshToken },
+			}).catch(() => null)
 		}
 		this.clearSession()
 	}
 
+	/**
+	 * Logout from all devices
+	 */
 	async logoutAllDevices() {
-		await this.call('post', '/auth/logout/all-devices', {}, true).catch(() => null)
+		await app.Request.post('/account/auth/logout/all-devices').catch(() => null)
 		this.clearSession()
 	}
 
-	async logoutAllUsers() {
-		return this.call('post', '/auth/logout/all-users', {}, false)
-	}
-
+	/**
+	 * Change account password
+	 */
 	async changePassword(currentPassword: string, newPassword: string, logoutAll = true) {
-		return this.call('post', '/auth/password', { currentPassword, newPassword, logoutAll })
+		return app.Request.post('/account/auth/password', {
+			body: { current_password: currentPassword, new_password: newPassword, logout_all: logoutAll },
+		})
 	}
 
+	/**
+	 * Update user profile
+	 */
 	async updateProfile(body: Record<string, any>) {
-		return this.call('post', '/auth/profile', body)
+		return app.Request.post('/account/profile', { body })
 	}
 
-	async vendor(vendor: string) {
-		return this.call('get', `/auth/vendor/${vendor}`, undefined, false)
-	}
-
-	async vendorLogin(vendor: string, payload: VendorPayload) {
-		const data = await this.call<AuthPayload>('post', `/auth/vendor/${vendor}`, payload, false)
-		if (data) {
-			this.persistSession(data)
-		}
+	/**
+	 * Login via third-party vendor (OAuth)
+	 */
+	async vendorLogin(vendor: string, payload: Record<string, any>) {
+		const data = await app.Request.post<AuthPayload>(`/account/auth/vendor/${vendor}`, {
+			body: payload,
+			useAuth: false,
+		})
+		if (data) this.persistSession(data)
 		return data
 	}
 
-	restore() {
-		const storedUser = this.storage.getItem(this.keys.user)
-		if (storedUser) {
-			try {
-				this.updateUser(JSON.parse(storedUser))
-			} catch {
-				this.updateUser(null)
-			}
-		}
+	/**
+	 * Get vendor OAuth redirect URL
+	 */
+	getVendorRedirectUrl(vendor: string, returnUrl?: string) {
+		const base = `${app.Config.apiBaseUrl}/account/auth/vendor/${vendor}/redirect`
+		return returnUrl ? `${base}?returnUrl=${encodeURIComponent(returnUrl)}` : base
+	}
 
+	/**
+	 * Get vendor info
+	 */
+	async vendorInfo(vendor: string) {
+		return app.Request.post<{ vendor: Record<string, any> }>(`/account/auth/vendor/${vendor}`, {
+			useAuth: false,
+		})
+	}
+
+	/**
+	 * Handle vendor OAuth callback - store tokens from URL params
+	 */
+	async handleVendorCallback(tokens: { access: string; refresh: string }) {
+		if (!tokens.access || !tokens.refresh) return false
+		this.setCookie(this.keys.access, tokens.access)
+		this.setCookie(this.keys.refresh, tokens.refresh, 30)
+		const user = await this.me()
+		return !!user
+	}
+
+	/**
+	 * Restore session from stored cookies on app init
+	 */
+	restore() {
 		if (this.getAccessToken()) {
 			this.me().catch(() => null)
-			return
-		}
-
-		if (this.getRefreshToken()) {
+		} else if (this.getRefreshToken()) {
 			this.refresh().catch(() => null)
 		}
+	}
+
+	/**
+	 * Debug: dump all auth state to console
+	 */
+	debug() {
+		const data = {
+			accessToken: this.getAccessToken(),
+			refreshToken: this.getRefreshToken(),
+			stateUser: app.State.currentUser,
+			isLoggedIn: this.isLoggedIn(),
+		}
+		console.table(data)
+		return data
 	}
 }

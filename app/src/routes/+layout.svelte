@@ -13,7 +13,7 @@
 	let userMenuItems: DropdownItem[] = []
 	let title = "Loading..."
 	let menuOpen = false
-	let isLoggedIn = false
+	let currentUser: any = null
 	let prevRouteClass = ""
 
 	$: routeClass = `page-${$page.url.pathname.split(`/`).filter(Boolean).join(`-`) || `home`}`
@@ -22,6 +22,10 @@
 		document.documentElement.classList.add(routeClass)
 		prevRouteClass = routeClass
 	}
+
+	$: isLoggedIn = !!currentUser
+	$: userMenuItems = app.Misc.Navigation.getMenu(isLoggedIn)
+	$: displayName = currentUser?.username || currentUser?.firstName || "User"
 
 	onNavigate((navigation) => {
 		if (!document.startViewTransition) return
@@ -34,10 +38,23 @@
 	})
 
 	onMount(() => {
-		navLinks = window.app.Misc.Navigation.list()
-		isLoggedIn = !!window.app.Auth?.user
-		userMenuItems = window.app.Misc.Navigation.getMenu(isLoggedIn)
+		navLinks = app.Misc.Navigation.list()
 		title = app.Config.pageTitleFull()
+
+		// Subscribe to currentUser state
+		if (app.State.currentUser?.subscribe) {
+			app.State.currentUser.subscribe((user: any) => {
+				currentUser = user
+			})
+		}
+
+		// Close menu on outside click
+		const handleClick = (e: MouseEvent) => {
+			const target = e.target as HTMLElement
+			if (!target.closest(".user-menu")) menuOpen = false
+		}
+		document.addEventListener("click", handleClick)
+		return () => document.removeEventListener("click", handleClick)
 	})
 
 	const toggleMenu = () => {
@@ -56,19 +73,26 @@
 				<a class="logo-graphic" href="/" aria-label={app.Config.name}>{app.Config.name}</a>
 			</div>
 			<nav class="col-xs middle-xs end-xs height-100p main-nav">
-				{#each navLinks as link}
-					<a href={link.href} class:active={$page.url.pathname === link.href}>{link.label}</a>
-				{/each}
-				<div class="user-menu">
-					<button class="avatar" aria-label="User menu" on:click={toggleMenu}></button>
-					{#if menuOpen}
-						<div class="menu">
-							{#each userMenuItems as item}
-								<a href={item.href}>{item.label}</a>
-							{/each}
-						</div>
-					{/if}
-				</div>
+				<a href="/home" class:active={$page.url.pathname === "/home"}>Home</a>
+				<a href="/account/login" class:active={$page.url.pathname === "/account/login"}>Login</a>
+
+				{#if isLoggedIn}
+					<div class="user-menu">
+						<button class="avatar-btn" aria-label="User menu" on:click|stopPropagation={toggleMenu}>
+							<span class="user-name">{displayName}</span>
+							<span class="avatar"></span>
+						</button>
+						{#if menuOpen}
+							<div class="menu">
+								{#each userMenuItems as item}
+									<a href={item.href}>{item.label}</a>
+								{/each}
+							</div>
+						{/if}
+					</div>
+				{:else}
+					<a href="/account/register" class:active={$page.url.pathname === "/account/register"}>Register</a>
+				{/if}
 			</nav>
 		</div>
 	</header>
@@ -93,13 +117,27 @@
 		position: relative;
 	}
 
+	.avatar-btn {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		background: none;
+		border: none;
+		cursor: pointer;
+		padding: 4px;
+	}
+
+	.user-name {
+		color: var(--white);
+		font-size: 14px;
+	}
+
 	.avatar {
 		width: 38px;
 		height: 38px;
 		border-radius: 50%;
 		border: var(--border);
 		background: var(--secondary-color);
-		cursor: pointer;
 	}
 
 	.menu {
