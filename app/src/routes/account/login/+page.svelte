@@ -55,7 +55,7 @@
 		loading = true
 		try {
 			await app.Auth.login(form)
-			goto("/")
+			goto("/account/profile")
 		} catch (error) {
 			app.Notify.error((error as Error).message)
 		} finally {
@@ -86,10 +86,14 @@
 
 		history.replaceState({}, "", window.location.pathname)
 		const success = await app.Auth.handleVendorCallback({ access: accessToken, refresh: refreshToken })
-		console.log(success)
 		if (success) {
-			app.Notify.success("Login successful!", "Success", 5)
-			return goto("/")
+			loading = true
+			app.Notify.success("💖 You are being redirected", "Login successful", 5)
+
+			setTimeout(() => {
+				goto("/account/profile")
+			}, 2500)
+			return
 		}
 
 		app.Notify.error("Failed to verify session", "Error")
@@ -108,10 +112,10 @@
 			</Button>
 		</div>
 
-		<div class="col-xs-12 divider margin-bottom-2"><span>Or Login with Email ^_^</span></div>
+		<div class="col-xs-12 divider margin-bottom-2"><span>Or Login with email</span></div>
 
 		<form on:submit|preventDefault={submit} class="col-xs-12">
-			<Input label="Username" placeholder="Type your username" bind:value={form.identifier} required />
+			<Input label="Username" placeholder="Username or email" bind:value={form.identifier} required />
 
 			<Input label="Password" type="password" placeholder="Password" bind:value={form.password} required />
 

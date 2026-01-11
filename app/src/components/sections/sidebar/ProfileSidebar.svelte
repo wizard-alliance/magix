@@ -13,7 +13,7 @@
 <div class="profile-sidebar">
 	<div class="header margin-bottom-2">
 		<h3>{title}</h3>
-		<p>{message}</p>
+		<p class="small">{message}</p>
 	</div>
 
 	<nav>
@@ -23,6 +23,10 @@
 </div>
 
 <style>
+	.small {
+		font-size: 0.875rem;
+		color: var(--text-muted);
+	}
 	nav {
 		display: flex;
 		flex-direction: column;
