@@ -14,6 +14,9 @@ export class AuthClient {
 		remember: 'auth_remember',
 	}
 
+	private meCache: { data: UserDBRow | null; expires: number } | null = null
+	private meCacheTTL = 10 * 60 * 1000 // 10 minutes
+
 	/**
 	 * Set a secure cookie (session cookie if days=0)
 	 */
@@ -64,6 +67,7 @@ export class AuthClient {
 	 */
 	private persistSession(payload: AuthPayload, remember = false) {
 		const { tokens, user } = payload
+		this.meCache = null
 		if (remember) {
 			this.setCookie(this.keys.remember, '1', 30)
 			this.setCookie(this.keys.access, tokens.access.token, 7)
@@ -80,6 +84,7 @@ export class AuthClient {
 	 * Clear stored session data
 	 */
 	private clearSession() {
+		this.meCache = null
 		this.deleteCookie(this.keys.access)
 		this.deleteCookie(this.keys.refresh)
 		this.deleteCookie(this.keys.remember)
@@ -133,12 +138,18 @@ export class AuthClient {
 	/**
 	 * Get current authenticated user profile
 	 */
-	async me() {
+	async me(force = false) {
 		const token = this.getAccessToken()
 		if (!token) return null
+
+		if (!force && this.meCache && Date.now() < this.meCache.expires) {
+			return this.meCache.data
+		}
+
 		try {
 			const data = await app.Request.post<UserDBRow>('/account/me')
 			if (data && !('error' in data)) {
+				this.meCache = { data, expires: Date.now() + this.meCacheTTL }
 				this.updateUser(data)
 				return data
 			}
@@ -203,6 +214,7 @@ export class AuthClient {
 	 * Update user profile
 	 */
 	async updateProfile(body: Record<string, any>) {
+		this.meCache = null
 		return app.Request.post('/account/profile', { body })
 	}
 
@@ -250,7 +262,7 @@ export class AuthClient {
 			this.setCookie(this.keys.access, tokens.access)
 			this.setCookie(this.keys.refresh, tokens.refresh)
 		}
-		const user = await this.me()
+		const user = await this.me(true)
 		return !!user
 	}
 

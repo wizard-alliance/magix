@@ -160,12 +160,17 @@ export class UIManager {
 		return parseInt(value) || 0
 	}
 
-	public sidebarSetContent(ID: 1 | 2, component: ComponentType<SvelteComponent>, props?: Record<string, any>, width?: number | string) {
+	public sidebarSetContent(ID: 1 | 2, component: ComponentType<SvelteComponent>, props?: Record<string, any>, width?: number | string, minWidth?: number | string) {
 		const store = ID === 1 ? this.uiState.sidebar1 : this.uiState.sidebar2
 		store.set({ component, props })
 		// Defer width setting to ensure DOM/CSS is ready on refresh
 		requestAnimationFrame(() => {
 			this.sidebarSetWidth(ID, width ?? this.sidebarGetDefaultWidth(ID))
+			if (minWidth !== undefined) {
+				const minQuery = `--sidebar-${ID}-min-width`
+				const minValue = typeof minWidth === 'string' ? minWidth : `${minWidth}px`
+				document.documentElement.style.setProperty(minQuery, minValue)
+			}
 		})
 	}
 
@@ -173,6 +178,7 @@ export class UIManager {
 		const store = ID === 1 ? this.uiState.sidebar1 : this.uiState.sidebar2
 		store.set(null)
 		this.sidebarSetWidth(ID, 0)
+		document.documentElement.style.removeProperty(`--sidebar-${ID}-min-width`)
 	}
 
 	public sidebarInit() {

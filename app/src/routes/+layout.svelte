@@ -4,7 +4,7 @@
 	import { app } from "$lib/app"
 	import { onMount } from "svelte"
 	import { page } from "$app/stores"
-	import { onNavigate } from "$app/navigation"
+	import { beforeNavigate, onNavigate } from "$app/navigation"
 
 	import type { NavigationLink } from "$lib/types/types"
 	import type { DropdownItem } from "$lib/classes/Misc/NavigationRegistry"
@@ -28,6 +28,12 @@
 	$: isLoggedIn = !!currentUser
 	$: userMenuItems = app.Misc.Navigation.getMenu(isLoggedIn)
 	$: displayName = currentUser?.username || currentUser?.firstName || "User"
+
+	beforeNavigate(({ from, to }) => {
+		if (from?.url.pathname === to?.url.pathname) return
+		app.UI.sidebarClearContent(1)
+		app.UI.sidebarClearContent(2)
+	})
 
 	onNavigate((navigation) => {
 		if (!document.startViewTransition) return

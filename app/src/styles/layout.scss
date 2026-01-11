@@ -84,6 +84,7 @@
 .sidebar-1 {
 	position: absolute;
 	width: var(--sidebar-1-width);
+	min-width: var(--sidebar-1-min-width, 0);
 	top: var(--header-height);
 	left: 0;
 	bottom: 0;
@@ -103,6 +104,7 @@
 .sidebar-2 {
 	position: absolute;
 	width: var(--sidebar-2-width);
+	min-width: var(--sidebar-2-min-width, 0);
 	top: var(--header-height);
 	bottom: 0;
 	right: 0;

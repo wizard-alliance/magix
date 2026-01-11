@@ -1,9 +1,21 @@
 <script lang="ts">
-	export let message = "Profile"
+	import { onMount } from "svelte"
+
+	export let message = "Your profile"
+	let title = "Loading ..."
+	let profile: any = null
+	onMount(async () => {
+		profile = await app.Auth.me()
+		title = `${profile.info.username || "User"}'s Profile`
+	})
 </script>
 
 <div class="profile-sidebar">
-	<h3>{message}</h3>
+	<div class="header margin-bottom-2">
+		<h3>{title}</h3>
+		<p>{message}</p>
+	</div>
+
 	<nav>
 		<a href="/account/profile">Overview</a>
 		<a href="/account/settings">Settings</a>
@@ -11,23 +23,14 @@
 </div>
 
 <style>
-	.profile-sidebar {
-		padding: var(--gutter);
-	}
-
-	h3 {
-		margin-bottom: var(--gutter);
-		color: var(--white);
-	}
-
 	nav {
 		display: flex;
 		flex-direction: column;
-		gap: 4px;
+		gap: calc(var(--gutter) * 0.5);
 	}
 
 	nav a {
-		padding: 8px 12px;
+		padding: 8px 0px;
 		border-radius: 6px;
 		color: var(--white);
 		text-decoration: none;
