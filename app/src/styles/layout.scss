@@ -12,41 +12,46 @@
 	}
 }
 
-.app>header {
+header {
 	position: absolute;
 	height: var(--header-height);
 	width: 100%;
-
 	border-bottom: var(--border);
 	background-color: var(--primary-color);
 	z-index: 100;
-	
-	.logo {
-		text-decoration: none;
-		--size: calc(var(--gutter) * 11);
+	display: flex;
 
-		flex-basis: var(--size);
-		max-width: var(--size);
-		width: var(--size);
-
+	.left-header {
 		display: flex;
-		text-align: center;
-		align-content: center;
-		justify-content: center;
-		align-self: center;
+		align-items: center;
+		justify-content: flex-start;
+		flex-grow: 0;
+		flex-shrink: 0;
+		border-right: var(--border);
 
-		.logo-graphic {
-			text-decoration: none;
-			font-weight: 600;
-			color: var(--primary-color);
-			background-size: contain;
-			background-repeat: no-repeat;
-			background-color: var(--gray);
-			border-radius: var(--border-radius);
-			font-size: 0.8rem;
-			width: 40px;
-			height: 20px;
-		}
+		width: var(--sidebar-0-width);
+		min-width: var(--sidebar-0-default-width);
+		padding-left: calc(var(--gutter) * 3);
+		padding-right: calc(var(--gutter) * 3);
+	}
+
+	.right-header {
+		display: flex;
+		align-items: center;
+		flex-grow: 1;
+		flex-shrink: 0;
+	}
+
+	.logo {
+		display: inline-block;
+		text-decoration: none;
+		font-weight: 600;
+		color: var(--primary-color);
+		background-color: var(--gray);
+		border-radius: var(--border-radius);
+		font-size: 0.8rem;
+		width: auto;
+		padding: calc(var(--gutter) * 0.25) calc(var(--gutter) * 0.75);
 	}
 
 	nav {
@@ -81,12 +86,32 @@
 	}
 }
 
-.sidebar-1 {
+.sidebar-0 {
 	position: absolute;
-	width: var(--sidebar-1-width);
-	min-width: var(--sidebar-1-min-width, 0);
+	width: var(--sidebar-0-width);
 	top: var(--header-height);
 	left: 0;
+	bottom: 0;
+	background-color: var(--primary-color);
+	border-right: var(--border);
+	z-index: 100;
+
+	.list {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		padding: calc(var(--gutter) * 2) 0;
+		gap: calc(var(--gutter) * 2);
+	}
+}
+
+
+.sidebar-1 {
+	position: absolute;
+	width: var(--sidebar-0-width);
+	min-width: var(--sidebar-1-min-width, 0);
+	top: var(--header-height);
+	left:var(--sidebar-0-width);
 	bottom: 0;
 	background-color: var(--primary-color);
 	border-right: var(--border);
@@ -130,7 +155,7 @@
 	position: absolute;
 	width: var(--main-width);
 	top: var(--header-height);
-	left: var(--sidebar-1-width);
+	left: var(--main-offset);
 	bottom: 0;
 	right: 0;
 
@@ -148,7 +173,9 @@
 }
 
 // Set animation speed for layout changes
-.app {
+.app,
+.left-header,
+.right-header {
 	transition: 
 		width var(--animationDefaultSpeed) var(--animationEasing), 
 		height var(--animationDefaultSpeed) var(--animationEasing), 

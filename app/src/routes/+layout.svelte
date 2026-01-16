@@ -9,6 +9,8 @@
 	import type { NavigationLink } from "$lib/types/types"
 	import type { DropdownItem } from "$lib/classes/Misc/NavigationRegistry"
 
+	import MainMenuSidebar from "$components/sections/sidebar/MainMenuSidebar.svelte"
+
 	let navLinks: NavigationLink[] = []
 	let userMenuItems: DropdownItem[] = []
 	let title = "Loading..."
@@ -47,6 +49,7 @@
 
 	onMount(() => {
 		app.UI.sidebarInit()
+
 		sidebar1 = app.State.ui.sidebar1
 		sidebar2 = app.State.ui.sidebar2
 		navLinks = app.Misc.Navigation.list()
@@ -79,36 +82,42 @@
 
 <div class="app">
 	<header>
-		<div class="row middle-xs height-100p">
-			<div class="col middle-xs center-xs logo">
-				<a class="logo-graphic" href="/" aria-label={app.Config.name}>{app.Config.name}</a>
-			</div>
-			<nav class="col-xs middle-xs end-xs height-100p main-nav">
-				<a href="/home" class:active={$page.url.pathname === "/home"}>Home</a>
-				<a href="/account/login" class:active={$page.url.pathname === "/account/login"}>Login</a>
+		<div class="left-header">
+			<a class="logo" href="/" aria-label={app.Config.name}>{app.Config.name}</a>
+		</div>
+		<div class="right-header">
+			<div class="row middle-xs height-100p">
+				<nav class="col-xs middle-xs end-xs height-100p main-nav">
+					<a href="/home" class:active={$page.url.pathname === "/home"}>Home</a>
+					<a href="/account/login" class:active={$page.url.pathname === "/account/login"}>Login</a>
 
-				{#if isLoggedIn}
-					<div class="user-menu">
-						<button class="avatar-btn" aria-label="User menu" on:click|stopPropagation={toggleMenu}>
-							<span class="user-name">{displayName}</span>
-							<span class="avatar"></span>
-						</button>
-						{#if menuOpen}
-							<div class="menu">
-								{#each userMenuItems as item}
-									<a href={item.href}>{item.label}</a>
-								{/each}
-							</div>
-						{/if}
-					</div>
-				{:else}
-					<a href="/account/register" class:active={$page.url.pathname === "/account/register"}>Register</a>
-				{/if}
-			</nav>
+					{#if isLoggedIn}
+						<div class="user-menu">
+							<button class="avatar-btn" aria-label="User menu" on:click|stopPropagation={toggleMenu}>
+								<span class="user-name">{displayName}</span>
+								<span class="avatar"></span>
+							</button>
+							{#if menuOpen}
+								<div class="menu">
+									{#each userMenuItems as item}
+										<a href={item.href}>{item.label}</a>
+									{/each}
+								</div>
+							{/if}
+						</div>
+					{:else}
+						<a href="/account/register" class:active={$page.url.pathname === "/account/register"}>Register</a>
+					{/if}
+				</nav>
+			</div>
 		</div>
 	</header>
 
-	<aside class="sidebar sidebar-1 sidebar-guilds scrollable-hidden">
+	<aside class="sidebar sidebar-0 scrollable-hidden">
+		<MainMenuSidebar />
+	</aside>
+
+	<aside class="sidebar sidebar-1 scrollable-hidden">
 		{#if $sidebar1}
 			<svelte:component this={$sidebar1.component} {...$sidebar1.props} />
 		{/if}

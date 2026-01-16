@@ -5,13 +5,22 @@
 
 	onMount(() => {
 		app.Config.pageTitle = "Profile"
-		app.UI.sidebarSetContent(2, ProfileSidebar, { message: "Hello World xd" }, "30%", "220px")
+		app.UI.sidebarSetContent(1, ProfileSidebar as any, { message: "Hello World xd" }, "220px")
 	})
 </script>
 
 <div>
 	<h1>Profile Page</h1>
 	<p>Welcome to your profile page.</p>
+	<ul>
+		<li>Settings</li>
+		<li>Notifications</li>
+		<li>Security: Sessions/ Devices</li>
+
+		<li>Subscriptions</li>
+		<li>Purchases</li>
+		<li>Invoices</li>
+	</ul>
 </div>
 
 <style lang="scss" scoped>

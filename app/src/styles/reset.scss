@@ -93,6 +93,15 @@ body {
 	overflow: hidden;
 }
 
+html, html * {
+	scroll-behavior: smooth;
+
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+
+	scrollbar-width: thin;
+}
+
 #app {
 	flex: 1;
 	height: 100%;
