@@ -9,7 +9,7 @@
 	})
 </script>
 
-<div>
+<div class="page page-thin">
 	<h1>Profile Page</h1>
 	<p>Welcome to your profile page.</p>
 	<ul>

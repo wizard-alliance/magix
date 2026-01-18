@@ -172,6 +172,31 @@ header {
 	overflow-y: auto;
 }
 
+// Page setup
+.page {
+	position: relative;
+	width: 100%;
+	min-height: 100%;
+	padding: calc( var(--gutter) * 2 );
+	box-sizing: border-box;
+	margin-left: auto;
+	margin-right: auto;
+
+	background-color: rgba(0,0,0,0.1);
+
+	&.page-thin {
+		--padding: max( calc( var(--gutter) * 2 ), 25% );
+		padding-left: var(--padding);
+		padding-right: var(--padding);
+	}
+
+	&.page-wide {
+		padding:0;
+		padding-left: 0;
+		padding-right: 0;
+	}
+}
+
 // Set animation speed for layout changes
 .app,
 .left-header,

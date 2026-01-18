@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from "svelte"
+	import SidebarMenuItem from "$components/modules/sidebarMenuItem.svelte"
 
 	let title = "Loading..."
 	let profile: any = null
@@ -23,62 +24,23 @@
 	<div class="scrollable">
 		<nav>
 			<h3 class="title">{appName}</h3>
-
-			<a href="/account/profile">
-				<i class="fa-light fa-share"></i>
-				<span>News</span>
-				<i class="indicator fa-light fa-arrow-right"></i>
-			</a>
-
-			<a href="/account/profile/settings">
-				<i class="fa-light fa-house"></i>
-				<span>Dashboard</span>
-				<i class="indicator fa-light fa-arrow-right"></i>
-			</a>
-
-			<a href="/admin/dashboard">
-				<i class="fa-light fa-newspaper"></i>
-				<span>Deep dive</span>
-				<i class="indicator fa-light fa-arrow-right"></i>
-			</a>
-
-			<a href="/admin/dashboard">
-				<i class="fa-light fa-building"></i>
-				<span>Research</span>
-				<i class="indicator fa-light fa-arrow-right"></i>
-			</a>
+			<SidebarMenuItem href="/account/profile" icon="fa-bell" label="News" unread={5} />
+			<SidebarMenuItem href="/account/profile/settings" icon="fa-grid-2" label="Dashboard" />
+			<SidebarMenuItem href="/admin/dashboard" icon="fa-chart-line" label="Deep dive" unread={2} />
+			<SidebarMenuItem href="/admin/dashboard" icon="fa-flask" label="Research" unread={0} />
 		</nav>
 		<div class="spacer"></div>
 
 		<nav>
 			<h3 class="title">Account</h3>
-
-			<a href="/account/profile">
-				<i class="fa-light fa-user"></i>
-				<span>Profile</span>
-				<i class="indicator fa-light fa-arrow-right"></i>
-			</a>
-
-			<a href="/account/profile/settings">
-				<i class="fa-light fa-cog"></i>
-				<span>Settings</span>
-				<i class="indicator fa-light fa-arrow-right"></i>
-			</a>
-
-			<a href="/admin/dashboard">
-				<i class="fa-light fa-shield-check"></i>
-				<span>Billing</span>
-				<i class="indicator fa-light fa-arrow-right"></i>
-			</a>
+			<SidebarMenuItem href="/account/profile" icon="fa-user" label="Profile" />
+			<SidebarMenuItem href="/account/profile/settings" icon="fa-gear" label="Settings" />
+			<SidebarMenuItem href="/admin/dashboard" icon="fa-credit-card" label="Billing" />
 		</nav>
 		<div class="spacer"></div>
 
 		<nav>
-			<a href="/admin/dashboard">
-				<i class="fa-light fa-shield-check"></i>
-				<span>Admin</span>
-				<i class="indicator fa-light fa-arrow-right"></i>
-			</a>
+			<SidebarMenuItem href="/admin/dashboard" icon="fa-shield-halved" label="Admin" />
 		</nav>
 	</div>
 </div>
@@ -120,6 +82,7 @@
 		flex-wrap: nowrap;
 		flex-direction: row;
 		justify-content: flex-start;
+
 		&:hover {
 			background-color: var(--secondary-color);
 			.indicator {
@@ -167,55 +130,13 @@
 		gap: calc(var(--gutter) * 0.5);
 	}
 
-	nav a,
 	nav .title {
 		user-select: none;
 		font-size: 14px;
-		font-weight: 300;
+		font-weight: 500;
 		padding: calc(var(--gutter) * 0.5) calc(var(--gutter) * 2);
 		text-decoration: none;
-	}
-
-	nav .title {
-		font-weight: 500;
 		color: var(--text-muted);
 		margin-bottom: calc(var(--gutter) * 0.5);
-	}
-
-	nav a {
-		position: relative;
-		display: flex;
-		align-items: center;
-		color: var(--white);
-		gap: calc(var(--gutter) * 1.5);
-		margin-bottom: calc(var(--gutter) * 1);
-
-		i {
-			font-size: 15px;
-			color: var(--text-muted);
-		}
-	}
-
-	nav a .indicator {
-		opacity: 0;
-		pointer-events: none;
-		position: absolute;
-		right: calc(var(--gutter) * 2);
-		font-size: 12px;
-		color: var(--text-muted);
-		transform: translateX(calc(var(--gutter) * 1));
-		transition:
-			opacity 600ms cubic-bezier(0, 0, 0, 1),
-			transform 600ms cubic-bezier(0, 0, 0, 1);
-	}
-
-	nav a:hover {
-		i:first-child {
-			color: var(--accent-color);
-		}
-		.indicator {
-			opacity: 0.7;
-			transform: translateX(0);
-		}
 	}
 </style>

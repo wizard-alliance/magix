@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from "svelte"
+	import SidebarMenuItem from "$components/modules/sidebarMenuItem.svelte"
 
 	let profile: any = null
 
@@ -12,65 +13,20 @@
 	<div class="scrollable">
 		<nav>
 			<h2 class="title">Account</h2>
-
-			<a href="/account/profile">
-				<i class="fa-light fa-user-plus"></i>
-				<span>Update profile</span>
-				<i class="indicator fa-light fa-arrow-right"></i>
-			</a>
-
-			<a href="/account/profile/settings">
-				<i class="fa-light fa-lock"></i>
-				<span>Change password</span>
-				<i class="indicator fa-light fa-arrow-right"></i>
-			</a>
-
-			<a href="/account/profile/avatar">
-				<i class="fa-light fa-cat"></i>
-				<span>Change avatar</span>
-				<i class="indicator fa-light fa-arrow-right"></i>
-			</a>
-
-			<a href="/admin/dashboard">
-				<i class="fa-light fa-building"></i>
-				<span>Account status</span>
-				<i class="indicator fa-light fa-arrow-right"></i>
-			</a>
-
-			<a href="/admin/dashboard">
-				<i class="fa-light fa-building"></i>
-				<span>Support</span>
-				<i class="indicator fa-light fa-arrow-right"></i>
-			</a>
+			<SidebarMenuItem href="/account/profile" icon="fa-user-pen" label="Update profile" />
+			<SidebarMenuItem href="/account/profile/settings" icon="fa-key" label="Change password" />
+			<SidebarMenuItem href="/account/profile/avatar" icon="fa-camera" label="Change avatar" />
+			<SidebarMenuItem href="/admin/dashboard" icon="fa-circle-info" label="Account status" />
+			<SidebarMenuItem href="/admin/dashboard" icon="fa-headset" label="Support" />
 		</nav>
 		<div class="spacer"></div>
 
 		<nav>
 			<h3 class="title">Billing</h3>
-
-			<a href="/account/profile">
-				<i class="fa-light fa-user"></i>
-				<span>Billing details</span>
-				<i class="indicator fa-light fa-arrow-right"></i>
-			</a>
-
-			<a href="/admin/dashboard">
-				<i class="fa-light fa-shield-check"></i>
-				<span>Subscriptions</span>
-				<i class="indicator fa-light fa-arrow-right"></i>
-			</a>
-
-			<a href="/admin/dashboard">
-				<i class="fa-light fa-shield-check"></i>
-				<span>Billing history</span>
-				<i class="indicator fa-light fa-arrow-right"></i>
-			</a>
-
-			<a href="/account/profile/settings">
-				<i class="fa-light fa-cog"></i>
-				<span>Invoices</span>
-				<i class="indicator fa-light fa-arrow-right"></i>
-			</a>
+			<SidebarMenuItem href="/account/profile" icon="fa-file-invoice" label="Billing details" />
+			<SidebarMenuItem href="/admin/dashboard" icon="fa-repeat" label="Subscriptions" />
+			<SidebarMenuItem href="/admin/dashboard" icon="fa-clock-rotate-left" label="Billing history" />
+			<SidebarMenuItem href="/account/profile/settings" icon="fa-receipt" label="Invoices" />
 		</nav>
 	</div>
 </div>
@@ -105,55 +61,13 @@
 		gap: calc(var(--gutter) * 0.5);
 	}
 
-	nav a,
 	nav .title {
 		user-select: none;
 		font-size: 14px;
-		font-weight: 300;
+		font-weight: 500;
 		padding: calc(var(--gutter) * 0.5) calc(var(--gutter) * 2);
 		text-decoration: none;
-	}
-
-	nav .title {
-		font-weight: 500;
 		color: var(--text-muted);
 		margin-bottom: calc(var(--gutter) * 0.5);
-	}
-
-	nav a {
-		position: relative;
-		display: flex;
-		align-items: center;
-		color: var(--white);
-		gap: calc(var(--gutter) * 1.5);
-		margin-bottom: calc(var(--gutter) * 1);
-
-		i {
-			font-size: 15px;
-			color: var(--text-muted);
-		}
-	}
-
-	nav a .indicator {
-		opacity: 0;
-		pointer-events: none;
-		position: absolute;
-		right: calc(var(--gutter) * 2);
-		font-size: 12px;
-		color: var(--text-muted);
-		transform: translateX(calc(var(--gutter) * 1));
-		transition:
-			opacity 600ms cubic-bezier(0, 0, 0, 1),
-			transform 600ms cubic-bezier(0, 0, 0, 1);
-	}
-
-	nav a:hover {
-		i:first-child {
-			color: var(--accent-color);
-		}
-		.indicator {
-			opacity: 0.7;
-			transform: translateX(0);
-		}
 	}
 </style>
