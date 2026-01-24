@@ -2,6 +2,8 @@
 	import { app } from "$lib/app"
 	import { onMount } from "svelte"
 	import Button from "$components/fields/button.svelte"
+	import Avatar from "$components/modules/avatar.svelte"
+	import Spinner from "$components/modules/spinner.svelte"
 	import ProfileSidebar from "$components/sections/sidebar/ProfileSidebar.svelte"
 
 	let user: any = null
@@ -14,14 +16,13 @@
 	})
 
 	$: info = user || {}
-	$: initials = (info.firstName?.[0] || "") + (info.lastName?.[0] || info.username?.[0] || "")
 	$: fullName = [info.firstName, info.lastName].filter(Boolean).join(" ")
 </script>
 
 <div class="page page-thin">
 	{#if user}
 		<div class="profile-header">
-			<div class="avatar">{initials.toUpperCase()}</div>
+			<Avatar name={fullName || info.username} size="lg" />
 			<div class="info-block">
 				<h1>{fullName || info.username}</h1>
 				<p class="email">{info.email}</p>
@@ -44,10 +45,10 @@
 		</div>
 
 		<div class="actions">
-			<Button variant="secondary" size="sm"><a href="/account/settings">Edit Profile</a></Button>
+			<Button variant="secondary" size="sm" href="/account/settings">Edit Profile</Button>
 		</div>
 	{:else}
-		<p class="loading">Loading...</p>
+		<Spinner />
 	{/if}
 </div>
 
@@ -57,19 +58,6 @@
 		align-items: center;
 		gap: calc(var(--gutter) * 2);
 		margin-bottom: calc(var(--gutter) * 3);
-	}
-
-	.avatar {
-		width: 72px;
-		height: 72px;
-		border-radius: 50%;
-		background: var(--accent-color);
-		color: var(--black);
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		font-size: 24px;
-		font-weight: 600;
 	}
 
 	.info-block h1 {
@@ -104,14 +92,5 @@
 	.actions {
 		display: flex;
 		gap: var(--gutter);
-	}
-
-	.actions a {
-		color: inherit;
-		text-decoration: none;
-	}
-
-	.loading {
-		color: var(--text-color-secondary);
 	}
 </style>

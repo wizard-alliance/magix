@@ -4,6 +4,7 @@
 	import { onMount } from "svelte"
 	import Input from "$components/fields/input.svelte"
 	import Button from "$components/fields/button.svelte"
+	import Spinner from "$components/modules/spinner.svelte"
 	import loginSplash from "$images/login-splash.png"
 
 	let email = ""
@@ -58,7 +59,7 @@
 	}
 </script>
 
-<div class="col-xs-12 col-sm-12 col-md-6 col-lg-5 center-xs auth-form-col">
+<div class="col-xs-12 col-sm-12 col-md-6 col-lg-5 center-xs auth-form-col scrollable">
 	<div class="row center-xs auth-form">
 		<div class="col-xs-12 margin-bottom-2">
 			<h2>{step === "request" ? "Reset Password" : resetComplete ? "Password Reset" : "Set New Password"}</h2>
@@ -83,7 +84,7 @@
 				<Input label="Email" type="email" placeholder="your@email.com" bind:value={email} required />
 
 				<Button type="submit" disabled={loading}>
-					{loading ? "Sending..." : "Send Reset Link"}
+					{#if loading}<Spinner size="sm" mode="light" />{:else}Send Reset Link{/if}
 				</Button>
 			</form>
 
@@ -99,7 +100,7 @@
 				<Input label="Confirm Password" type="password" placeholder="Confirm new password" bind:value={confirmPassword} required />
 
 				<Button type="submit" disabled={loading}>
-					{loading ? "Resetting..." : "Reset Password"}
+					{#if loading}<Spinner size="sm" mode="light" />{:else}Reset Password{/if}
 				</Button>
 			</form>
 
@@ -118,6 +119,7 @@
 		margin-left: auto;
 		margin-right: auto;
 		display: flex;
+		height: 100%;
 		flex-direction: row;
 		flex-wrap: wrap;
 		align-content: center;
@@ -130,7 +132,6 @@
 
 	.auth-form {
 		display: flex;
-		flex-direction: column;
 		gap: calc(var(--gutter) * 1.5);
 	}
 

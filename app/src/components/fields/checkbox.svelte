@@ -2,15 +2,15 @@
 	export let id = ""
 	export let label = ""
 	export let checked = false
+	export let disabled = false
 
-	// randomize ID
 	if (!id) {
 		id = `checkbox-${Math.random().toString(36).substring(2, 15)}`
 	}
 </script>
 
-<label class="checkbox" for={id}>
-	<input {id} type="checkbox" bind:checked />
+<label class="checkbox" class:disabled for={id}>
+	<input {id} type="checkbox" bind:checked {disabled} />
 	{#if label}
 		<span class="checkbox-label">{label}</span>
 	{/if}
@@ -22,11 +22,16 @@
 		align-items: center;
 		gap: 8px;
 		cursor: pointer;
-		font-size: 13px;
+		font-size: 14px;
 		user-select: none;
 
 		&:hover {
 			opacity: 0.9;
+		}
+
+		&.disabled {
+			opacity: 0.5;
+			cursor: not-allowed;
 		}
 	}
 

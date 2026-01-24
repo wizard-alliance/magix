@@ -6,12 +6,11 @@
 	import { page } from "$app/stores"
 	import { beforeNavigate, onNavigate } from "$app/navigation"
 
-	import type { NavigationLink } from "$lib/types/types"
 	import type { DropdownItem } from "$lib/classes/Misc/NavigationRegistry"
 
 	import MainMenuSidebar from "$components/sections/sidebar/MainMenuSidebar.svelte"
+	import Avatar from "$components/modules/avatar.svelte"
 
-	let navLinks: NavigationLink[] = []
 	let userMenuItems: DropdownItem[] = []
 	let title = "Loading..."
 	let menuOpen = false
@@ -52,7 +51,6 @@
 
 		sidebar1 = app.State.ui.sidebar1
 		sidebar2 = app.State.ui.sidebar2
-		navLinks = app.Misc.Navigation.list()
 		title = app.Config.pageTitleFull()
 
 		// Subscribe to currentUser state
@@ -89,25 +87,7 @@
 			<div class="row middle-xs height-100p">
 				<nav class="col-xs middle-xs end-xs height-100p main-nav">
 					<a href="/home" class:active={$page.url.pathname === "/home"}>Home</a>
-					<a href="/account/login" class:active={$page.url.pathname === "/account/login"}>Login</a>
-
-					{#if isLoggedIn}
-						<div class="user-menu">
-							<button class="avatar-btn" aria-label="User menu" on:click|stopPropagation={toggleMenu}>
-								<span class="user-name">{displayName}</span>
-								<span class="avatar"></span>
-							</button>
-							{#if menuOpen}
-								<div class="menu">
-									{#each userMenuItems as item}
-										<a href={item.href}>{item.label}</a>
-									{/each}
-								</div>
-							{/if}
-						</div>
-					{:else}
-						<a href="/account/register" class:active={$page.url.pathname === "/account/register"}>Register</a>
-					{/if}
+					<a href="/dev" class:active={$page.url.pathname.startsWith("/dev")}>Dev</a>
 				</nav>
 			</div>
 		</div>
@@ -158,14 +138,6 @@
 	.user-name {
 		color: var(--white);
 		font-size: 14px;
-	}
-
-	.avatar {
-		width: 38px;
-		height: 38px;
-		border-radius: 50%;
-		border: var(--border);
-		background: var(--secondary-color);
 	}
 
 	.menu {

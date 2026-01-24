@@ -1,6 +1,7 @@
 <script lang="ts">
 	import SidebarMenuItem from "$components/modules/sidebarMenuItem.svelte"
 	import DropdownMenu from "$components/modules/DropdownMenu.svelte"
+	import Avatar from "$components/modules/avatar.svelte"
 
 	let title = "Menu"
 	let appName = "App"
@@ -17,7 +18,7 @@
 <div class="main-menu__sidebar">
 	<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
 	<div class="account" class:open={accountMenuOpen} bind:this={accountTrigger} on:click={toggleAccountMenu}>
-		<div class="avatar"></div>
+		<Avatar name={nickname} size="sm" />
 		<div class="name">{nickname}</div>
 		<i class="indicator fa-light fa-angle-down"></i>
 		<DropdownMenu bind:open={accountMenuOpen} bind:toggle={toggleAccountMenu} triggerRef={accountTrigger} position="top">
@@ -100,15 +101,6 @@
 			.indicator {
 				color: white;
 			}
-		}
-
-		.avatar {
-			--size: 36px;
-			display: flex;
-			width: var(--size);
-			height: var(--size);
-			border-radius: 50%;
-			background-color: var(--secondary-color);
 		}
 
 		.name {

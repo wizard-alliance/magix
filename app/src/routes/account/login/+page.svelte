@@ -5,6 +5,7 @@
 	import Input from "$components/fields/input.svelte"
 	import Checkbox from "$components/fields/checkbox.svelte"
 	import Button from "$components/fields/button.svelte"
+	import Spinner from "$components/modules/spinner.svelte"
 	import loginSplash from "$images/login-splash.png"
 
 	let form = { identifier: "", password: "", remember: false }
@@ -100,7 +101,7 @@
 	}
 </script>
 
-<div class="col-xs-12 col-sm-12 col-md-6 col-lg-5 center-xs auth-form-col">
+<div class="col-xs-12 col-sm-12 col-md-6 col-lg-5 center-xs auth-form-col scrollable">
 	<div class="row center-xs auth-form">
 		<div class="col-xs-12 margin-bottom-2">
 			<h2>Welcome!</h2>
@@ -108,7 +109,7 @@
 
 		<div class="col-xs-12 margin-bottom-2">
 			<Button variant="secondary" on:click={() => vendorLogin(`discord`)} disabled={loading}>
-				{loading ? "Connecting..." : "Log in with Discord"}
+				{#if loading}<Spinner size="sm" />{:else}Log in with Discord{/if}
 			</Button>
 		</div>
 
@@ -129,17 +130,19 @@
 			</div>
 
 			<Button type="submit" disabled={loading}>
-				{loading ? "Logging in..." : "Login"}
+				{#if loading}<Spinner size="sm" mode="light" />{:else}Login{/if}
 			</Button>
 		</form>
 
-		<div class="col-xs-12">
+		<div class="col-xs-12 margin-bottom-2">
 			<p class="hint">Haven't sign up yet? <a href="/account/register">Sign up</a></p>
 		</div>
 	</div>
 </div>
 
-<div class="col-xs hidden-xs visible-md auth-side" style:--bg-image="url({loginSplash})"></div>
+<div class="col-xs hidden-xs visible-md auth-side">
+	<div style:--bg-image="url({loginSplash})"></div>
+</div>
 
 <style lang="scss" scoped>
 	.auth-form-col {
@@ -147,7 +150,7 @@
 		margin-left: auto;
 		margin-right: auto;
 		display: flex;
-		flex-direction: row;
+		height: 100%;
 		flex-wrap: wrap;
 		align-content: center;
 		justify-content: center;
@@ -159,7 +162,6 @@
 
 	.auth-form {
 		display: flex;
-		flex-direction: column;
 		gap: calc(var(--gutter) * 1.5);
 	}
 
@@ -186,14 +188,22 @@
 	}
 
 	.auth-side {
-		background: var(--bg-image), radial-gradient(ellipse at center, #fff7d0, #ffee9f);
-		background-size: contain, cover;
-		background-position: center;
-		background-repeat: no-repeat;
+		position: relative;
 		height: 100%;
-		background-size:
-			clamp(300px, 70%, 500px) auto,
-			cover;
+
+		div {
+			height: 100%;
+			width: 100%;
+			position: absolute;
+
+			background: var(--bg-image), radial-gradient(ellipse at center, #fff7d0, #ffee9f);
+			background-size: contain, cover;
+			background-position: center;
+			background-repeat: no-repeat;
+			background-size:
+				clamp(300px, 70%, 500px) auto,
+				cover;
+		}
 	}
 
 	.link-muted {

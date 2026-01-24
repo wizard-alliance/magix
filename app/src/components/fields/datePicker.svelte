@@ -1,12 +1,10 @@
 <script lang="ts">
 	export let id = ""
-	export let label = ""
-	export let value = ""
-	export let placeholder = ""
+	export let label: string = ""
+	export let value: string = ""
 	export let required = false
 	export let disabled = false
 	export let helperText = ""
-	export let rows = 4
 </script>
 
 <div class="field">
@@ -15,7 +13,7 @@
 			>{label}{#if required}<span class="req">*</span>{/if}</label
 		>
 	{/if}
-	<textarea {id} bind:value {placeholder} {required} {disabled} {rows}></textarea>
+	<input {id} type="date" bind:value {required} {disabled} />
 	{#if helperText}
 		<span class="helper">{helperText}</span>
 	{/if}
@@ -31,27 +29,30 @@
 	label {
 		font-size: 14px;
 		font-weight: 500;
-		text-align: left;
 	}
 
-	textarea {
+	input {
+		padding: 10px 12px;
 		background: var(--secondary-color);
 		border: var(--border);
 		border-radius: 8px;
 		color: var(--white);
-		padding: 10px 12px;
-		resize: vertical;
-		min-height: 80px;
-	}
+		font-size: 14px;
 
-	textarea:focus {
-		outline: none;
-		border-color: var(--accent-color);
-	}
+		&:focus {
+			outline: none;
+			border-color: var(--accent-color);
+		}
 
-	textarea:disabled {
-		opacity: 0.5;
-		cursor: not-allowed;
+		&:disabled {
+			opacity: 0.5;
+			cursor: not-allowed;
+		}
+
+		&::-webkit-calendar-picker-indicator {
+			filter: invert(1);
+			cursor: pointer;
+		}
 	}
 
 	.req {

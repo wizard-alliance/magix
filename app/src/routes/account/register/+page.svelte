@@ -4,6 +4,7 @@
 	import Input from "$components/fields/input.svelte"
 	import Checkbox from "$components/fields/checkbox.svelte"
 	import Button from "$components/fields/button.svelte"
+	import Spinner from "$components/modules/spinner.svelte"
 	import loginSplash from "$images/login-splash.png"
 
 	let form = {
@@ -44,7 +45,7 @@
 	}
 </script>
 
-<div class="col-xs-12 col-sm-12 col-md-6 col-lg-5 center-xs auth-form-col">
+<div class="col-xs-12 col-sm-12 col-md-6 col-lg-5 center-xs auth-form-col scrollable">
 	<div class="row center-xs auth-form">
 		<div class="col-xs-12 margin-bottom-2">
 			<h2>Create Account</h2>
@@ -80,7 +81,7 @@
 				</div>
 
 				<Button type="submit" disabled={loading}>
-					{loading ? "Creating account..." : "Create Account"}
+					{#if loading}<Spinner size="sm" mode="light" />{:else}Create Account{/if}
 				</Button>
 			</form>
 
@@ -99,6 +100,7 @@
 		margin-left: auto;
 		margin-right: auto;
 		display: flex;
+		height: 100%;
 		flex-direction: row;
 		flex-wrap: wrap;
 		align-content: center;
@@ -111,7 +113,6 @@
 
 	.auth-form {
 		display: flex;
-		flex-direction: column;
 		gap: calc(var(--gutter) * 1.5);
 	}
 

@@ -1,0 +1,38 @@
+<script lang="ts">
+	export let value: number = 0
+	export let max: number = 100
+	export let showLabel = false
+
+	$: percent = Math.min(100, Math.max(0, (value / max) * 100))
+</script>
+
+<div class="progress">
+	<div class="bar" style={`width: ${percent}%`}></div>
+	{#if showLabel}<span class="label">{Math.round(percent)}%</span>{/if}
+</div>
+
+<style>
+	.progress {
+		position: relative;
+		width: 100%;
+		height: 8px;
+		background: var(--secondary-color);
+		border-radius: 4px;
+		overflow: hidden;
+	}
+
+	.bar {
+		height: 100%;
+		background: var(--accent-color);
+		border-radius: 4px;
+		transition: width 0.3s;
+	}
+
+	.label {
+		position: absolute;
+		right: 0;
+		top: -20px;
+		font-size: 12px;
+		color: var(--text-muted);
+	}
+</style>

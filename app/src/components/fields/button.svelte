@@ -3,11 +3,18 @@
 	export let variant: "primary" | "secondary" | "ghost" | "danger" = "primary"
 	export let size: "sm" | "md" | "lg" = "md"
 	export let disabled = false
+	export let href: string | null = null
 </script>
 
-<button class={`btn btn-${variant} btn-${size}`} {type} {disabled} on:click>
-	<slot />
-</button>
+{#if href}
+	<a {href} class={`btn btn-${variant} btn-${size}`} class:disabled on:click>
+		<slot />
+	</a>
+{:else}
+	<button class={`btn btn-${variant} btn-${size}`} {type} {disabled} on:click>
+		<slot />
+	</button>
+{/if}
 
 <style>
 	.btn {
@@ -20,6 +27,7 @@
 		font-weight: 600;
 		cursor: pointer;
 		user-select: none;
+		text-decoration: none;
 	}
 
 	.btn-sm {
@@ -68,8 +76,10 @@
 		opacity: 0.9;
 	}
 
-	.btn:disabled {
+	.btn:disabled,
+	.btn.disabled {
 		opacity: 0.5;
 		cursor: not-allowed;
+		pointer-events: none;
 	}
 </style>
