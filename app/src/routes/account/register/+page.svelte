@@ -3,7 +3,7 @@
 	import { onMount } from "svelte"
 	import Input from "$components/fields/input.svelte"
 	import Checkbox from "$components/fields/checkbox.svelte"
-	import Button from "$components/button.svelte"
+	import Button from "$components/fields/button.svelte"
 	import loginSplash from "$images/login-splash.png"
 
 	let form = {
@@ -79,7 +79,7 @@
 					<Checkbox label="I accept the Terms of Service" bind:checked={form.tos_accepted} />
 				</div>
 
-				<Button type="submit" color="primary" disabled={loading} icon={loading ? "fas fa-spinner fa-spin" : ""}>
+				<Button type="submit" disabled={loading}>
 					{loading ? "Creating account..." : "Create Account"}
 				</Button>
 			</form>

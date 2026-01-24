@@ -35,6 +35,7 @@ export class AuthRoute {
 
 		// User routes
 		api.Router.set(["POST"], `${this.userRoute}/me`, this.me, this.userOptions)
+		api.Router.set(["POST"], `${this.userRoute}/profile`, this.updateProfile, this.userOptions)
 
 		// CRUD routes
 		api.Router.set("GET", `${this.userRoute}/user`, this.get, this.adminOptions)
@@ -130,10 +131,31 @@ export class AuthRoute {
 		)
 	}
 
+
+	// Fetches all Profile information about the current authenticated logged in user
 	me = async ($: $, req: Request, res: Response) => {
 		$ = api.Router.getParams(req)
 		const token = this.parseAccessToken($.headers as Record<string, any>)
 		return await api.User.Repo.me(token ?? "")
+	}
+
+	// Update current user's profile
+	updateProfile = async ($: $, req: Request, res: Response) => {
+		$ = api.Router.getParams(req)
+		const token = this.parseAccessToken($.headers as Record<string, any>)
+		const me = token ? await api.User.Repo.me(token) : null
+		if (!me || "error" in me) return me ?? { error: "Unauthorized", code: 401 }
+
+		const allowed = ["first_name", "last_name", "phone", "company", "address"]
+		const data: Record<string, any> = {}
+		for (const key of allowed) {
+			if ($.body[key] !== undefined) data[key] = $.body[key]
+		}
+		// Also accept camelCase
+		if ($.body.firstName !== undefined) data.first_name = $.body.firstName
+		if ($.body.lastName !== undefined) data.last_name = $.body.lastName
+
+		return await api.User.Repo.update(me.id, data)
 	}
 
 	refresh = async ($: $, req: Request, res: Response) => {

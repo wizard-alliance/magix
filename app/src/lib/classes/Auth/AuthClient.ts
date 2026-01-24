@@ -1,4 +1,4 @@
-import type { AuthPayload, UserDBRow } from '../../types/types'
+import type { AuthPayload, UserDBRow, UserFull } from '../../types/types'
 
 type LoginInput = { identifier: string; password: string; remember?: boolean }
 type RegisterInput = { email: string; username: string; password: string; tos_accepted?: boolean }
@@ -14,7 +14,7 @@ export class AuthClient {
 		remember: 'auth_remember',
 	}
 
-	private meCache: { data: UserDBRow | null; expires: number } | null = null
+	private meCache: { data: UserFull | null; expires: number } | null = null
 	private meCacheTTL = 10 * 60 * 1000 // 10 minutes
 
 	/**
@@ -138,7 +138,7 @@ export class AuthClient {
 	/**
 	 * Get current authenticated user profile
 	 */
-	async me(force = false) {
+	async me(force = false): Promise<UserFull | null> {
 		const token = this.getAccessToken()
 		if (!token) return null
 
@@ -147,10 +147,10 @@ export class AuthClient {
 		}
 
 		try {
-			const data = await app.Request.post<UserDBRow>('/account/me')
+			const data = await app.Request.post<UserFull>('/account/me')
 			if (data && !('error' in data)) {
 				this.meCache = { data, expires: Date.now() + this.meCacheTTL }
-				this.updateUser(data)
+				this.updateUser(data as any)
 				return data
 			}
 			return null

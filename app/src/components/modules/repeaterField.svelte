@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { createEventDispatcher } from "svelte"
-	import FormButton from "./formButton.svelte"
+	import Button from "$components/fields/button.svelte"
 
 	type ItemResolver<T = any, R = string> = (item: T, index: number) => R
 	type RepeaterEvent<T = any> = { item: T; index: number }
@@ -65,7 +65,7 @@
 			<h3>{title}</h3>
 			<slot name="helper" />
 		</div>
-		<FormButton label={addLabel} on:click={() => dispatch("add")} />
+		<Button on:click={() => dispatch("add")}>{addLabel}</Button>
 	</div>
 
 	{#if !items.length}
@@ -130,14 +130,13 @@
 			</section>
 
 			<footer class={`repeater__item-footer ${isCollapsed ? "collapsed" : ""}`} aria-hidden={isCollapsed}>
-				<FormButton
-					label={getSaveLabel(item, index)}
+				<Button
 					on:click={(event) => {
 						event.stopPropagation()
 						fire("save", { item, index })
 					}}
-					disabled={Boolean(getSaveDisabled(item, index))}
-				/>
+					disabled={Boolean(getSaveDisabled(item, index))}>{getSaveLabel(item, index)}</Button
+				>
 			</footer>
 		</article>
 	{/each}

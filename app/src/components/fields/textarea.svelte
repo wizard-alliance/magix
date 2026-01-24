@@ -1,24 +1,17 @@
 <script lang="ts">
 	export let id = ""
 	export let label = ""
-	export let type: HTMLInputElement["type"] = "text"
 	export let value = ""
 	export let placeholder = ""
 	export let required = false
-	export let disabled = false
-	export let helperText = ""
+	export let rows = 4
 </script>
 
 <div class="field">
 	{#if label}
-		<label for={id}
-			>{label}{#if required}<span class="req">*</span>{/if}</label
-		>
+		<label for={id}>{label}</label>
 	{/if}
-	<input {id} {type} bind:value {placeholder} {required} {disabled} />
-	{#if helperText}
-		<span class="helper">{helperText}</span>
-	{/if}
+	<textarea {id} bind:value {placeholder} {required} {rows}></textarea>
 </div>
 
 <style>
@@ -34,31 +27,18 @@
 		text-align: left;
 	}
 
-	input {
+	textarea {
 		background: var(--secondary-color);
 		border: var(--border);
 		border-radius: 8px;
 		color: var(--white);
 		padding: 10px 12px;
+		resize: vertical;
+		min-height: 80px;
 	}
 
-	input:focus {
+	textarea:focus {
 		outline: none;
 		border-color: var(--accent-color);
-	}
-
-	input:disabled {
-		opacity: 0.5;
-		cursor: not-allowed;
-	}
-
-	.req {
-		color: var(--accent-color);
-		margin-left: 4px;
-	}
-
-	.helper {
-		font-size: 12px;
-		color: var(--text-color-secondary);
 	}
 </style>

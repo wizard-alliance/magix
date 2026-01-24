@@ -58,6 +58,14 @@ export type UserDBRow = {
 	updated: string | null
 }
 
+export type UserFull = {
+	id: number
+	info: UserDBRow
+	permissions: string[]
+	settings: { key: string; value: string | null }[]
+	devices: any[]
+}
+
 export type AuthPayload = {
 	user: UserDBRow
 	tokens: AuthTokens

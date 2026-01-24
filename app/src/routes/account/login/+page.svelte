@@ -4,7 +4,7 @@
 	import { onMount } from "svelte"
 	import Input from "$components/fields/input.svelte"
 	import Checkbox from "$components/fields/checkbox.svelte"
-	import Button from "$components/button.svelte"
+	import Button from "$components/fields/button.svelte"
 	import loginSplash from "$images/login-splash.png"
 
 	let form = { identifier: "", password: "", remember: false }
@@ -107,7 +107,7 @@
 		</div>
 
 		<div class="col-xs-12 margin-bottom-2">
-			<Button color="secondary" on:click={() => vendorLogin(`discord`)} icon={loading ? "fas fa-spinner fa-spin" : "fab fa-discord"} disabled={loading}>
+			<Button variant="secondary" on:click={() => vendorLogin(`discord`)} disabled={loading}>
 				{loading ? "Connecting..." : "Log in with Discord"}
 			</Button>
 		</div>
@@ -128,7 +128,7 @@
 				</div>
 			</div>
 
-			<Button type="submit" color="primary" disabled={loading} icon={loading ? "fas fa-spinner fa-spin" : ""}>
+			<Button type="submit" disabled={loading}>
 				{loading ? "Logging in..." : "Login"}
 			</Button>
 		</form>

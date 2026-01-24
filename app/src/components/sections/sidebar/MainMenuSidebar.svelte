@@ -1,24 +1,36 @@
 <script lang="ts">
-	import { onMount } from "svelte"
 	import SidebarMenuItem from "$components/modules/sidebarMenuItem.svelte"
+	import DropdownMenu from "$components/modules/DropdownMenu.svelte"
 
-	let title = "Loading..."
-	let profile: any = null
+	let title = "Menu"
 	let appName = "App"
-	let nickname = "Loading..."
+	let accountMenuOpen = false
+	let toggleAccountMenu: () => void
+	let accountTrigger: HTMLElement
 
-	onMount(async () => {
-		profile = await app.Auth.me()
-		nickname = profile.info.username || "Account"
-		title = `Menu`
-	})
+	const currentUser = app.State.currentUser
+
+	$: isLoggedIn = !!$currentUser
+	$: nickname = $currentUser?.info?.firstName || $currentUser?.info?.username || "Login"
 </script>
 
 <div class="main-menu__sidebar">
-	<div class="account">
+	<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+	<div class="account" class:open={accountMenuOpen} bind:this={accountTrigger} on:click={toggleAccountMenu}>
 		<div class="avatar"></div>
 		<div class="name">{nickname}</div>
 		<i class="indicator fa-light fa-angle-down"></i>
+		<DropdownMenu bind:open={accountMenuOpen} bind:toggle={toggleAccountMenu} triggerRef={accountTrigger} position="top">
+			{#if isLoggedIn}
+				<a href="/account/profile"><i class="fa-light fa-user"></i> Profile</a>
+				<a href="/account/settings"><i class="fa-light fa-gear"></i> Settings</a>
+				<hr />
+				<a href="/account/logout"><i class="fa-light fa-arrow-right-from-bracket"></i> Logout</a>
+			{:else}
+				<a href="/account/login"><i class="fa-light fa-arrow-right-to-bracket"></i> Login</a>
+				<a href="/account/register"><i class="fa-light fa-user-plus"></i> Register</a>
+			{/if}
+		</DropdownMenu>
 	</div>
 
 	<div class="scrollable">
@@ -113,10 +125,15 @@
 			right: calc(var(--gutter) * 3);
 			font-size: 12px;
 			color: var(--text-muted);
-			transform: translateX(calc(var(--gutter) * 1));
+			transform: translateX(calc(var(--gutter) * 1)) rotate(0deg);
 			transition:
 				opacity 600ms cubic-bezier(0, 0, 0, 1),
-				transform 600ms cubic-bezier(0, 0, 0, 1);
+				transform 600ms cubic-bezier(0, 0, 0, 1),
+				color 600ms cubic-bezier(0, 0, 0, 1);
+		}
+
+		&.open .indicator {
+			transform: translateX(calc(var(--gutter) * 1)) rotate(180deg);
 		}
 	}
 

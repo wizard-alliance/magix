@@ -1,8 +1,10 @@
 <script lang="ts">
+	type Option = { label: string; value: string }
+
 	export let id = ""
 	export let label = ""
-	export let type: HTMLInputElement["type"] = "text"
 	export let value = ""
+	export let options: Option[] = []
 	export let placeholder = ""
 	export let required = false
 	export let disabled = false
@@ -15,7 +17,14 @@
 			>{label}{#if required}<span class="req">*</span>{/if}</label
 		>
 	{/if}
-	<input {id} {type} bind:value {placeholder} {required} {disabled} />
+	<select {id} bind:value {required} {disabled}>
+		{#if placeholder}
+			<option value="" disabled>{placeholder}</option>
+		{/if}
+		{#each options as opt}
+			<option value={opt.value}>{opt.label}</option>
+		{/each}
+	</select>
 	{#if helperText}
 		<span class="helper">{helperText}</span>
 	{/if}
@@ -34,20 +43,21 @@
 		text-align: left;
 	}
 
-	input {
+	select {
 		background: var(--secondary-color);
 		border: var(--border);
 		border-radius: 8px;
 		color: var(--white);
 		padding: 10px 12px;
+		cursor: pointer;
 	}
 
-	input:focus {
+	select:focus {
 		outline: none;
 		border-color: var(--accent-color);
 	}
 
-	input:disabled {
+	select:disabled {
 		opacity: 0.5;
 		cursor: not-allowed;
 	}

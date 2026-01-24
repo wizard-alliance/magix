@@ -3,7 +3,7 @@
 	import { goto } from "$app/navigation"
 	import { onMount } from "svelte"
 	import Input from "$components/fields/input.svelte"
-	import Button from "$components/button.svelte"
+	import Button from "$components/fields/button.svelte"
 	import loginSplash from "$images/login-splash.png"
 
 	let email = ""
@@ -82,7 +82,7 @@
 			<form on:submit|preventDefault={requestReset} class="col-xs-12">
 				<Input label="Email" type="email" placeholder="your@email.com" bind:value={email} required />
 
-				<Button type="submit" color="primary" disabled={loading} icon={loading ? "fas fa-spinner fa-spin" : ""}>
+				<Button type="submit" disabled={loading}>
 					{loading ? "Sending..." : "Send Reset Link"}
 				</Button>
 			</form>
@@ -98,7 +98,7 @@
 
 				<Input label="Confirm Password" type="password" placeholder="Confirm new password" bind:value={confirmPassword} required />
 
-				<Button type="submit" color="primary" disabled={loading} icon={loading ? "fas fa-spinner fa-spin" : ""}>
+				<Button type="submit" disabled={loading}>
 					{loading ? "Resetting..." : "Reset Password"}
 				</Button>
 			</form>

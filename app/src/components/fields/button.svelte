@@ -1,21 +1,17 @@
 <script lang="ts">
 	export let type: "button" | "submit" | "reset" = "button"
+	export let variant: "primary" | "secondary" | "ghost" | "danger" = "primary"
 	export let size: "sm" | "md" | "lg" = "md"
-	export let color: "primary" | "secondary" | "ghost" | "danger" = "primary"
-	export let icon: string = ""
-	export let iconRight: string = "fal fa-arrow-right"
 	export let disabled = false
 </script>
 
-<button class={`button btn-${size} btn-${color}`} {type} {disabled} on:click>
-	{#if icon}<i class={icon}></i>{/if}
-	<span><slot /></span>
-	{#if iconRight}<i class={iconRight}></i>{/if}
+<button class={`btn btn-${variant} btn-${size}`} {type} {disabled} on:click>
+	<slot />
 </button>
 
 <style>
-	.button {
-		display: flex;
+	.btn {
+		display: inline-flex;
 		align-items: center;
 		justify-content: center;
 		gap: 8px;
@@ -24,13 +20,6 @@
 		font-weight: 600;
 		cursor: pointer;
 		user-select: none;
-
-		flex-basis: 100%;
-		width: 100%;
-	}
-
-	.button span:empty {
-		display: none;
 	}
 
 	.btn-sm {
@@ -48,13 +37,8 @@
 
 	.btn-primary {
 		background: var(--accent-color);
-		&,
-		i,
-		span {
-			color: var(--black);
-		}
+		color: var(--black);
 	}
-
 	.btn-primary:hover {
 		opacity: 0.9;
 	}
@@ -84,12 +68,8 @@
 		opacity: 0.9;
 	}
 
-	.button:disabled {
+	.btn:disabled {
 		opacity: 0.5;
 		cursor: not-allowed;
-	}
-
-	.button span {
-		flex: 2 2 auto;
 	}
 </style>
