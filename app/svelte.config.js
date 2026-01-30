@@ -9,6 +9,7 @@ const config = {
 			out: ".dist"
 		}),
 		alias: {
+			$configs: "./src/configs",
 			$lib: "./src/lib",
 			$styles: "./src/styles",
 			$components: "./src/components",

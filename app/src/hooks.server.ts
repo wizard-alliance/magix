@@ -10,7 +10,7 @@ export const handleError: HandleServerError = ({ error, event }) => {
 		message,
 		stack
 	}
-	console.error('[SvelteKit] SSR error', payload)
+	console.error('[😭 SvelteKit] SSR error', payload)
 	return {
 		message: dev ? payload.message : 'Internal Error'
 	}

@@ -3,7 +3,6 @@
 	import { onMount } from "svelte"
 	import Input from "$components/fields/input.svelte"
 	import Button from "$components/fields/button.svelte"
-	import ProfileSidebar from "$components/sections/sidebar/ProfileSidebar.svelte"
 
 	let status = ""
 	let loading = false
@@ -11,7 +10,6 @@
 
 	onMount(() => {
 		app.Config.pageTitle = "Account Settings"
-		app.UI.sidebarSetContent(1, ProfileSidebar as any, {}, "200px")
 		loadProfile()
 	})
 

@@ -154,8 +154,8 @@ header {
 .app > .main {
 	position: absolute;
 	width: var(--main-width);
-	top: var(--header-height);
-	left: var(--main-offset);
+	top: var(--main-offset-y);
+	left: var(--main-offset-x);
 	bottom: 0;
 	right: 0;
 

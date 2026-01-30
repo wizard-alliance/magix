@@ -10,14 +10,17 @@
 
 	import MainMenuSidebar from "$components/sections/sidebar/MainMenuSidebar.svelte"
 	import Avatar from "$components/modules/avatar.svelte"
+	import PageNav from "$components/sections/PageNav.svelte"
 
 	let userMenuItems: DropdownItem[] = []
-	let title = "Loading..."
 	let menuOpen = false
 	let currentUser: any = null
 	let prevRouteClass = ""
 	let sidebar1: any = null
 	let sidebar2: any = null
+
+	$: title = app.Config.pageTitleFull()
+	$: pageTitle = app.Config.pageTitle || "Loading..."
 
 	$: routeClass = `page-${$page.url.pathname.split(`/`).filter(Boolean).join(`-`) || `home`}`
 	$: if (typeof document !== `undefined`) {
@@ -28,7 +31,6 @@
 
 	$: isLoggedIn = !!currentUser
 	$: userMenuItems = app.Misc.Navigation.getMenu(isLoggedIn)
-	$: displayName = currentUser?.username || currentUser?.firstName || "User"
 
 	beforeNavigate(({ from, to }) => {
 		if (from?.url.pathname === to?.url.pathname) return
@@ -48,10 +50,8 @@
 
 	onMount(() => {
 		app.UI.sidebarInit()
-
 		sidebar1 = app.State.ui.sidebar1
 		sidebar2 = app.State.ui.sidebar2
-		title = app.Config.pageTitleFull()
 
 		// Subscribe to currentUser state
 		if (app.State.currentUser?.subscribe) {
@@ -61,17 +61,13 @@
 		}
 
 		// Close menu on outside click
-		const handleClick = (e: MouseEvent) => {
+		const handleUserMenuClick = (e: MouseEvent) => {
 			const target = e.target as HTMLElement
 			if (!target.closest(".user-menu")) menuOpen = false
 		}
-		document.addEventListener("click", handleClick)
-		return () => document.removeEventListener("click", handleClick)
+		document.addEventListener("click", handleUserMenuClick)
+		return () => document.removeEventListener("click", handleUserMenuClick)
 	})
-
-	const toggleMenu = () => {
-		menuOpen = !menuOpen
-	}
 </script>
 
 <svelte:head>
@@ -85,9 +81,17 @@
 		</div>
 		<div class="right-header">
 			<div class="row middle-xs height-100p">
+				<div class="col-xs page-title__wrapper">
+					<i class="icon fa-light fa-arrow-left-to-bracket toggle-menu"></i>
+					<h3 class="page-title">{$page.data.title || "Loading..."}</h3>
+				</div>
 				<nav class="col-xs middle-xs end-xs height-100p main-nav">
-					<a href="/home" class:active={$page.url.pathname === "/home"}>Home</a>
 					<a href="/dev" class:active={$page.url.pathname.startsWith("/dev")}>Dev</a>
+
+					<div class="bell">
+						<span data-count="2"></span>
+						<i class="fa-light fa-bell"></i>
+					</div>
 				</nav>
 			</div>
 		</div>
@@ -103,6 +107,10 @@
 		{/if}
 	</aside>
 
+	{#if $page.data.nav}
+		<PageNav nav={$page.data.nav} />
+	{/if}
+
 	<main class="main">
 		<slot />
 	</main>
@@ -114,55 +122,34 @@
 	</aside>
 </div>
 
-<style>
+<style lang="scss" scoped>
+	.page-title__wrapper {
+		display: flex;
+		align-items: center;
+
+		margin-left: calc(var(--gutter) * 2);
+
+		.icon {
+			margin-right: 8px;
+			color: var(--white);
+			font-size: 16px;
+			opacity: 0.7;
+		}
+
+		.page-title {
+			color: var(--white);
+			margin: 0;
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			font-size: 16px;
+			font-weight: 500;
+		}
+	}
+
 	.main-nav {
 		display: flex;
 		align-items: center;
 		gap: var(--gutter);
-	}
-
-	.user-menu {
-		position: relative;
-	}
-
-	.avatar-btn {
-		display: flex;
-		align-items: center;
-		gap: 8px;
-		background: none;
-		border: none;
-		cursor: pointer;
-		padding: 4px;
-	}
-
-	.user-name {
-		color: var(--white);
-		font-size: 14px;
-	}
-
-	.menu {
-		position: absolute;
-		right: 0;
-		top: 44px;
-		background: var(--primary-color);
-		border: var(--border);
-		border-radius: var(--border-radius);
-		padding: 8px;
-		display: flex;
-		flex-direction: column;
-		gap: 4px;
-		min-width: 160px;
-		z-index: 100;
-	}
-
-	.menu a {
-		color: var(--white);
-		text-decoration: none;
-		padding: 8px 12px;
-		border-radius: 6px;
-	}
-
-	.menu a:hover {
-		background: var(--secondary-color);
 	}
 </style>

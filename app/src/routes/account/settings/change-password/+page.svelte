@@ -4,7 +4,6 @@
 	import { onMount } from "svelte"
 	import Input from "$components/fields/input.svelte"
 	import Button from "$components/fields/button.svelte"
-	import ProfileSidebar from "$components/sections/sidebar/ProfileSidebar.svelte"
 
 	let form = { currentPassword: "", newPassword: "" }
 	let status = ""
@@ -12,7 +11,6 @@
 
 	onMount(() => {
 		app.Config.pageTitle = "Change Password"
-		app.UI.sidebarSetContent(1, ProfileSidebar as any, {}, "200px")
 	})
 
 	const submit = async () => {

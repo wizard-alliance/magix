@@ -112,3 +112,8 @@ body:not([data-app-type="electron"]) .app {
 .text-red {
 	color: var(--red);
 }
+
+.text-muted {
+	color: var(--text-muted);
+	font-size: 14px;
+}

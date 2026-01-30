@@ -29,8 +29,10 @@
 	--sidebar-0-default-width: 220px;
 	--sidebar-1-default-width: 220px;
 	--sidebar-2-default-width: 400px;
+	
 	--main-width: calc(100% - (var(--sidebar-0-width, 0) + var(--sidebar-1-width, 0) + var(--sidebar-2-width, 0)));
-	--main-offset: calc(var(--sidebar-0-width, 0) + var(--sidebar-1-width, 0));
+	--main-offset-x: calc(var(--sidebar-0-width, 0) + var(--sidebar-1-width, 0));
+	--main-offset-y: calc( var(--header-height) + var(--page-nav-height, 0));
 
 	--header-height: 70px;
 	--account-height: 70px;
