@@ -93,7 +93,7 @@
 
 	.actions a {
 		color: var(--text-color-secondary);
-		font-size: 14px;
+		font-size: var(--font-size-small);
 	}
 
 	.status {

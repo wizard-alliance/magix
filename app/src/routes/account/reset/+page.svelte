@@ -59,28 +59,28 @@
 	}
 </script>
 
-<div class="col-xs-12 col-sm-12 col-md-6 col-lg-5 center-xs auth-form-col scrollable">
+<div class="col-xxs-12 col-sm-12 col-md-6 col-lg-5 center-xs auth-form-col scrollable">
 	<div class="row center-xs auth-form">
-		<div class="col-xs-12 margin-bottom-2">
+		<div class="col-xxs-12 margin-bottom-2">
 			<h2>{step === "request" ? "Reset Password" : resetComplete ? "Password Reset" : "Set New Password"}</h2>
 		</div>
 
 		{#if submitted}
-			<div class="col-xs-12 success-message">
+			<div class="col-xxs-12 success-message">
 				<i class="fas fa-envelope"></i>
 				<p>If an account exists for <strong>{email}</strong>, you'll receive a password reset link shortly.</p>
 				<a href="/account/login" class="back-link">Back to login</a>
 			</div>
 		{:else if resetComplete}
-			<div class="col-xs-12 success-message">
+			<div class="col-xxs-12 success-message">
 				<i class="fas fa-check-circle"></i>
 				<p>Your password has been reset successfully.</p>
 				<a href="/account/login" class="back-link">Sign in with your new password</a>
 			</div>
 		{:else if step === "request"}
-			<p class="col-xs-12 hint margin-bottom-2">Enter your email and we'll send you a link to reset your password.</p>
+			<p class="col-xxs-12 hint margin-bottom-2">Enter your email and we'll send you a link to reset your password.</p>
 
-			<form on:submit|preventDefault={requestReset} class="col-xs-12">
+			<form on:submit|preventDefault={requestReset} class="col-xxs-12">
 				<Input label="Email" type="email" placeholder="your@email.com" bind:value={email} required />
 
 				<Button type="submit" disabled={loading}>
@@ -88,13 +88,13 @@
 				</Button>
 			</form>
 
-			<div class="col-xs-12">
+			<div class="col-xxs-12">
 				<p class="hint">Remember your password? <a href="/account/login">Sign in</a></p>
 			</div>
 		{:else}
-			<p class="col-xs-12 hint margin-bottom-2">Enter your new password below.</p>
+			<p class="col-xxs-12 hint margin-bottom-2">Enter your new password below.</p>
 
-			<form on:submit|preventDefault={confirmReset} class="col-xs-12">
+			<form on:submit|preventDefault={confirmReset} class="col-xxs-12">
 				<Input label="New Password" type="password" placeholder="Enter new password" bind:value={newPassword} required />
 
 				<Input label="Confirm Password" type="password" placeholder="Confirm new password" bind:value={confirmPassword} required />
@@ -104,14 +104,14 @@
 				</Button>
 			</form>
 
-			<div class="col-xs-12">
+			<div class="col-xxs-12">
 				<p class="hint"><a href="/account/login">Back to login</a></p>
 			</div>
 		{/if}
 	</div>
 </div>
 
-<div class="col-xs hidden-xs visible-md auth-side" style:--bg-image="url({loginSplash})"></div>
+<div class="col-xxs hidden-xs visible-md auth-side" style:--bg-image="url({loginSplash})"></div>
 
 <style lang="scss" scoped>
 	.auth-form-col {
@@ -154,7 +154,7 @@
 
 	.hint {
 		color: var(--gray);
-		font-size: 13px;
+		font-size: var(--font-size-small);
 		user-select: none;
 	}
 
@@ -182,6 +182,6 @@
 
 	.back-link {
 		color: var(--accent-color);
-		font-size: 14px;
+		font-size: var(--font-size-small);
 	}
 </style>

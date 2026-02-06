@@ -6,8 +6,8 @@
 </script>
 
 <nav class="page-nav">
-	<div class="row middle-xs start-xs">
-		<div class="col-xs">
+	<div class="row middle-xs start-xxs gap-2">
+		<div class="col-xxs">
 			<div class="row gap-2">
 				{#each left as item}
 					<a href={item.href}>
@@ -18,8 +18,8 @@
 			</div>
 		</div>
 
-		<div class="col-xs">
-			<div class="row gap-2 end-xs">
+		<div class="col">
+			<div class="row gap-2 end-xxs">
 				{#each right as item}
 					<a href={item.href}>
 						{#if item.icon}<i class={item.icon}></i>{/if}
@@ -32,33 +32,34 @@
 </nav>
 
 <style lang="scss" scoped>
-	:global html {
-		--page-nav-height: 50px;
-	}
-
 	.page-nav {
 		position: absolute;
 		top: var(--header-height);
 		left: var(--main-offset-x);
 		width: var(--main-width);
-		height: var(--page-nav-height);
+		height: var(--page-header-height);
+		transform: translateY(var(--page-nav-offset-y));
 
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
 
-		background-color: var(--bg-color);
+		background-color: var(--bg-color-primary);
 		padding: calc(var(--gutter) * 0) calc(var(--gutter) * 2);
 		border-bottom: var(--border);
-		z-index: 100;
+		z-index: 50;
+
+		font-size: var(--font-size);
+		font-weight: 300;
 
 		a {
 			display: flex;
 			align-items: center;
-			color: var(--text-muted);
-			font-size: 14px;
+			color: var(--muted-color);
+			font-size: inherit;
+			font-weight: inherit;
 			text-decoration: none;
-			gap: calc(var(--gutter) * 0.75);
+			gap: calc(var(--gutter) * 1);
 
 			i {
 				opacity: 0.7;
@@ -67,6 +68,11 @@
 			&:hover {
 				color: var(--white);
 			}
+		}
+
+		span {
+			font-size: inherit;
+			font-weight: inherit;
 		}
 	}
 </style>

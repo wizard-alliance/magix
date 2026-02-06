@@ -45,25 +45,25 @@
 	}
 </script>
 
-<div class="col-xs-12 col-sm-12 col-md-6 col-lg-5 center-xs auth-form-col scrollable">
+<div class="col-xxs-12 col-sm-12 col-md-6 col-lg-5 center-xs auth-form-col scrollable">
 	<div class="row center-xs auth-form">
-		<div class="col-xs-12 margin-bottom-2">
+		<div class="col-xxs-12 margin-bottom-2">
 			<h2>Create Account</h2>
 		</div>
 
 		{#if submitted}
-			<div class="col-xs-12 success-message">
+			<div class="col-xxs-12 success-message">
 				<i class="fas fa-envelope"></i>
 				<p>Account created! Please check your email at <strong>{form.email}</strong> to activate your account.</p>
 				<a href="/account/login" class="back-link">Go to login</a>
 			</div>
 		{:else}
-			<form on:submit|preventDefault={submit} class="col-xs-12">
+			<form on:submit|preventDefault={submit} class="col-xxs-12">
 				<div class="row">
-					<div class="col-xs-6">
+					<div class="col-xxs-6">
 						<Input label="First Name" placeholder="John" bind:value={form.first_name} />
 					</div>
-					<div class="col-xs-6">
+					<div class="col-xxs-6">
 						<Input label="Last Name" placeholder="Doe" bind:value={form.last_name} />
 					</div>
 				</div>
@@ -85,14 +85,14 @@
 				</Button>
 			</form>
 
-			<div class="col-xs-12">
+			<div class="col-xxs-12">
 				<p class="hint">Already have an account? <a href="/account/login">Sign in</a></p>
 			</div>
 		{/if}
 	</div>
 </div>
 
-<div class="col-xs hidden-xs visible-md auth-side" style:--bg-image="url({loginSplash})"></div>
+<div class="col-xxs hidden-xs visible-md auth-side" style:--bg-image="url({loginSplash})"></div>
 
 <style lang="scss" scoped>
 	.auth-form-col {
@@ -135,7 +135,7 @@
 
 	.hint {
 		color: var(--gray);
-		font-size: 13px;
+		font-size: var(--font-size-small);
 		user-select: none;
 	}
 
@@ -163,6 +163,6 @@
 
 	.back-link {
 		color: var(--accent-color);
-		font-size: 14px;
+		font-size: var(--font-size-small);
 	}
 </style>

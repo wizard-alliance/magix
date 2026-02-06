@@ -43,7 +43,7 @@
 	}
 
 	label {
-		font-size: 14px;
+		font-size: var(--font-size-small);
 		font-weight: 500;
 	}
 
@@ -70,7 +70,7 @@
 		border: var(--border);
 		border-radius: 8px;
 		color: var(--white);
-		font-size: 14px;
+		font-size: var(--font-size-small);
 		cursor: pointer;
 
 		&:hover {
@@ -83,8 +83,8 @@
 	}
 
 	.file-names {
-		font-size: 13px;
-		color: var(--text-muted);
+		font-size: var(--font-size-small);
+		color: var(--muted-color);
 	}
 
 	.req {
@@ -93,7 +93,7 @@
 	}
 
 	.helper {
-		font-size: 12px;
+		font-size: var(--font-size-small);
 		color: var(--text-color-secondary);
 	}
 </style>

@@ -9,8 +9,11 @@
 	import type { DropdownItem } from "$lib/classes/Misc/NavigationRegistry"
 
 	import MainMenuSidebar from "$components/sections/sidebar/MainMenuSidebar.svelte"
-	import Avatar from "$components/modules/avatar.svelte"
+	import GlobalMenuSidebar from "$components/sections/sidebar/GlobalMenuSidebar.svelte"
+	import NotificationsSidebar from "$components/sections/sidebar/NotificationsSidebar.svelte"
 	import PageNav from "$components/sections/PageNav.svelte"
+	import Header from "$components/sections/Header.svelte"
+	import GlobalTooltip from "$components/modules/GlobalTooltip.svelte"
 
 	let userMenuItems: DropdownItem[] = []
 	let menuOpen = false
@@ -34,8 +37,8 @@
 
 	beforeNavigate(({ from, to }) => {
 		if (from?.url.pathname === to?.url.pathname) return
-		app.UI.sidebarClearContent(1)
-		app.UI.sidebarClearContent(2)
+		// app.UI.sidebarClearContent(1)
+		// app.UI.sidebarClearContent(2)
 	})
 
 	onNavigate((navigation) => {
@@ -49,10 +52,6 @@
 	})
 
 	onMount(() => {
-		app.UI.sidebarInit()
-		sidebar1 = app.State.ui.sidebar1
-		sidebar2 = app.State.ui.sidebar2
-
 		// Subscribe to currentUser state
 		if (app.State.currentUser?.subscribe) {
 			app.State.currentUser.subscribe((user: any) => {
@@ -75,36 +74,15 @@
 </svelte:head>
 
 <div class="app">
-	<header>
-		<div class="left-header">
-			<a class="logo" href="/" aria-label={app.Config.name}>{app.Config.name}</a>
-		</div>
-		<div class="right-header">
-			<div class="row middle-xs height-100p">
-				<div class="col-xs page-title__wrapper">
-					<i class="icon fa-light fa-arrow-left-to-bracket toggle-menu"></i>
-					<h3 class="page-title">{$page.data.title || "Loading..."}</h3>
-				</div>
-				<nav class="col-xs middle-xs end-xs height-100p main-nav">
-					<a href="/dev" class:active={$page.url.pathname.startsWith("/dev")}>Dev</a>
-
-					<div class="bell">
-						<span data-count="2"></span>
-						<i class="fa-light fa-bell"></i>
-					</div>
-				</nav>
-			</div>
-		</div>
-	</header>
+	<GlobalTooltip />
+	<Header />
 
 	<aside class="sidebar sidebar-0 scrollable-hidden">
-		<MainMenuSidebar />
+		<GlobalMenuSidebar />
 	</aside>
 
 	<aside class="sidebar sidebar-1 scrollable-hidden">
-		{#if $sidebar1}
-			<svelte:component this={$sidebar1.component} {...$sidebar1.props} />
-		{/if}
+		<MainMenuSidebar />
 	</aside>
 
 	{#if $page.data.nav}
@@ -115,41 +93,10 @@
 		<slot />
 	</main>
 
-	<aside class="sidebar sidebar-2 sidebar-status scrollable">
-		{#if $sidebar2}
-			<svelte:component this={$sidebar2.component} {...$sidebar2.props} />
-		{/if}
+	<aside class="sidebar sidebar-2 scrollable">
+		<NotificationsSidebar />
 	</aside>
 </div>
 
 <style lang="scss" scoped>
-	.page-title__wrapper {
-		display: flex;
-		align-items: center;
-
-		margin-left: calc(var(--gutter) * 2);
-
-		.icon {
-			margin-right: 8px;
-			color: var(--white);
-			font-size: 16px;
-			opacity: 0.7;
-		}
-
-		.page-title {
-			color: var(--white);
-			margin: 0;
-			white-space: nowrap;
-			overflow: hidden;
-			text-overflow: ellipsis;
-			font-size: 16px;
-			font-weight: 500;
-		}
-	}
-
-	.main-nav {
-		display: flex;
-		align-items: center;
-		gap: var(--gutter);
-	}
 </style>

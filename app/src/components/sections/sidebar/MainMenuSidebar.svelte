@@ -2,9 +2,8 @@
 	import SidebarMenuItem from "$components/modules/sidebarMenuItem.svelte"
 	import DropdownMenu from "$components/modules/DropdownMenu.svelte"
 	import Avatar from "$components/modules/avatar.svelte"
+	import { navigationData as navData } from "$configs/nav.js"
 
-	let title = "Menu"
-	let appName = "App"
 	let accountMenuOpen = false
 	let toggleAccountMenu: () => void
 	let accountTrigger: HTMLElement
@@ -35,30 +34,24 @@
 	</div>
 
 	<div class="scrollable">
-		<nav>
-			<h3 class="title">{appName}</h3>
-			<SidebarMenuItem href="/account/profile" icon="fa-bell" label="News" unread={5} />
-			<SidebarMenuItem href="/account/profile/settings" icon="fa-grid-2" label="Dashboard" />
-			<SidebarMenuItem href="/admin/dashboard" icon="fa-chart-line" label="Deep dive" unread={2} />
-			<SidebarMenuItem href="/admin/dashboard" icon="fa-flask" label="Research" unread={0} />
-		</nav>
-		<div class="spacer"></div>
-
-		<nav>
-			<h3 class="title">Account</h3>
-			<SidebarMenuItem href="/account/profile" icon="fa-user" label="Profile" />
-			<SidebarMenuItem href="/account/profile/settings" icon="fa-gear" label="Settings" />
-			<SidebarMenuItem href="/admin/dashboard" icon="fa-credit-card" label="Billing" />
-		</nav>
-		<div class="spacer"></div>
-
-		<nav>
-			<SidebarMenuItem href="/admin/dashboard" icon="fa-shield-halved" label="Admin" />
-		</nav>
+		{#each navData as section}
+			<nav>
+				{section.href}
+				{#if !section.href}
+					<h3 class="title">{section.label}</h3>
+				{/if}
+				{#each section.children as item}
+					<SidebarMenuItem href={item.href} icon={item.icon} label={item.label} unread={0} children={item.children || []} />
+				{/each}
+			</nav>
+			{#if section !== navData[navData.length - 1]}
+				<div class="spacer"></div>
+			{/if}
+		{/each}
 	</div>
 </div>
 
-<style>
+<style lang="scss" scoped>
 	.spacer {
 		width: 100%;
 		height: 1px;
@@ -75,6 +68,17 @@
 
 		height: calc(100%);
 		padding-bottom: var(--account-height);
+
+		font-size: 5rem !important;
+	}
+
+	:global(.main-menu__sidebar) {
+		i,
+		a,
+		span,
+		.title {
+			font-size: inherit;
+		}
 	}
 
 	.account {
@@ -106,7 +110,7 @@
 		.name {
 			position: relative;
 			top: 1px;
-			font-size: 14px;
+			font-size: inherit;
 			font-weight: 500;
 			color: var(--white);
 		}
@@ -115,8 +119,8 @@
 			pointer-events: none;
 			position: absolute;
 			right: calc(var(--gutter) * 3);
-			font-size: 12px;
-			color: var(--text-muted);
+			font-size: inherit;
+			color: var(--muted-color);
 			transform: translateX(calc(var(--gutter) * 1)) rotate(0deg);
 			transition:
 				opacity 600ms cubic-bezier(0, 0, 0, 1),
@@ -141,11 +145,11 @@
 
 	nav .title {
 		user-select: none;
-		font-size: 14px;
+		font-size: inherit;
 		font-weight: 500;
 		padding: calc(var(--gutter) * 0.5) calc(var(--gutter) * 2);
 		text-decoration: none;
-		color: var(--text-muted);
+		color: var(--muted-color);
 		margin-bottom: calc(var(--gutter) * 0.5);
 	}
 </style>

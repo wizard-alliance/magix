@@ -159,7 +159,7 @@
 
 		h3 {
 			margin: 0;
-			font-size: 1.2rem;
+			font-size: var(--font-size-large);
 		}
 	}
 
@@ -200,20 +200,20 @@
 
 		h4 {
 			margin: 0;
-			font-size: 1rem;
+			font-size: var(--font-size);
 		}
 	}
 
 	.repeater__item-meta {
 		margin: 0;
-		font-size: 0.85rem;
+		font-size: var(--font-size-small);
 		color: rgba(255, 255, 255, 0.65);
 		letter-spacing: 0.04em;
 		text-transform: uppercase;
 	}
 
 	.repeater__item-meta.is-compact {
-		font-size: 0.75rem;
+		font-size: var(--font-size-small);
 		letter-spacing: 0.06em;
 	}
 
@@ -251,7 +251,7 @@
 			background: transparent;
 			color: rgba(255, 255, 255, 0.55);
 			text-transform: uppercase;
-			font-size: 0.75rem;
+			font-size: var(--font-size-small);
 			letter-spacing: 0.08em;
 			cursor: pointer;
 			padding: 0;

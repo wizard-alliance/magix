@@ -63,7 +63,7 @@
 		overflow-y: auto;
 		flex-basis: 100%;
 
-		font-size: 0.875rem;
+		font-size: var(--font-size-small);
 		padding: calc(var(--gutter) * 1);
 
 		transition:

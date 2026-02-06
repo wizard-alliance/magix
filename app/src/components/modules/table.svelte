@@ -45,14 +45,14 @@
 	}
 
 	th {
-		font-size: 13px;
+		font-size: var(--font-size-small);
 		font-weight: 500;
-		color: var(--text-muted);
+		color: var(--muted-color);
 		background: var(--secondary-color);
 	}
 
 	td {
-		font-size: 14px;
+		font-size: var(--font-size-small);
 		color: var(--white);
 	}
 

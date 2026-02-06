@@ -32,8 +32,8 @@
 		padding: 10px 16px;
 		background: none;
 		border: none;
-		color: var(--text-muted);
-		font-size: 14px;
+		color: var(--muted-color);
+		font-size: var(--font-size-small);
 		cursor: pointer;
 		position: relative;
 

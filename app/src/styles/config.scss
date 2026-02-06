@@ -1,9 +1,11 @@
+@use './GRID/GRID.v3.mixins.scss' as *;
+
 :root {
-	--primary-color: #0f1018;
-	--primary-color-transp: #0a0a0f9c;
-	--secondary-color: #3435426e;
-	--tertiary-color: #64667a44; // borders
-	--quaternary-color: #3435426e;
+	--primary-color: #1C1D21;
+	--primary-color-transp: #141518c2;
+	--secondary-color: #212327;
+	--tertiary-color: #292B2F; // borders
+	--quaternary-color: #36383E;
 	--accent-color: #74e7a8;
 	--red: #ff6b84de;
 	--yellow: #FFF176;
@@ -12,37 +14,86 @@
 	--white: #FFFFFF;
 	--black: #000000;
 
-	--text-muted: #c9c7d2;
-	--bg-color: var(--primary-color);
-	--border-color: var(--tertiary-color);
+	--muted-color: #aaadb6;
+	--muted-color-2: #7a7d85;
+	--text-color: var(--white);
+	--text-color-secondary: var(--muted-color);
+
+	--bg-color: var(--secondary-color);
+	--bg-color-secondary: var(--primary-color);
+	--bg-color-tertiary: var(--primary-color);
+	--border-color: rgba(255, 255, 255, 0.08);
+
+	--border-size: 1px;
+	--border: var(--border-size) solid var(--border-color);
 	--border-radius: 12px;
 	--border-radius-large: 20px;
 	--border-radius-app: var(--border-radius-large);
 
-	--text-color: var(--white);
-	--text-color-secondary: var(--gray);
-
-	// Widths
-	--sidebar-0-width: 220px;
-	--sidebar-1-width: 0px;
-	--sidebar-2-width: 0px;
-	--sidebar-0-default-width: 220px;
-	--sidebar-1-default-width: 220px;
-	--sidebar-2-default-width: 400px;
-	
-	--main-width: calc(100% - (var(--sidebar-0-width, 0) + var(--sidebar-1-width, 0) + var(--sidebar-2-width, 0)));
-	--main-offset-x: calc(var(--sidebar-0-width, 0) + var(--sidebar-1-width, 0));
-	--main-offset-y: calc( var(--header-height) + var(--page-nav-height, 0));
-
-	--header-height: 70px;
-	--account-height: 70px;
-
-	--border-color: var(--tertiary-color);
-	--border-size: 1px;
-	--border: var(--border-size) solid var(--border-color);
-
 	--gutter: 0.5rem;
 
-	--animationDefaultSpeed: 400ms;
+	--animationDefaultSpeed: 480ms;
 	--animationEasing: cubic-bezier(0, 0, 0, 1);
+
+	--font-size: 1.0rem;
+	--font-size-small: 0.875rem;
+	--font-size-large: 1.2rem;
+	--font-size-global: 0.95rem;
+
+	// Widths
+	--sidebar-0-width: 100px;
+	--sidebar-1-width: 280px;
+	--sidebar-2-width: 280px;
+
+	--sidebar-0-pos: 0%;
+	--sidebar-1-pos: 0%;
+	--sidebar-2-pos: 100%;
+
+	--header-left-width: calc(var(--sidebar-0-width) + var(--sidebar-1-width));
+	--header-right-width: unset;
+
+	--main-width: calc(100% - (var(--sidebar-1-width, 0) + var(--sidebar-0-width, 0)));
+	--main-offset-x: calc(var(--sidebar-1-width, 0) + var(--sidebar-0-width, 0));
+	--main-offset-y: calc( var(--header-height) + var(--page-header-height, 0));
+
+	--header-height: 80px;
+	--account-height: 70px;
+	--page-header-height: 50px;
+	--page-nav-offset-y: 0%;
+
+	@include menu-mobile {
+		--header-height: 70px;
+		--main-width: 100%;
+		--main-offset-x: 0;
+		
+		--sidebar-0-pos: calc( var(--sidebar-0-width) * -1 );
+		--sidebar-1-pos: calc( (var(--sidebar-0-width) + var(--sidebar-1-width)) * -1);
+		--header-left-width: var(--sidebar-0-width);
+
+		.app[menu-open="true"] {
+			--sidebar-0-pos: 0;
+			--sidebar-1-pos: 0;
+		}
+	}
+
+	@include lg {
+		--sidebar-0-width: 80px;
+		--sidebar-1-width: 240px;
+	}
+
+	@include sm {
+		--header-height: 60px;
+		--sidebar-0-width: 70px;
+		--sidebar-2-width: 100%;
+		--page-nav-offset-y: calc( var(--header-height) * -1 );
+		--page-header-height: 0px;
+		
+		.app[menu-open="true"] {
+			--sidebar-1-pos: 0%;
+		}
+	}
+
+	.app[notifications-open="true"] {
+		--sidebar-2-pos: 0%;
+	}
 }

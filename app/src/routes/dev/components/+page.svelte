@@ -218,7 +218,7 @@
 	}
 	h2 {
 		margin-bottom: calc(var(--gutter) * 1.5);
-		font-size: 18px;
+		font-size: var(--font-size-large);
 	}
 	section {
 		margin-bottom: calc(var(--gutter) * 4);

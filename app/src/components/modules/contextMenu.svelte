@@ -155,14 +155,14 @@
 		border: none;
 		color: inherit;
 		font: inherit;
-		font-size: 0.9rem;
+		font-size: var(--font-size-small);
 		border-radius: var(--border-radius);
 		display: flex;
 		align-items: center;
 		gap: calc(var(--gutter) * 1);
 
 		.context-menu__icon {
-			font-size: 0.9rem;
+			font-size: var(--font-size-small);
 			opacity: 0.65;
 		}
 

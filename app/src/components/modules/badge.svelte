@@ -10,7 +10,7 @@
 		display: inline-flex;
 		align-items: center;
 		padding: 4px 10px;
-		font-size: 12px;
+		font-size: var(--font-size-small);
 		font-weight: 500;
 		border-radius: 12px;
 	}

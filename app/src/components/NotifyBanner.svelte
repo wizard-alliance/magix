@@ -72,12 +72,12 @@
 
 	.notify-title {
 		font-weight: 600;
-		font-size: 0.95rem;
+		font-size: var(--font-size-small);
 		color: inherit;
 	}
 
 	.notify-message {
-		font-size: 13px;
+		font-size: var(--font-size-small);
 		opacity: 0.8;
 		color: inherit;
 	}

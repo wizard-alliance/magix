@@ -21,7 +21,7 @@
 		border: var(--border);
 		border-radius: 6px;
 		color: var(--white);
-		font-size: 12px;
+		font-size: var(--font-size-small);
 		white-space: nowrap;
 		opacity: 0;
 		pointer-events: none;

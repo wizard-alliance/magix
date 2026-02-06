@@ -6,6 +6,6 @@
 * @usage: `import './styles/_GRID.V3.scss'` in your main scss or js file
 * @author: Magic
 */
-
+@use "./GRID.v3.mixins.scss" as *;
 @use "./GRID.v3.core.scss" as *;
 @use "./GRID.v3.margin.scss" as *;

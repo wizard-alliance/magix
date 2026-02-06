@@ -29,7 +29,7 @@
 	}
 
 	label {
-		font-size: 14px;
+		font-size: var(--font-size-small);
 		font-weight: 500;
 		text-align: left;
 	}
@@ -60,7 +60,7 @@
 	}
 
 	.helper {
-		font-size: 12px;
+		font-size: var(--font-size-small);
 		color: var(--text-color-secondary);
 	}
 </style>

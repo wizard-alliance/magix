@@ -180,9 +180,4 @@ export class UIManager {
 		this.sidebarSetWidth(ID, 0)
 		document.documentElement.style.removeProperty(`--sidebar-${ID}-min-width`)
 	}
-
-	public sidebarInit() {
-		this.sidebarSetWidth(1, 0)
-		this.sidebarSetWidth(2, 0)
-	}
 }

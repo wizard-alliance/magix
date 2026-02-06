@@ -98,7 +98,7 @@
 	}
 
 	.hint {
-		font-size: 0.75rem;
+		font-size: var(--font-size-small);
 		color: var(--text-color-secondary);
 		margin: 0;
 	}
@@ -143,7 +143,7 @@
 	.note-list li {
 		display: flex;
 		justify-content: space-between;
-		font-size: 0.85rem;
+		font-size: var(--font-size-small);
 		padding: calc(var(--gutter) * 0.75);
 		border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 	}
@@ -159,7 +159,7 @@
 	.notice {
 		margin: 0;
 		padding: calc(var(--gutter) * 0.75);
-		font-size: 0.85rem;
+		font-size: var(--font-size-small);
 		background: rgba(255, 255, 255, 0.04);
 		border-radius: var(--border-radius);
 	}

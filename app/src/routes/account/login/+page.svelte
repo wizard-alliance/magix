@@ -101,30 +101,30 @@
 	}
 </script>
 
-<div class="col-xs-12 col-sm-12 col-md-6 col-lg-5 center-xs auth-form-col scrollable">
+<div class="col-xxs-12 col-sm-12 col-md-6 col-lg-5 center-xs auth-form-col scrollable">
 	<div class="row center-xs auth-form">
-		<div class="col-xs-12 margin-bottom-2">
+		<div class="col-xxs-12 margin-bottom-2">
 			<h2>Welcome!</h2>
 		</div>
 
-		<div class="col-xs-12 margin-bottom-2">
+		<div class="col-xxs-12 margin-bottom-2">
 			<Button variant="secondary" on:click={() => vendorLogin(`discord`)} disabled={loading}>
 				{#if loading}<Spinner size="sm" />{:else}Log in with Discord{/if}
 			</Button>
 		</div>
 
-		<div class="col-xs-12 divider margin-bottom-2"><span>Or Login with email</span></div>
+		<div class="col-xxs-12 divider margin-bottom-2"><span>Or Login with email</span></div>
 
-		<form on:submit|preventDefault={submit} class="col-xs-12">
+		<form on:submit|preventDefault={submit} class="col-xxs-12">
 			<Input label="Username" placeholder="Username or email" bind:value={form.identifier} required />
 
 			<Input label="Password" type="password" placeholder="Password" bind:value={form.password} required />
 
 			<div class="row between-xs middle-xs margin-bottom-2">
-				<div class="col-xs-6 start-xs">
+				<div class="col-xxs-6 start-xxs">
 					<Checkbox label="Keep me logged in" bind:checked={form.remember} />
 				</div>
-				<div class="col-xs end-xs">
+				<div class="col-xxs end-xxs">
 					<a href="/account/reset" class="link-muted">Forget your password?</a>
 				</div>
 			</div>
@@ -134,13 +134,13 @@
 			</Button>
 		</form>
 
-		<div class="col-xs-12 margin-bottom-2">
+		<div class="col-xxs-12 margin-bottom-2">
 			<p class="hint">Haven't sign up yet? <a href="/account/register">Sign up</a></p>
 		</div>
 	</div>
 </div>
 
-<div class="col-xs hidden-xs visible-md auth-side">
+<div class="col-xxs hidden-xs visible-md auth-side">
 	<div style:--bg-image="url({loginSplash})"></div>
 </div>
 
@@ -176,7 +176,7 @@
 		align-items: center;
 		gap: var(--gutter);
 		color: var(--gray);
-		font-size: 13px;
+		font-size: var(--font-size-small);
 	}
 
 	.divider::before,
@@ -208,12 +208,12 @@
 
 	.link-muted {
 		color: var(--gray);
-		font-size: 13px;
+		font-size: var(--font-size-small);
 	}
 
 	.hint {
 		color: var(--gray);
-		font-size: 13px;
+		font-size: var(--font-size-small);
 		user-select: none;
 	}
 </style>

@@ -94,7 +94,7 @@
 		align-items: center;
 		gap: calc(var(--gutter) * 1);
 		width: 100%;
-		font-size: 14px;
+		font-size: var(--font-size-small);
 		color: var(--text-color);
 		background: none;
 		border: none;

@@ -27,7 +27,7 @@
 	}
 
 	label {
-		font-size: 14px;
+		font-size: var(--font-size-small);
 		font-weight: 500;
 	}
 
@@ -37,7 +37,7 @@
 		border: var(--border);
 		border-radius: 8px;
 		color: var(--white);
-		font-size: 14px;
+		font-size: var(--font-size-small);
 
 		&:focus {
 			outline: none;
@@ -61,7 +61,7 @@
 	}
 
 	.helper {
-		font-size: 12px;
+		font-size: var(--font-size-small);
 		color: var(--text-color-secondary);
 	}
 </style>

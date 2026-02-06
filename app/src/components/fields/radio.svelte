@@ -34,7 +34,7 @@
 	}
 
 	.group-label {
-		font-size: 14px;
+		font-size: var(--font-size-small);
 		font-weight: 500;
 	}
 
@@ -88,6 +88,6 @@
 
 	.opt-label {
 		color: var(--white);
-		font-size: 14px;
+		font-size: var(--font-size-small);
 	}
 </style>

@@ -1,3 +1,6 @@
+@use './GRID/GRID.v3.mixins.scss' as *;
+
+
 .scrollable {
 	overflow-y: auto;
 }
@@ -16,8 +19,6 @@ header {
 	position: absolute;
 	height: var(--header-height);
 	width: 100%;
-	border-bottom: var(--border);
-	background-color: var(--primary-color);
 	z-index: 100;
 	display: flex;
 
@@ -28,11 +29,17 @@ header {
 		flex-grow: 0;
 		flex-shrink: 0;
 		border-right: var(--border);
+		border-bottom: var(--border);
 
-		width: var(--sidebar-0-width);
-		min-width: var(--sidebar-0-default-width);
-		padding-left: calc(var(--gutter) * 3);
-		padding-right: calc(var(--gutter) * 3);
+		width: var(--header-left-width);
+		padding-left: calc(var(--gutter) * 2);
+		padding-right: calc(var(--gutter) * 2);
+
+		background-color: var(--bg-color-tertiary);
+
+		@include xs {
+			border-right-color: transparent;
+		}
 	}
 
 	.right-header {
@@ -40,62 +47,26 @@ header {
 		align-items: center;
 		flex-grow: 1;
 		flex-shrink: 0;
-	}
-
-	.logo {
-		display: inline-block;
-		text-decoration: none;
-		font-weight: 600;
-		color: var(--primary-color);
-		background-color: var(--gray);
-		border-radius: var(--border-radius);
-		font-size: 0.8rem;
-		width: auto;
-		padding: calc(var(--gutter) * 0.25) calc(var(--gutter) * 0.75);
-	}
-
-	nav {
-		display: flex;
-		align-items: center;
-		gap: calc(var(--gutter) * 1);
-
-		a {
-			display: inline-block;
-
-			text-decoration: none;
-			color: var(--text-color-secondary);
-			font-weight: 500;
-			font-size: 0.9rem;
-
-			padding: 6px 12px;
-			background: transparent;
-			border-radius: var(--border-radius);
-			border: 1.5px solid transparent;
-
-			&.active {
-				color: var(--text-color);
-				background: var(--secondary-color);
-				border-color: transparent;
-			}
-
-			&:not(.active):hover {
-				color: var(--text-color);
-				border-color: var(--tertiary-color);
-			}
-		}
+		width: var(--header-right-width);
+		padding-left: calc(var(--gutter) * 2);
+		padding-right: calc(var(--gutter) * 2);
+		
+		background-color: var(--bg-color-secondary);
+		border-bottom: var(--border);
 	}
 }
 
 .sidebar-0 {
 	position: absolute;
 	width: var(--sidebar-0-width);
+	min-width: var(--sidebar-0-min-width, 0);
 	top: var(--header-height);
 	left: 0;
 	bottom: 0;
-	background-color: var(--primary-color);
+	background-color: var(--bg-color-tertiary);
 	border-right: var(--border);
-	z-index: 100;
-
+	z-index: 102;
+	transform: translateX( var(--sidebar-0-pos) );
 	.list {
 		display: flex;
 		flex-direction: column;
@@ -105,17 +76,17 @@ header {
 	}
 }
 
-
 .sidebar-1 {
 	position: absolute;
 	width: var(--sidebar-1-width);
-	min-width: var(--sidebar-1-min-width, 0);
 	top: var(--header-height);
-	left:var(--sidebar-0-width);
+	left: var(--sidebar-0-width);
 	bottom: 0;
-	background-color: var(--primary-color);
+	background-color: var(--bg-color-secondary);
 	border-right: var(--border);
-	z-index: 100;
+	z-index: 101;
+
+	transform: translateX( var(--sidebar-1-pos) );
 
 	.list {
 		display: flex;
@@ -129,16 +100,17 @@ header {
 .sidebar-2 {
 	position: absolute;
 	width: var(--sidebar-2-width);
-	min-width: var(--sidebar-2-min-width, 0);
+	max-width: 100vw;
+	transform: translateX( var(--sidebar-2-pos) );
 	top: var(--header-height);
 	bottom: 0;
 	right: 0;
-	background-color: var(--primary-color);
+	background-color: var(--bg-color-tertiary);
 	border-left: var(--border);
-	z-index: 20;
+	z-index: 101;
 }
 
-.sidebar-1,
+.sidebar-0,
 .sidebar-2 {
 	transition: 
 		width var(--animationDefaultSpeed) var(--animationEasing),
@@ -182,8 +154,6 @@ header {
 	margin-left: auto;
 	margin-right: auto;
 
-	background-color: rgba(0,0,0,0.1);
-
 	&.page-thin {
 		--padding: max( calc( var(--gutter) * 2 ), 25% );
 		padding-left: var(--padding);
@@ -197,11 +167,24 @@ header {
 	}
 }
 
+.page-nav {
+	@include sm {
+		opacity: 0;
+		pointer-events: none;
+	}
+}
+
 // Set animation speed for layout changes
 .app,
 .left-header,
-.right-header {
+.right-header,
+.sidebar-0,
+.sidebar-1,
+.sidebar-2,
+.page-nav {
 	transition: 
+		border-color var(--animationDefaultSpeed) var(--animationEasing),
+		opacity var(--animationDefaultSpeed) var(--animationEasing),
 		width var(--animationDefaultSpeed) var(--animationEasing), 
 		height var(--animationDefaultSpeed) var(--animationEasing), 
 		transform var(--animationDefaultSpeed) var(--animationEasing);

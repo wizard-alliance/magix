@@ -215,7 +215,7 @@ textarea {
 	background: #0f1218;
 	border: 1px solid var(--border);
 	color: var(--text);
-	font-size: 14px;
+	font-size: var(--font-size-small);
 }
 
 textarea {
@@ -258,7 +258,7 @@ button:not(:disabled):hover {
 
 .resp {
 	font-family: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
-	font-size: 14px;
+	font-size: var(--font-size-small);
 	background: #0c0f15;
 	color: #c5d0e5;
 	overflow: auto;

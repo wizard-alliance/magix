@@ -32,15 +32,15 @@
 
 	.btn-sm {
 		padding: 6px 12px;
-		font-size: 13px;
+		font-size: var(--font-size-small);
 	}
 	.btn-md {
 		padding: 10px 16px;
-		font-size: 14px;
+		font-size: var(--font-size-small);
 	}
 	.btn-lg {
 		padding: 14px 24px;
-		font-size: 16px;
+		font-size: var(--font-size);
 	}
 
 	.btn-primary {

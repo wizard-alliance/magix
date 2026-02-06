@@ -32,7 +32,7 @@
 		position: absolute;
 		right: 0;
 		top: -20px;
-		font-size: 12px;
-		color: var(--text-muted);
+		font-size: var(--font-size-small);
+		color: var(--muted-color);
 	}
 </style>

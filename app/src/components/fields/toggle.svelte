@@ -65,6 +65,6 @@
 
 	.toggle-label {
 		color: var(--white);
-		font-size: 14px;
+		font-size: var(--font-size-small);
 	}
 </style>

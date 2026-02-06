@@ -27,9 +27,9 @@
 	}
 
 	.title {
-		font-size: 13px;
+		font-size: var(--font-size-small);
 		font-weight: 500;
-		color: var(--text-muted);
+		color: var(--muted-color);
 		margin-bottom: calc(var(--gutter) * 0.5);
 		padding-left: calc(var(--gutter) * 0.5);
 	}

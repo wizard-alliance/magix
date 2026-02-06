@@ -10,13 +10,14 @@
 	let user: any = null
 
 	onMount(async () => {
-		app.Config.pageTitle = "Profile"
+		// app.Config.pageTitle = "Profile"
 		const data = await app.Auth.me().catch(() => null)
 		user = data?.info
 	})
 
 	$: info = user || {}
 	$: fullName = [info.firstName, info.lastName].filter(Boolean).join(" ")
+	$: redactedEmail = info.email ? info.email.replace(/(.{2}).+(@.+)/, "$1***$2") : ""
 </script>
 
 <div class="page page-thin">
@@ -24,30 +25,30 @@
 		<Spinner />
 	{:else}
 		<div class="section section-header row center-xs margin-bottom-4">
-			<div class="col-xs-12">
+			<div class="col-xxs-12 margin-bottom-2">
 				<Avatar name={fullName || info.username} size="lg" />
 			</div>
-			<div class="col-xs-12 col-md-9 info-block">
+			<div class="col-xxs-12 col-md-9 info-block">
 				<h1>{fullName || info.username}</h1>
-				<p class="text-muted">{info.email}</p>
+				<p class="muted-color text-small">{redactedEmail}</p>
 			</div>
 		</div>
 
 		<div class="section row margin-bottom-4">
-			<div class="col-xs-12 col-md-11 col-lg-10 margin-bottom-2">
+			<div class="col-xxs-12 col-md-11 col-lg-10 margin-bottom-2">
 				<h2 class="title">Section title</h2>
-				<p class="text-muted">You can view and edit your personal information here.</p>
+				<p class="muted-color text-small">You can view and edit your personal information here.</p>
 			</div>
 
-			<div class="col-xs-12 details">
+			<div class="col-xxs-12 details">
 				<div class="row">
-					<div class="col-xs-12">
+					<div class="col-xxs-12">
 						<div class="row center-xs middle-xs">
-							<div class="col-xs start-xs">
+							<div class="col-xxs start-xxs">
 								<span class="detail-title">Phone</span>
-								<span class="detail-subtitle text-muted">Your phone number</span>
+								<span class="detail-subtitle muted-color text-small">Your phone number</span>
 							</div>
-							<div class="col-xs end-xs text-muted">
+							<div class="col-xxs end-xxs muted-color text-small">
 								{info.phone}
 							</div>
 						</div>
@@ -55,13 +56,13 @@
 
 					<hr />
 
-					<div class="col-xs-12">
+					<div class="col-xxs-12">
 						<div class="row center-xs middle-xs">
-							<div class="col-xs start-xs">
+							<div class="col-xxs start-xxs">
 								<span class="detail-title">Company</span>
-								<span class="detail-subtitle text-muted">Your company name</span>
+								<span class="detail-subtitle muted-color text-small">Your company name</span>
 							</div>
-							<div class="col-xs end-xs text-muted">
+							<div class="col-xxs end-xxs muted-color text-small">
 								{info.company}
 							</div>
 						</div>
@@ -69,13 +70,13 @@
 
 					<hr />
 
-					<div class="col-xs-12">
+					<div class="col-xxs-12">
 						<div class="row center-xs middle-xs">
-							<div class="col-xs start-xs">
+							<div class="col-xxs start-xxs">
 								<span class="detail-title">Address</span>
-								<span class="detail-subtitle text-muted">Your address</span>
+								<span class="detail-subtitle muted-color text-small">Your address</span>
 							</div>
-							<div class="col-xs end-xs text-muted">
+							<div class="col-xxs end-xxs muted-color text-small">
 								{info.address}
 							</div>
 						</div>
@@ -83,19 +84,19 @@
 
 					<hr />
 
-					<div class="col-xs-12">
+					<div class="col-xxs-12">
 						<div class="row center-xs middle-xs">
-							<div class="col-xs start-xs">
+							<div class="col-xxs start-xxs">
 								<span class="detail-title">Member since</span>
-								<span class="detail-subtitle text-muted">Your registration date</span>
+								<span class="detail-subtitle muted-color text-small">Your registration date</span>
 							</div>
-							<div class="col-xs end-xs text-muted">
+							<div class="col-xxs end-xxs muted-color text-small">
 								{new Date(info.created).toLocaleDateString()}
 							</div>
 						</div>
 					</div>
 
-					<div class="col-xs-12 margin-top-2">
+					<div class="col-xxs-12 margin-top-2">
 						<Button variant="secondary" size="sm" href="/account/settings">Edit your profile</Button>
 					</div>
 				</div>
@@ -107,7 +108,7 @@
 <style lang="scss" scoped>
 	.section {
 		.title {
-			font-size: 17px;
+			font-size: var(--font-size-large);
 			font-weight: 600;
 		}
 
@@ -123,8 +124,6 @@
 
 			.detail-subtitle {
 				display: block;
-				font-size: 14px;
-				color: var(--text-muted);
 			}
 		}
 

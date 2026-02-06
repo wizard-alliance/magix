@@ -22,7 +22,7 @@
 		align-items: center;
 		gap: 8px;
 		cursor: pointer;
-		font-size: 14px;
+		font-size: var(--font-size-small);
 		user-select: none;
 
 		&:hover {

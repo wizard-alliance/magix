@@ -42,7 +42,7 @@
 		border: var(--border);
 		border-radius: 6px;
 		color: var(--white);
-		font-size: 13px;
+		font-size: var(--font-size-small);
 		cursor: pointer;
 
 		&:hover:not(:disabled) {

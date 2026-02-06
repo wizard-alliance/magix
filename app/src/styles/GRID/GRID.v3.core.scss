@@ -5,6 +5,7 @@
 * @author: Magic
 */
 @use "./GRID.v3.config.scss" as *;
+@use "./GRID.v3.mixins.scss" as *;
 
 * {
 	box-sizing: border-box;
@@ -58,6 +59,18 @@
 	justify-content: stretch;
 }
 
+.hidden-menu-mobile {
+	@include menu-mobile {
+		display: none !important;
+	}
+}
+
+.hidden-menu-desktop {
+	@include menu-desktop {
+		display: none !important;
+	}
+}
+
 /* columns should be blocks by default, and not grow */
 [class*="col-"],
 .col {
@@ -70,6 +83,11 @@
 	width: var(--calc-width);
 	max-width: 100%;
 	max-height: 100%;
+}
+
+.col {
+	width: auto;
+	flex: 0 0 0;
 }
 
 /* gap utils are fine */
