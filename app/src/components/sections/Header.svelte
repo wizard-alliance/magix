@@ -4,20 +4,12 @@
 
 	$: title = app.Config.pageTitleFull()
 	$: pageTitle = $page.data.title || app.Config.pageTitle || "Loading..."
-
+	$: pageIcon = $page.data.icon || "fa-solid fa-file"
 	$: segments = $page.url.pathname.split(`/`).filter(Boolean)
 	$: breadcrumbs = segments.map((seg, i) => ({
 		href: `/${segments.slice(0, i + 1).join(`/`)}`,
 		label: i === segments.length - 1 && $page.data.title ? $page.data.title : seg.replace(/-/g, ` `).replace(/\b\w/g, (c) => c.toUpperCase()),
 	}))
-
-	function toggleMenu() {
-		app.UI.toggleMenu()
-	}
-
-	function toggleNotifications() {
-		app.UI.toggleNotifications()
-	}
 </script>
 
 <header>
@@ -27,20 +19,20 @@
 	<div class="right-header">
 		<div class="row middle-xs height-100p">
 			<div class="col-xxs page-title__wrapper">
-				<i class="hidden-xxs visible-sm icon fa-light fa-user"></i>
+				<i class="hidden-xxs visible-sm icon {pageIcon}"></i>
 				<div class="hidden-xxs start-xxs visible-xs">
 					<h3 class="page-title">{pageTitle}</h3>
 					<Breadcrumbs items={breadcrumbs} />
 				</div>
 			</div>
 			<nav class="col-xxs middle-xxs end-xxs height-100p main-nav">
-				<div class="hidden-menu-desktop nav-button menu-toggle" aria-label="Click to view the main menu" on:click={toggleMenu}>
+				<button class="hidden-menu-desktop nav-button menu-toggle" aria-label="Toggle menu" on:click={() => app.UI.toggleMenu()}>
 					<i class="fa-light fa-stream"></i>
-				</div>
+				</button>
 
-				<div class="nav-button bell sidebar-2-toggle" data-count="2" aria-label="Click to view notifications" on:click={toggleNotifications}>
+				<button class="nav-button bell sidebar-2-toggle" data-count="2" aria-label="Toggle notifications" on:click={() => app.UI.toggleNotifications()}>
 					<i class="fa-light fa-bell"></i>
-				</div>
+				</button>
 			</nav>
 		</div>
 	</div>
@@ -133,6 +125,7 @@
 	}
 
 	.bell {
+		/* svelte-ignore a11y-missing-attribute */
 		&[data-count="0"],
 		&[data-count=""] {
 			&:after {

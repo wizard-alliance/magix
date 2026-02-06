@@ -10,12 +10,12 @@
 </script>
 
 {#if href}
-	<a {href} class={`btn btn-${variant} btn-${size}`} class:disabled class:active class:icon-only={iconOnly} class:loading on:click>
+	<a {href} class={`btn btn-${variant} btn-${size}`} class:disabled class:active class:icon-only={iconOnly} class:loading on:click {...$$restProps}>
 		{#if loading}<span class="spinner"></span>{/if}
 		<slot />
 	</a>
 {:else}
-	<button class={`btn btn-${variant} btn-${size}`} class:active class:icon-only={iconOnly} class:loading {type} disabled={disabled || loading} on:click>
+	<button class={`btn btn-${variant} btn-${size}`} class:active class:icon-only={iconOnly} class:loading {type} disabled={disabled || loading} on:click {...$$restProps}>
 		{#if loading}<span class="spinner"></span>{/if}
 		<slot />
 	</button>

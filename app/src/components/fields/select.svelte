@@ -2,6 +2,7 @@
 	type Option = { label: string; value: string }
 
 	export let id = ""
+	export let name = ""
 	export let label = ""
 	export let value = ""
 	export let options: Option[] = []
@@ -17,7 +18,7 @@
 			>{label}{#if required}<span class="req">*</span>{/if}</label
 		>
 	{/if}
-	<select {id} bind:value {required} {disabled}>
+	<select {id} {name} bind:value {required} {disabled}>
 		{#if placeholder}
 			<option value="" disabled>{placeholder}</option>
 		{/if}

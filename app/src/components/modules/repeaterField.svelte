@@ -2,288 +2,263 @@
 	import { createEventDispatcher } from "svelte"
 	import Button from "$components/fields/button.svelte"
 
-	type ItemResolver<T = any, R = string> = (item: T, index: number) => R
-	type RepeaterEvent<T = any> = { item: T; index: number }
-
 	const dispatch = createEventDispatcher<{
-		add: void
-		duplicate: RepeaterEvent
-		remove: RepeaterEvent
-		save: RepeaterEvent
+		add: { item: any; index: number }
+		remove: { item: any; index: number }
+		duplicate: { item: any; index: number }
+		change: { items: any[] }
 	}>()
 
 	export let title = "Repeater"
 	export let items: any[] = []
-	export let addLabel = "Add item"
+	export let addLabel = "Add row"
 	export let emptyLabel = "No entries yet"
-	export let isSaving = false
-	export let getItemLabel: ItemResolver = (item, index) => item?.key ?? `Item ${index + 1}`
-	export let getItemMeta: ItemResolver<any, string | null> = () => null
-	export let getSaveLabel: ItemResolver = () => "Save"
-	export let getSaveDisabled: ItemResolver<any, boolean> = () => isSaving
-	export let metaDensity: "normal" | "compact" = "normal"
+	export let minRows: number | null = null
+	export let maxRows: number | null = null
+	export let collapsible = true
+	export let defaultExpanded = false
+	export let getRowLabel: ((item: any, index: number) => string) | null = null
+	export let createRow: (() => any) | null = null
 
-	let collapsedState: Record<number, boolean> = {}
+	// auto-derive a blank row from the first item's shape
+	const deriveRow = () => {
+		const template = items[0]
+		if (!template || typeof template !== `object`) return {}
+		const row: Record<string, any> = {}
+		for (const key of Object.keys(template)) {
+			const val = template[key]
+			if (typeof val === `string`) row[key] = ``
+			else if (typeof val === `number`) row[key] = 0
+			else if (typeof val === `boolean`) row[key] = false
+			else row[key] = null
+		}
+		return row
+	}
 
+	// stable IDs via counter — simple and bulletproof
+	let nextId = 0
+	let rowIds: number[] = items.map(() => nextId++)
+
+	// keep rowIds in sync when items change externally
 	$: {
-		const nextState: Record<number, boolean> = {}
-		items.forEach((_, index) => {
-			nextState[index] = collapsedState[index] ?? true
-		})
-		collapsedState = nextState
+		while (rowIds.length < items.length) rowIds.push(nextId++)
+		if (rowIds.length > items.length) rowIds = rowIds.slice(0, items.length)
 	}
 
-	const toggleCollapse = (index: number) => {
-		collapsedState = { ...collapsedState, [index]: !collapsedState[index] }
+	// collapse: only explicit overrides stored, fallback to !defaultExpanded
+	let open: Record<number, boolean> = {}
+
+	const isOpen = (rid: number) => open[rid] ?? defaultExpanded
+
+	const toggle = (rid: number) => {
+		if (!collapsible) return
+		open = { ...open, [rid]: !isOpen(rid) }
 	}
 
-	const handleHeaderClick = (event: MouseEvent, index: number) => {
-		const target = event.target as HTMLElement | null
-		if (target?.closest?.(".repeater__actions")) {
-			return
-		}
-		if ((event.target as HTMLElement | null)?.closest?.("button[data-prevent-toggle]")) {
-			return
-		}
-		toggleCollapse(index)
+	$: atLimit = maxRows !== null && items.length >= maxRows
+	$: atMin = minRows !== null && items.length <= minRows
+
+	const addRow = () => {
+		if (atLimit) return
+		const row = createRow ? createRow() : deriveRow()
+		const rid = nextId++
+		items = [...items, row]
+		rowIds = [...rowIds, rid]
+		open = { ...open, [rid]: true }
+		dispatch(`add`, { item: row, index: items.length - 1 })
+		dispatch(`change`, { items })
 	}
 
-	const handleHeaderKeydown = (event: KeyboardEvent, index: number) => {
-		if (event.defaultPrevented) return
-		if (event.key === "Enter" || event.key === " ") {
-			event.preventDefault()
-			handleHeaderClick(event as unknown as MouseEvent, index)
-		}
+	const removeRow = (index: number) => {
+		if (atMin) return
+		const item = items[index]
+		items = items.filter((_, i) => i !== index)
+		rowIds = rowIds.filter((_, i) => i !== index)
+		dispatch(`remove`, { item, index })
+		dispatch(`change`, { items })
 	}
 
-	const fire = <T,>(type: "duplicate" | "remove" | "save", detail: RepeaterEvent<T>) => dispatch(type, detail)
+	const duplicateRow = (index: number) => {
+		if (atLimit) return
+		const copy = { ...items[index] }
+		const rid = nextId++
+		items = [...items.slice(0, index + 1), copy, ...items.slice(index + 1)]
+		rowIds = [...rowIds.slice(0, index + 1), rid, ...rowIds.slice(index + 1)]
+		open = { ...open, [rid]: true }
+		dispatch(`duplicate`, { item: copy, index: index + 1 })
+		dispatch(`change`, { items })
+	}
+
+	const onHeaderClick = (e: MouseEvent, rid: number) => {
+		if ((e.target as HTMLElement)?.closest?.(`.rpt-actions`)) return
+		toggle(rid)
+	}
 </script>
 
-<div class="repeater">
-	<div class="repeater__header">
-		<div>
-			<h3>{title}</h3>
-			<slot name="helper" />
+<div class="rpt">
+	<div class="rpt-top">
+		<div class="rpt-title">
+			<span>{title}</span>
+			{#if maxRows !== null}
+				<span class="rpt-count">{items.length}/{maxRows}</span>
+			{/if}
 		</div>
-		<Button on:click={() => dispatch("add")}>{addLabel}</Button>
+		<Button variant="secondary" size="sm" disabled={atLimit} on:click={addRow}>
+			<i class="fa-light fa-plus"></i> <span>{addLabel}</span>
+		</Button>
 	</div>
 
 	{#if !items.length}
-		<p class="repeater__empty">{emptyLabel}</p>
+		<div class="rpt-empty">{emptyLabel}</div>
 	{/if}
 
-	{#each items as item, index}
-		{@const isCollapsed = collapsedState[index] ?? true}
-		{@const metaText = getItemMeta(item, index)}
-		<article class={`repeater__item ${isCollapsed ? "is-collapsed" : ""}`}>
-			<header
-				class="repeater__item-header"
-				role="button"
-				tabindex="0"
-				aria-expanded={!isCollapsed}
-				on:click={(event) => handleHeaderClick(event, index)}
-				on:keydown={(event) => handleHeaderKeydown(event, index)}
+	{#each items as item, index (rowIds[index])}
+		{@const rid = rowIds[index]}
+		{@const expanded = !collapsible || (open[rid] ?? defaultExpanded)}
+		<!-- svelte-ignore a11y_no_noninteractive_tabindex a11y_no_static_element_interactions a11y_click_events_have_key_events -->
+		<div class="rpt-row" class:is-open={expanded}>
+			<div
+				class="rpt-header"
+				tabindex={collapsible ? 0 : -1}
+				on:click={(e) => onHeaderClick(e, rid)}
+				on:keydown={(e) => (e.key === `Enter` || e.key === ` `) && (e.preventDefault(), toggle(rid))}
 			>
-				<button
-					type="button"
-					class="repeater__collapse"
-					aria-label={isCollapsed ? "Expand section" : "Collapse section"}
-					aria-expanded={!isCollapsed}
-					on:click={(event) => {
-						event.stopPropagation()
-						toggleCollapse(index)
-					}}
-				>
-					<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-						<path d="M9 6l6 6-6 6" />
-					</svg>
-				</button>
-				<div class="repeater__item-title">
-					<h4>{getItemLabel(item, index)}</h4>
-					{#if metaText}
-						<p class={`repeater__item-meta ${metaDensity === "compact" ? "is-compact" : ""}`}>{metaText}</p>
-					{/if}
+				{#if collapsible}
+					<i class="rpt-chevron fa-light fa-chevron-right" class:is-open={expanded}></i>
+				{/if}
+				<span class="rpt-label">
+					{#if getRowLabel}{getRowLabel(item, index)}{:else}#{index + 1}{/if}
+				</span>
+				<div class="rpt-actions">
+					<button type="button" title="Duplicate" disabled={atLimit} on:click|stopPropagation={() => duplicateRow(index)}>
+						<i class="fa-light fa-copy"></i>
+					</button>
+					<button type="button" class="danger" title="Remove" disabled={atMin} on:click|stopPropagation={() => removeRow(index)}>
+						<i class="fa-light fa-trash"></i>
+					</button>
 				</div>
-				<div class="repeater__actions">
-					<button
-						type="button"
-						data-prevent-toggle
-						on:click={(event) => {
-							event.stopPropagation()
-							fire("duplicate", { item, index })
-						}}>Duplicate</button
-					>
-					<button
-						type="button"
-						class="danger"
-						data-prevent-toggle
-						on:click={(event) => {
-							event.stopPropagation()
-							fire("remove", { item, index })
-						}}>Delete</button
-					>
+			</div>
+			{#if expanded}
+				<div class="rpt-body row middle-xs">
+					<slot {item} {index} rowId={rid} />
 				</div>
-			</header>
-
-			<section class={`repeater__item-body ${isCollapsed ? "collapsed" : ""}`} aria-hidden={isCollapsed}>
-				<slot {item} {index} />
-			</section>
-
-			<footer class={`repeater__item-footer ${isCollapsed ? "collapsed" : ""}`} aria-hidden={isCollapsed}>
-				<Button
-					on:click={(event) => {
-						event.stopPropagation()
-						fire("save", { item, index })
-					}}
-					disabled={Boolean(getSaveDisabled(item, index))}>{getSaveLabel(item, index)}</Button
-				>
-			</footer>
-		</article>
+			{:else}
+				<div class="rpt-body row middle-xs" style="display:none">
+					<slot {item} {index} rowId={rid} />
+				</div>
+			{/if}
+		</div>
 	{/each}
 </div>
 
 <style lang="scss">
-	.repeater {
+	.rpt {
 		display: flex;
 		flex-direction: column;
-		gap: calc(var(--gutter) * 2);
+		gap: calc(var(--gutter) * 1.5);
 		width: 100%;
 	}
 
-	.repeater__header {
+	.rpt-top {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-		padding-bottom: calc(var(--gutter) * 1.25);
-
-		h3 {
-			margin: 0;
-			font-size: var(--font-size-large);
-		}
 	}
 
-	.repeater__empty {
-		padding: calc(var(--gutter) * 2);
+	.rpt-title {
+		display: flex;
+		align-items: center;
+		gap: calc(var(--gutter) * 1);
+		font-size: var(--font-size);
+		font-weight: 600;
+	}
+
+	.rpt-count {
+		font-size: var(--font-size-small);
+		color: var(--muted-color-2);
+		font-weight: 400;
+	}
+
+	.rpt-empty {
+		padding: calc(var(--gutter) * 3);
 		text-align: center;
+		border: 1px dashed var(--border-color);
+		border-radius: var(--border-radius);
+		color: var(--muted-color-2);
+		font-size: var(--font-size-small);
+	}
+
+	.rpt-row {
 		border: var(--border);
 		border-radius: var(--border-radius);
-		color: var(--text-color-secondary);
+		overflow: hidden;
 	}
 
-	.repeater__item {
-		border: 1px solid var(--border-color);
-		border-radius: var(--border-radius);
-		padding: calc(var(--gutter) * 2);
+	.rpt-header {
 		display: flex;
-		flex-direction: column;
-		gap: calc(var(--gutter) * 1.4);
+		align-items: center;
+		gap: calc(var(--gutter) * 0.75);
+		padding: calc(var(--gutter) * 0.75) calc(var(--gutter) * 1.25);
+		cursor: pointer;
+		user-select: none;
 
-		&.is-collapsed {
-			gap: calc(var(--gutter) * 1);
+		&:hover {
+			background: rgba(255, 255, 255, 0.02);
 		}
 	}
 
-	.repeater__item-header {
-		display: flex;
-		align-items: center;
-		gap: calc(var(--gutter) * 1);
-		cursor: pointer;
+	.rpt-chevron {
+		font-size: 0.65rem;
+		color: var(--muted-color-2);
+		transition: transform 150ms ease;
+		&.is-open {
+			transform: rotate(90deg);
+		}
 	}
 
-	.repeater__item-title {
+	.rpt-label {
 		flex: 1;
-		display: flex;
-		flex-direction: column;
-		align-items: flex-start;
-		gap: 0.2rem;
-
-		h4 {
-			margin: 0;
-			font-size: var(--font-size);
-		}
-	}
-
-	.repeater__item-meta {
-		margin: 0;
 		font-size: var(--font-size-small);
-		color: rgba(255, 255, 255, 0.65);
-		letter-spacing: 0.04em;
-		text-transform: uppercase;
+		color: var(--muted-color);
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
 	}
 
-	.repeater__item-meta.is-compact {
-		font-size: var(--font-size-small);
-		letter-spacing: 0.06em;
-	}
-
-	.repeater__collapse {
-		border: none;
-		background: transparent;
-		color: rgba(255, 255, 255, 0.7);
-		cursor: pointer;
-		padding: 0;
-		line-height: 0;
+	.rpt-actions {
 		display: flex;
-		align-items: center;
-
-		svg {
-			width: 16px;
-			height: 16px;
-			stroke: currentColor;
-			stroke-width: 2;
-			fill: none;
-			transform: rotate(-90deg);
-			transition: transform 150ms ease;
-		}
-
-		&[aria-expanded="true"] svg {
-			transform: rotate(0deg);
-		}
-	}
-
-	.repeater__actions {
-		display: flex;
-		gap: calc(var(--gutter) * 1);
+		gap: 2px;
 
 		button {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			width: 22px;
+			height: 22px;
 			border: none;
+			border-radius: 4px;
 			background: transparent;
-			color: rgba(255, 255, 255, 0.55);
-			text-transform: uppercase;
-			font-size: var(--font-size-small);
-			letter-spacing: 0.08em;
+			color: var(--muted-color-2);
 			cursor: pointer;
-			padding: 0;
+			font-size: 0.75rem;
 
 			&:hover {
+				background: rgba(255, 255, 255, 0.06);
 				color: var(--white);
 			}
-
-			&.danger {
-				color: #f56565;
+			&.danger:hover {
+				background: rgba(255, 107, 132, 0.1);
+				color: var(--red);
+			}
+			&:disabled {
+				opacity: 0.25;
+				cursor: not-allowed;
 			}
 		}
 	}
 
-	.repeater__item-body {
-		display: flex;
-		flex-direction: column;
-		gap: calc(var(--gutter) * 2);
-
-		&.collapsed {
-			display: none;
-		}
-	}
-
-	.repeater__item-footer {
-		display: flex;
-		justify-content: flex-end;
-		padding-top: calc(var(--gutter) * 1);
-		border-top: 1px solid rgba(255, 255, 255, 0.06);
-
-		&.collapsed {
-			display: none;
-		}
+	.rpt-body {
+		padding: calc(var(--gutter) * 1.5);
+		border-top: var(--border);
 	}
 </style>

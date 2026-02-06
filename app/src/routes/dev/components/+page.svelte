@@ -15,7 +15,6 @@
 	import Tabs from "$components/modules/tabs.svelte"
 	import Badge from "$components/modules/badge.svelte"
 	import Avatar from "$components/modules/avatar.svelte"
-	import Tooltip from "$components/modules/tooltip.svelte"
 	import Spinner from "$components/modules/spinner.svelte"
 	import ProgressBar from "$components/modules/progressBar.svelte"
 	import Table from "$components/modules/table.svelte"
@@ -31,9 +30,9 @@
 	let loadingBtn = false
 	let dropdownOpen = false
 	let dropdownTrigger: HTMLElement | null = null
-	let repeaterItems = [
-		{ key: "header", value: "Welcome to Magix" },
-		{ key: "footer", value: "© 2026" },
+	let repeaterItems: { name: string; type: string; enabled: boolean }[] = [
+		{ name: "Header", type: "text", enabled: true },
+		{ name: "Sidebar", type: "select", enabled: false },
 	]
 
 	function simulateLoading() {
@@ -456,28 +455,53 @@
 
 	<section>
 		<h2>Repeater Field</h2>
-		<div class="demo" style="width:100%">
-			<RepeaterField
-				title="Config Entries"
-				bind:items={repeaterItems}
-				addLabel="Add entry"
-				emptyLabel="No config entries"
-				getItemLabel={(item) => item.key || "Untitled"}
-				getItemMeta={(item) => item.value}
-				on:add={() => (repeaterItems = [...repeaterItems, { key: "", value: "" }])}
-				on:remove={(e) => (repeaterItems = repeaterItems.filter((_, i) => i !== e.detail.index))}
-				on:duplicate={(e) => {
-					const copy = { ...repeaterItems[e.detail.index] }
-					repeaterItems = [...repeaterItems, copy]
-				}}
-				on:save={(e) => app.Notify.success(`Saved item ${e.detail.index + 1}`)}
-			>
-				<svelte:fragment let:item let:index>
-					<Input label="Key" bind:value={repeaterItems[index].key} placeholder="Key name" />
-					<Input label="Value" bind:value={repeaterItems[index].value} placeholder="Value" />
+		<form
+			class="demo"
+			style="width:100%; flex-direction:column; align-items:stretch; gap:1rem"
+			on:submit|preventDefault={(e) => {
+				const fd = new FormData(e.currentTarget)
+				const data: Record = {}
+				for (const [key, val] of fd.entries()) {
+					const match = key.match(/^row\[(\d+)]\[(.+)]$/)
+					if (!match) continue
+					const [, i, field] = match
+					data[i] ??= {}
+					data[i][field] = val
+				}
+				const rows = Object.values(data)
+				console.log(`Repeater form data:`, rows)
+				app.Notify.success(`Logged ${rows.length} items to console`)
+			}}
+		>
+			<RepeaterField title="Components" bind:items={repeaterItems} addLabel="Add component" emptyLabel="No components added" minRows={2} maxRows={6}>
+				<svelte:fragment let:index>
+					<div class="col-xxs-12 col-md margin-bottom-2">
+						<Input label="Name" name={`row[${index}][name]`} value={repeaterItems[index].name} placeholder="Component name" />
+					</div>
+					<div class="col-xxs-12 col-md margin-bottom-2">
+						<Select
+							label="Type"
+							name={`row[${index}][type]`}
+							value={repeaterItems[index].type}
+							options={[
+								{ label: "Text", value: "text" },
+								{ label: "Image", value: "image" },
+								{ label: "Select", value: "select" },
+								{ label: "Video", value: "video" },
+							]}
+						/>
+					</div>
+					<div class="col-xxs-12 col-md-12">
+						<Toggle label="Enabled" name={`row[${index}][enabled]`} checked={repeaterItems[index].enabled} />
+					</div>
 				</svelte:fragment>
 			</RepeaterField>
-		</div>
+			<div style="display:flex; justify-content:flex-end">
+				<Button size="sm" type="submit">
+					<i class="fa-light fa-floppy-disk"></i> <span>Save</span>
+				</Button>
+			</div>
+		</form>
 	</section>
 
 	<section>

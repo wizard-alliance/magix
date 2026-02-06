@@ -1,5 +1,6 @@
 <script lang="ts">
 	export let id = ""
+	export let name = ""
 	export let label = ""
 	export let type: HTMLInputElement["type"] = "text"
 	export let value = ""
@@ -15,7 +16,7 @@
 			>{label}{#if required}<span class="req">*</span>{/if}</label
 		>
 	{/if}
-	<input {id} {type} bind:value {placeholder} {required} {disabled} />
+	<input {id} {name} {type} bind:value {placeholder} {required} {disabled} />
 	{#if helperText}
 		<span class="helper">{helperText}</span>
 	{/if}

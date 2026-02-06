@@ -1,5 +1,6 @@
 <script lang="ts">
 	export let id = ""
+	export let name = ""
 	export let checked = false
 	export let label: string = ""
 	export let disabled = false
@@ -10,7 +11,7 @@
 </script>
 
 <label class="toggle" class:disabled for={id}>
-	<input {id} type="checkbox" bind:checked {disabled} />
+	<input {id} {name} type="checkbox" bind:checked {disabled} value="true" />
 	<span class="track">
 		<span class="thumb"></span>
 	</span>
