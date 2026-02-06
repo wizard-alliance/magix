@@ -45,6 +45,11 @@
 	--sidebar-1-width: 250px;
 	--sidebar-2-width: 300px;
 
+	// Default widths (used by UIManager.sidebarGetDefaultWidth)
+	--sidebar-0-default-width: 100px;
+	--sidebar-1-default-width: 250px;
+	--sidebar-2-default-width: 300px;
+
 	--sidebar-0-pos: 0%;
 	--sidebar-1-pos: 0%;
 	--sidebar-2-pos: 100%;
@@ -54,7 +59,7 @@
 
 	--main-width: calc(100% - (var(--sidebar-1-width, 0) + var(--sidebar-0-width, 0)));
 	--main-offset-x: calc(var(--sidebar-1-width, 0) + var(--sidebar-0-width, 0));
-	--main-offset-y: calc( var(--header-height) + var(--page-header-height, 0));
+	--main-offset-y: calc( var(--header-height) );
 
 	--header-height: 80px;
 	--account-height: 70px;
@@ -70,7 +75,7 @@
 		--sidebar-1-pos: calc( (var(--sidebar-0-width) + var(--sidebar-1-width)) * -1);
 		--header-left-width: var(--sidebar-0-width);
 
-		.app[menu-open="true"] {
+		.app[data-menu-open="true"]:not([data-sidebar-0="hidden"]) {
 			--sidebar-0-pos: 0;
 			--sidebar-1-pos: 0;
 		}
@@ -79,6 +84,8 @@
 	@include lg {
 		--sidebar-0-width: 80px;
 		--sidebar-1-width: 240px;
+		--sidebar-0-default-width: 80px;
+		--sidebar-1-default-width: 240px;
 	}
 
 	@include sm {
@@ -88,12 +95,33 @@
 		--page-nav-offset-y: calc( var(--header-height) * -1 );
 		--page-header-height: 0px;
 		
-		.app[menu-open="true"] {
+		.app[data-menu-open="true"]:not([data-sidebar-1="hidden"]) {
 			--sidebar-1-pos: 0%;
 		}
 	}
 
-	.app[notifications-open="true"] {
+	.app[data-notifications-open="true"] {
 		--sidebar-2-pos: 0%;
+	}
+
+	// Sidebar visibility via data attributes (set by layout from UIManager stores)
+	.app[data-sidebar-0="hidden"] {
+		--sidebar-0-pos: calc(var(--sidebar-0-width) * -1);
+	}
+
+	.app[data-sidebar-1="hidden"] {
+		--sidebar-1-pos: calc((var(--sidebar-0-width) + var(--sidebar-1-width)) * -1);
+	}
+
+	.app[data-sidebar-0="hidden"][data-sidebar-1="hidden"] {
+		--main-width: 100%;
+		--main-offset-x: 0;
+		--header-left-width: 0px;
+	}
+
+	.app[data-sidebar-0="visible"][data-sidebar-1="hidden"] {
+		--main-width: calc(100% - var(--sidebar-0-width));
+		--main-offset-x: var(--sidebar-0-width);
+		--header-left-width: var(--sidebar-0-width);
 	}
 }

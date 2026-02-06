@@ -6,7 +6,7 @@ export const load = () => ({
 	icon: "fa-light fa-id-badge",
 	description: "View and edit your personal profile information.",
 
-    sidebars: { 1: null, 2: null },
+    sidebars: { 0: true, 1: true, 2: false },
 	nav: accountNav,
 
 	seo: {

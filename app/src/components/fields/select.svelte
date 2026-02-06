@@ -50,15 +50,20 @@
 		color: var(--white);
 		padding: 10px 12px;
 		cursor: pointer;
+		transition:
+			border-color 0.15s,
+			box-shadow 0.15s;
+		font-size: var(--font-size-small);
 	}
 
 	select:focus {
 		outline: none;
 		border-color: var(--accent-color);
+		box-shadow: 0 0 0 2px rgba(116, 231, 168, 0.15);
 	}
 
 	select:disabled {
-		opacity: 0.5;
+		opacity: 0.4;
 		cursor: not-allowed;
 	}
 

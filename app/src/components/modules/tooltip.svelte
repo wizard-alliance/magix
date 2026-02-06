@@ -25,7 +25,10 @@
 		white-space: nowrap;
 		opacity: 0;
 		pointer-events: none;
-		transition: opacity 0.15s;
+		user-select: none;
+		transition:
+			opacity 0.15s,
+			transform 0.15s;
 		z-index: 100;
 	}
 

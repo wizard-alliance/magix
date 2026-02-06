@@ -11,6 +11,7 @@
 	import Toggle from "$components/fields/toggle.svelte"
 	import DatePicker from "$components/fields/datePicker.svelte"
 	import FileUpload from "$components/fields/fileUpload.svelte"
+	import SearchInput from "$components/fields/searchInput.svelte"
 	import Tabs from "$components/modules/tabs.svelte"
 	import Badge from "$components/modules/badge.svelte"
 	import Avatar from "$components/modules/avatar.svelte"
@@ -19,10 +20,26 @@
 	import ProgressBar from "$components/modules/progressBar.svelte"
 	import Table from "$components/modules/table.svelte"
 	import Pagination from "$components/modules/pagination.svelte"
+	import ContextMenu from "$components/modules/contextMenu.svelte"
+	import DropdownMenu from "$components/modules/DropdownMenu.svelte"
+	import RepeaterField from "$components/modules/repeaterField.svelte"
+	import Breadcrumbs from "$components/modules/breadcrumbs.svelte"
 
 	let radioValue = "a"
 	let toggleChecked = false
 	let tabActive = "tab1"
+	let loadingBtn = false
+	let dropdownOpen = false
+	let dropdownTrigger: HTMLElement | null = null
+	let repeaterItems = [
+		{ key: "header", value: "Welcome to Magix" },
+		{ key: "footer", value: "© 2026" },
+	]
+
+	function simulateLoading() {
+		loadingBtn = true
+		setTimeout(() => (loadingBtn = false), 2000)
+	}
 
 	onMount(() => {})
 </script>
@@ -31,13 +48,123 @@
 	<h1>Components</h1>
 
 	<section>
-		<h2>Button</h2>
+		<h2>Button — Variants</h2>
 		<div class="demo">
-			<Button>Default</Button>
+			<Button>Primary</Button>
 			<Button variant="secondary">Secondary</Button>
+			<Button variant="ghost">Ghost</Button>
 			<Button variant="danger">Danger</Button>
+		</div>
+	</section>
+
+	<section>
+		<h2>Button — Sizes</h2>
+		<div class="demo">
 			<Button size="sm">Small</Button>
+			<Button size="md">Medium</Button>
 			<Button size="lg">Large</Button>
+		</div>
+	</section>
+
+	<section>
+		<h2>Button — Active & Disabled</h2>
+		<div class="demo">
+			<Button active>Active Primary</Button>
+			<Button variant="secondary" active>Active Secondary</Button>
+			<Button variant="ghost" active>Active Ghost</Button>
+			<Button variant="danger" active>Active Danger</Button>
+			<Button disabled>Disabled</Button>
+			<Button variant="secondary" disabled>Disabled</Button>
+			<Button variant="danger" disabled>Disabled</Button>
+		</div>
+	</section>
+
+	<section>
+		<h2>Button — Loading</h2>
+		<div class="demo">
+			<Button loading={loadingBtn} on:click={simulateLoading}>
+				{loadingBtn ? `Saving...` : `Click to load`}
+			</Button>
+			<Button variant="secondary" loading>Loading…</Button>
+		</div>
+	</section>
+
+	<section>
+		<h2>Button — Icon + Text</h2>
+		<div class="demo">
+			<Button><i class="fa-light fa-plus"></i> <span>Add Item</span></Button>
+			<Button variant="secondary"><i class="fa-light fa-pen"></i> <span>Edit</span></Button>
+			<Button variant="danger"><i class="fa-light fa-trash"></i> <span>Delete</span></Button>
+			<Button variant="ghost"><i class="fa-light fa-arrow-left"></i> <span>Back</span></Button>
+		</div>
+	</section>
+
+	<section>
+		<h2>Button — Icon Only</h2>
+		<div class="demo">
+			<Button iconOnly size="sm"><i class="fa-light fa-gear"></i></Button>
+			<Button iconOnly><i class="fa-light fa-bell"></i></Button>
+			<Button iconOnly size="lg"><i class="fa-light fa-heart"></i></Button>
+			<Button iconOnly variant="secondary"><i class="fa-light fa-ellipsis-vertical"></i></Button>
+			<Button iconOnly variant="ghost"><i class="fa-light fa-xmark"></i></Button>
+			<Button iconOnly variant="danger"><i class="fa-light fa-trash"></i></Button>
+		</div>
+	</section>
+
+	<section>
+		<h2>Button — Span Only</h2>
+		<div class="demo">
+			<Button><span>Just a span</span></Button>
+			<Button variant="secondary"><span>Label</span></Button>
+		</div>
+	</section>
+
+	<section>
+		<h2>Button — Link</h2>
+		<div class="demo">
+			<Button href="/">Home Link</Button>
+			<Button href="/" variant="ghost"><i class="fa-light fa-link"></i> <span>Link Ghost</span></Button>
+		</div>
+	</section>
+
+	<section>
+		<h2>Notifications — Types</h2>
+		<div class="demo">
+			<Button on:click={() => app.Notify.success(`Item saved successfully`)}><i class="fa-light fa-check"></i> <span>Success</span></Button>
+			<Button variant="danger" on:click={() => app.Notify.error(`Something went wrong`)}><i class="fa-light fa-xmark"></i> <span>Error</span></Button>
+			<Button variant="secondary" on:click={() => app.Notify.warning(`Disk space running low`)}><i class="fa-light fa-triangle-exclamation"></i> <span>Warning</span></Button>
+			<Button variant="secondary" on:click={() => app.Notify.info(`New version available`)}><i class="fa-light fa-circle-info"></i> <span>Info</span></Button>
+		</div>
+	</section>
+
+	<section>
+		<h2>Notifications — With Title</h2>
+		<div class="demo">
+			<Button on:click={() => app.Notify.success(`Changes published`, `Deploy`)}><i class="fa-light fa-check"></i> <span>Success + Title</span></Button>
+			<Button variant="danger" on:click={() => app.Notify.error(`Connection refused`, `Network Error`)}><i class="fa-light fa-xmark"></i> <span>Error + Title</span></Button>
+			<Button variant="secondary" on:click={() => app.Notify.warning(`Rate limit approaching`, `API Warning`)}
+				><i class="fa-light fa-triangle-exclamation"></i> <span>Warning + Title</span></Button
+			>
+			<Button variant="secondary" on:click={() => app.Notify.info(`v2.4.0 is out`, `Update`)}><i class="fa-light fa-circle-info"></i> <span>Info + Title</span></Button>
+		</div>
+	</section>
+
+	<section>
+		<h2>Notifications — Duration</h2>
+		<div class="demo">
+			<Button variant="ghost" on:click={() => app.Notify.info(`Gone in 2 seconds`, `Quick`, 2)}><i class="fa-light fa-bolt"></i> <span>Short (2s)</span></Button>
+			<Button variant="ghost" on:click={() => app.Notify.info(`Default 5 second toast`)}><i class="fa-light fa-clock"></i> <span>Default (5s)</span></Button>
+			<Button variant="ghost" on:click={() => app.Notify.info(`This one sticks around`, `Sticky`, 10)}><i class="fa-light fa-hourglass"></i> <span>Long (10s)</span></Button>
+		</div>
+	</section>
+
+	<section>
+		<h2>Notifications — create()</h2>
+		<div class="demo">
+			<Button variant="ghost" on:click={() => app.Notify.create({ message: `Raw create call` })}><span>No type (default info)</span></Button>
+			<Button variant="ghost" on:click={() => app.Notify.create({ title: `Custom`, message: `Full params example`, type: `success`, duration: 3 })}
+				><span>Full params</span></Button
+			>
 		</div>
 	</section>
 
@@ -159,10 +286,41 @@
 	</section>
 
 	<section>
-		<h2>Tooltip</h2>
+		<h2>Avatar — With Tooltip</h2>
 		<div class="demo">
-			<Tooltip text="Top tooltip"><Button>Hover me</Button></Tooltip>
-			<Tooltip text="Right tooltip" position="right"><Button variant="secondary">Right</Button></Tooltip>
+			<Avatar name="Alice" size="sm" data-tip="Alice — Admin" data-tip-pos="bottom" />
+			<Avatar name="Bob" size="md" data-tip="Bob — Editor" data-tip-icon="fa-circle-info" data-tip-pos="right" />
+			<Avatar name="Carol" size="lg" data-tip="Carol — Viewer" data-tip-icon="fa-circle-info" data-tip-pos="bottom" />
+			<Avatar name="Dave" size="md" href="#" data-tip="Open Dave's profile" data-tip-icon="fa-arrow-up-right-from-square" data-tip-pos="right" />
+		</div>
+	</section>
+
+	<section>
+		<h2>Tooltip — Global (data-tip)</h2>
+		<div class="demo">
+			<Button data-tip="Save changes" data-tip-pos="top"><i class="fa-light fa-floppy-disk"></i> <span>Save</span></Button>
+			<Button variant="secondary" data-tip="Edit settings" data-tip-icon="fa-circle-info" data-tip-pos="bottom"><i class="fa-light fa-gear"></i> <span>Settings</span></Button
+			>
+			<Button iconOnly variant="ghost" data-tip="Notifications" data-tip-pos="right"><i class="fa-light fa-bell"></i></Button>
+			<Button iconOnly variant="danger" data-tip="Delete item" data-tip-icon="fa-triangle-exclamation" data-tip-pos="bottom"><i class="fa-light fa-trash"></i></Button>
+		</div>
+	</section>
+
+	<section>
+		<h2>Tooltip — Global with Icon</h2>
+		<div class="demo">
+			<span data-tip="This is a help tip" data-tip-icon="fa-circle-info" data-tip-pos="top" style="cursor: help"
+				><i class="fa-light fa-circle-info" style="font-size: 1.2rem; color: var(--muted-color)"></i></span
+			>
+			<span data-tip="Feature in beta" data-tip-icon="fa-flask" data-tip-pos="right" style="cursor: help"
+				><i class="fa-light fa-flask" style="font-size: 1.2rem; color: var(--muted-color)"></i></span
+			>
+			<span data-tip="Create a new project" data-tip-icon="fa-circle-plus" data-tip-pos="bottom" style="cursor: pointer"
+				><i class="fa-light fa-circle-plus" style="font-size: 1.2rem; color: var(--accent-color)"></i></span
+			>
+			<span data-tip="Requires permission" data-tip-icon="fa-lock" data-tip-pos="top" style="cursor: not-allowed"
+				><i class="fa-light fa-lock" style="font-size: 1.2rem; color: var(--muted-color-2)"></i></span
+			>
 		</div>
 	</section>
 
@@ -204,6 +362,155 @@
 		<h2>Pagination</h2>
 		<div class="demo">
 			<Pagination current={2} total={5} />
+		</div>
+	</section>
+
+	<section>
+		<h2>Search Input</h2>
+		<div class="demo">
+			<SearchInput placeholder="Search items..." on:submit={(e) => app.Notify.info(`Searched: ${e.detail}`)} />
+			<SearchInput label="With label" placeholder="Type and press enter..." />
+		</div>
+	</section>
+
+	<section>
+		<h2>Breadcrumbs</h2>
+		<div class="demo" style="width:100%">
+			<Breadcrumbs
+				items={[
+					{ href: "/", label: "Home" },
+					{ href: "/projects", label: "Projects" },
+					{ href: "/projects/magix", label: "Magix" },
+				]}
+			/>
+		</div>
+		<div class="demo" style="width:100%; margin-top: calc(var(--gutter) * 2)">
+			<Breadcrumbs
+				separator="›"
+				items={[
+					{ href: "/", label: "Dashboard" },
+					{ href: "/settings", label: "Settings" },
+					{ href: "/settings/profile", label: "Profile" },
+				]}
+			/>
+		</div>
+	</section>
+
+	<section>
+		<h2>Context Menu</h2>
+		<div class="demo">
+			<div
+				class="context-target"
+				style="padding: calc(var(--gutter) * 3); border: var(--border); border-radius: var(--border-radius); cursor: context-menu; color: var(--muted-color)"
+			>
+				Right-click here
+			</div>
+			<ContextMenu
+				togglers=".context-target"
+				items={[
+					{ label: "Edit", icon: "fa-light fa-pen", action: () => app.Notify.info("Edit clicked") },
+					{ label: "Duplicate", icon: "fa-light fa-copy", action: () => app.Notify.info("Duplicate clicked") },
+					{ label: "Delete", icon: "fa-light fa-trash", action: () => app.Notify.warning("Delete clicked") },
+				]}
+			/>
+		</div>
+	</section>
+
+	<section>
+		<h2>Dropdown Menu</h2>
+		<div class="demo" style="position: relative">
+			<div bind:this={dropdownTrigger}>
+				<Button on:click={() => (dropdownOpen = !dropdownOpen)}>
+					<i class="fa-light fa-ellipsis-vertical"></i> <span>Open Menu</span>
+				</Button>
+			</div>
+			<DropdownMenu bind:open={dropdownOpen} triggerRef={dropdownTrigger}>
+				<button
+					on:click={() => {
+						dropdownOpen = false
+						app.Notify.info("Profile clicked")
+					}}
+				>
+					<i class="fa-light fa-user"></i> Profile
+				</button>
+				<button
+					on:click={() => {
+						dropdownOpen = false
+						app.Notify.info("Settings clicked")
+					}}
+				>
+					<i class="fa-light fa-gear"></i> Settings
+				</button>
+				<hr />
+				<button
+					on:click={() => {
+						dropdownOpen = false
+						app.Notify.warning("Logout clicked")
+					}}
+				>
+					<i class="fa-light fa-arrow-right-from-bracket"></i> Logout
+				</button>
+			</DropdownMenu>
+		</div>
+	</section>
+
+	<section>
+		<h2>Repeater Field</h2>
+		<div class="demo" style="width:100%">
+			<RepeaterField
+				title="Config Entries"
+				bind:items={repeaterItems}
+				addLabel="Add entry"
+				emptyLabel="No config entries"
+				getItemLabel={(item) => item.key || "Untitled"}
+				getItemMeta={(item) => item.value}
+				on:add={() => (repeaterItems = [...repeaterItems, { key: "", value: "" }])}
+				on:remove={(e) => (repeaterItems = repeaterItems.filter((_, i) => i !== e.detail.index))}
+				on:duplicate={(e) => {
+					const copy = { ...repeaterItems[e.detail.index] }
+					repeaterItems = [...repeaterItems, copy]
+				}}
+				on:save={(e) => app.Notify.success(`Saved item ${e.detail.index + 1}`)}
+			>
+				<svelte:fragment let:item let:index>
+					<Input label="Key" bind:value={repeaterItems[index].key} placeholder="Key name" />
+					<Input label="Value" bind:value={repeaterItems[index].value} placeholder="Value" />
+				</svelte:fragment>
+			</RepeaterField>
+		</div>
+	</section>
+
+	<section>
+		<h2>Modal / Dialog</h2>
+		<div class="demo">
+			<Button
+				on:click={async () => {
+					const result = await app.Modal.confirm("Delete project?", "This action cannot be undone.")
+					app.Notify.info(result ? "Confirmed" : "Cancelled")
+				}}><i class="fa-light fa-trash"></i> <span>Confirm Dialog</span></Button
+			>
+
+			<Button variant="secondary" on:click={() => app.Modal.alert("Deployment complete", "Your app is now live.", "fa-rocket")}>
+				<i class="fa-light fa-circle-info"></i> <span>Alert Dialog</span>
+			</Button>
+
+			<Button
+				variant="ghost"
+				on:click={async () => {
+					const choice = await app.Modal.open({
+						icon: "fa-code-branch",
+						title: "Merge Strategy",
+						subtitle: "How should this branch be merged?",
+						content: "Choose a merge strategy for the pull request.",
+						choices: [
+							{ label: "Merge", value: "merge" },
+							{ label: "Squash", value: "squash", variant: "primary" },
+							{ label: "Rebase", value: "rebase" },
+						],
+					})
+					if (choice) app.Notify.success(`Chose: ${choice}`)
+				}}><i class="fa-light fa-code-branch"></i> <span>Multi-choice</span></Button
+			>
 		</div>
 	</section>
 </div>

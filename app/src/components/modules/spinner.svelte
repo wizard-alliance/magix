@@ -11,6 +11,7 @@
 		border-top-color: var(--accent-color);
 		border-radius: 50%;
 		animation: spin 0.8s linear infinite;
+		user-select: none;
 	}
 
 	.spinner-light {

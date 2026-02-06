@@ -22,6 +22,13 @@
 	let sidebar1: any = null
 	let sidebar2: any = null
 
+	// Sidebar visibility stores (destructured for Svelte $ reactivity)
+	const sidebar0Visible = app.State.ui.sidebar0Visible
+	const sidebar1Visible = app.State.ui.sidebar1Visible
+	const sidebar2Visible = app.State.ui.sidebar2Visible
+	const notificationsOpen = app.State.ui.notificationsOpen
+	const menuOpenStore = app.State.ui.menuOpen
+
 	$: title = app.Config.pageTitleFull()
 	$: pageTitle = app.Config.pageTitle || "Loading..."
 
@@ -32,13 +39,23 @@
 		prevRouteClass = routeClass
 	}
 
+	// Apply sidebar config from page load data (flash-free, runs during SSR)
+	$: if ($page.data.sidebars !== undefined) {
+		app.UI.applySidebarConfig($page.data.sidebars)
+	}
+
+	// Derive attribute values from stores (used in template bindings)
+	$: attrSidebar0 = $sidebar0Visible ? `visible` : `hidden`
+	$: attrSidebar1 = $sidebar1Visible ? `visible` : `hidden`
+	$: attrSidebar2 = $sidebar2Visible ? `visible` : `hidden`
+	$: attrNotifications = $notificationsOpen ? `true` : `false`
+	$: attrMenu = $menuOpenStore ? `true` : `false`
+
 	$: isLoggedIn = !!currentUser
 	$: userMenuItems = app.Misc.Navigation.getMenu(isLoggedIn)
 
 	beforeNavigate(({ from, to }) => {
 		if (from?.url.pathname === to?.url.pathname) return
-		// app.UI.sidebarClearContent(1)
-		// app.UI.sidebarClearContent(2)
 	})
 
 	onNavigate((navigation) => {
@@ -73,7 +90,7 @@
 	<title>{title}</title>
 </svelte:head>
 
-<div class="app">
+<div class="app" data-sidebar-0={attrSidebar0} data-sidebar-1={attrSidebar1} data-sidebar-2={attrSidebar2} data-notifications-open={attrNotifications} data-menu-open={attrMenu}>
 	<GlobalTooltip />
 	<Header />
 
@@ -85,18 +102,17 @@
 		<MainMenuSidebar />
 	</aside>
 
-	{#if $page.data.nav}
-		<PageNav nav={$page.data.nav} />
-	{/if}
-
 	<main class="main">
-		<slot />
+		{#if $page.data.nav}
+			<PageNav nav={$page.data.nav} />
+		{/if}
+
+		<div class="scrollable">
+			<slot />
+		</div>
 	</main>
 
 	<aside class="sidebar sidebar-2 scrollable">
 		<NotificationsSidebar />
 	</aside>
 </div>
-
-<style lang="scss" scoped>
-</style>

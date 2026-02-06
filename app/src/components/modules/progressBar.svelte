@@ -19,13 +19,14 @@
 		background: var(--secondary-color);
 		border-radius: 4px;
 		overflow: hidden;
+		user-select: none;
 	}
 
 	.bar {
 		height: 100%;
 		background: var(--accent-color);
 		border-radius: 4px;
-		transition: width 0.3s;
+		transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 	}
 
 	.label {

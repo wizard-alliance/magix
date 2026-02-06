@@ -12,6 +12,7 @@ import { Log, ErrorLog, SuccessLog, WarningLog } from "./classes/Helpers/Log"
 import { Reactive } from "./classes/Helpers/Reactive"
 import { AppLogger } from "./classes/Helpers/AppLogger"
 import { Notify } from "./classes/Notify"
+import { Modal } from "./classes/Modal"
 
 // Event signals
 import { EventManager } from "./classes/Events/EventManager"
@@ -65,6 +66,7 @@ export const createAppClient = () => ({
 
 	Logger: {} as AppLogger,
 	Notify: new Notify,
+	Modal: new Modal,
 })
 
 // Make global
@@ -78,6 +80,19 @@ export const app: AppClient = createAppClient()
 
 // Initialize state stores
 app.State.currentUser = store.writable(null)
+app.State.ui = {
+	isDragging: store.writable(false),
+	dragData: store.writable(null),
+	isClicking: store.writable(false),
+	clickData: store.writable(null),
+	sidebar1: store.writable(null),
+	sidebar2: store.writable(null),
+	sidebar0Visible: store.writable(true),
+	sidebar1Visible: store.writable(true),
+	sidebar2Visible: store.writable(false),
+	notificationsOpen: store.writable(false),
+	menuOpen: store.writable(false),
+}
 
 app.Request = new RequestClient()
 app.Auth = new AuthClient()

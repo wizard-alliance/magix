@@ -36,6 +36,7 @@ header {
 		border-bottom: var(--border);
 
 		width: var(--header-left-width);
+		min-width: var(--sidebar-0-width);
 		padding-left: calc(var(--gutter) * 2);
 		padding-right: calc(var(--gutter) * 2);
 
@@ -136,16 +137,29 @@ header {
 	right: 0;
 
 	z-index: 50;
+}
 
+.app > .main > * {
+	z-index: 50;
+}
+
+.app > .main > .scrollable {
+	overflow: hidden;
+	overflow-y: auto;
+	height: 100%;
+	width: 100%;
+	z-index: 1;
+	
 	display: flex;
     align-items: center;
     justify-content: flex-start;
     flex-wrap: wrap;
     flex-direction: row;
     align-content: flex-start;
-	
-	overflow: hidden;
-	overflow-y: auto;
+}
+
+.app:has(.page-nav) > .main > .scrollable {
+	padding-top: var(--page-header-height);
 }
 
 // Page setup

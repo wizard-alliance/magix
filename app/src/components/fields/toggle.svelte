@@ -39,9 +39,16 @@
 		width: 40px;
 		height: 22px;
 		background: var(--secondary-color);
+		border: 1px solid var(--border-color);
 		border-radius: 11px;
 		position: relative;
-		transition: background 0.2s;
+		transition:
+			background 0.2s,
+			border-color 0.2s;
+	}
+
+	input:checked + .track {
+		border-color: transparent;
 	}
 
 	input:checked + .track {
@@ -56,7 +63,10 @@
 		height: 18px;
 		background: var(--white);
 		border-radius: 50%;
-		transition: transform 0.2s;
+		transition:
+			transform 0.2s,
+			box-shadow 0.2s;
+		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 	}
 
 	input:checked + .track .thumb {

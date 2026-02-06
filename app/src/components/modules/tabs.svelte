@@ -19,6 +19,7 @@
 <style>
 	.tabs {
 		width: 100%;
+		user-select: none;
 	}
 
 	.tab-list {

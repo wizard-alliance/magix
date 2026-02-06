@@ -13,8 +13,6 @@
 
 	onMount(() => {
 		app.Config.pageTitle = "Login"
-		// app.UI.sidebarSetWidth(1, 0)
-		// app.UI.sidebarSetWidth(2, 0)
 		verifyVendorLogin()
 
 		handleErrors()
@@ -113,7 +111,7 @@
 			</Button>
 		</div>
 
-		<div class="col-xxs-12 divider margin-bottom-2"><span>Or Login with email</span></div>
+		<div class="col-xxs-12 divider margin-bottom-2"><span>Or login with email</span></div>
 
 		<form on:submit|preventDefault={submit} class="col-xxs-12">
 			<Input label="Username" placeholder="Username or email" bind:value={form.identifier} required />
@@ -145,13 +143,6 @@
 </div>
 
 <style lang="scss" scoped>
-	:global(:root) {
-		--main-width: 100%;
-		--main-offset-x: 0;
-		--sidebar-0-pos: calc(var(--sidebar-0-width) * -1);
-		--sidebar-1-pos: calc((var(--sidebar-0-width) + var(--sidebar-1-width)) * -1);
-		--header-left-width: var(--sidebar-0-width);
-	}
 	.auth-form-col {
 		padding: calc(var(--gutter) * 2) calc(var(--gutter) * 8);
 		margin-left: auto;
@@ -182,8 +173,12 @@
 		display: flex;
 		align-items: center;
 		gap: var(--gutter);
-		color: var(--gray);
+		color: var(--muted-color);
 		font-size: var(--font-size-small);
+
+		span {
+			// color: inherit;
+		}
 	}
 
 	.divider::before,
@@ -191,7 +186,7 @@
 		content: "";
 		flex: 1;
 		height: 1px;
-		background: var(--tertiary-color);
+		background: var(--border-color);
 	}
 
 	.auth-side {

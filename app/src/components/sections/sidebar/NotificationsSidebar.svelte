@@ -1,16 +1,15 @@
 <script lang="ts">
 	import { onMount, onDestroy } from "svelte"
+	import { app } from "$lib/app"
 	import NotificationRow from "$components/modules/notificationRow.svelte"
 
 	let sidebarEl: HTMLDivElement
 
 	function handleClickOutside(e: MouseEvent) {
-		if (sidebarEl && !sidebarEl.contains(e.target as Node)) {
-			const appEl = document.querySelector(".app")
-			if (appEl?.getAttribute("notifications-open") === "true") {
-				appEl.setAttribute("notifications-open", "false")
-			}
-		}
+		const target = e.target as HTMLElement
+		if (!sidebarEl || sidebarEl.contains(target)) return
+		if (target.closest(`.sidebar-2-toggle`)) return
+		app.UI.closeNotifications()
 	}
 
 	onMount(() => {

@@ -2,7 +2,7 @@ export const load = () => ({
 	title: "Register",
 	icon: "fa-light fa-user-plus",
 	description: "Create a new account.",
-	sidebars: { 1: null, 2: null },
+	sidebars: { 0: false, 1: false, 2: false },
 	nav: null,
 	seo: {
 		canonical: "/account/register",

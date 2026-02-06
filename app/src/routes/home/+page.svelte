@@ -4,8 +4,6 @@
 
 	onMount(() => {
 		app.Config.pageTitle = "Home"
-		// app.UI.sidebarSetWidth(1, null)
-		// app.UI.sidebarSetWidth(2, null)
 	})
 </script>
 

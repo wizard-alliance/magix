@@ -51,6 +51,14 @@
 		border-radius: 4px;
 		position: relative;
 		cursor: pointer;
+		transition:
+			background 0.15s,
+			border-color 0.15s,
+			box-shadow 0.15s;
+
+		&:hover:not(:disabled) {
+			border-color: var(--accent-color);
+		}
 
 		&:checked {
 			background: var(--accent-color);
@@ -64,7 +72,6 @@
 			height: 8px;
 			border: solid var(--black);
 			border-width: 0 2px 2px 0;
-			transform: rotate(45deg);
 
 			top: 50%;
 			left: 50%;

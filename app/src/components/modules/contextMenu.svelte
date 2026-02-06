@@ -91,6 +91,7 @@
 	})
 
 	onDestroy(() => {
+		if (typeof document === "undefined") return
 		closeMenu()
 		document.removeEventListener("contextmenu", handleGlobalContextMenu)
 		document.removeEventListener("click", handleGlobalClick)

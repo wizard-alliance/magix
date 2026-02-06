@@ -40,15 +40,20 @@
 		border-radius: 8px;
 		color: var(--white);
 		padding: 10px 12px;
+		transition:
+			border-color 0.15s,
+			box-shadow 0.15s;
+		font-size: var(--font-size-small);
 	}
 
 	input:focus {
 		outline: none;
 		border-color: var(--accent-color);
+		box-shadow: 0 0 0 2px rgba(116, 231, 168, 0.15);
 	}
 
 	input:disabled {
-		opacity: 0.5;
+		opacity: 0.4;
 		cursor: not-allowed;
 	}
 

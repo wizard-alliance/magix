@@ -1,4 +1,4 @@
-import { writable, type Writable } from 'svelte/store'
+import { writable, get, type Writable } from 'svelte/store'
 import { app } from '../app.js'
 
 import type { ComponentType, SvelteComponent } from 'svelte'
@@ -8,6 +8,8 @@ type ClickPayload = MouseEvent | PointerEvent | Record<string, unknown> | null |
 
 type SidebarContent = { component: ComponentType<SvelteComponent>, props?: Record<string, any> } | null
 
+type SidebarConfig = Record<number, boolean | null | undefined>
+
 type UiStateStores = {
 	isDragging: Writable<boolean>
 	dragData: Writable<DragPayload | null>
@@ -15,6 +17,11 @@ type UiStateStores = {
 	clickData: Writable<ClickPayload | null>
 	sidebar1: Writable<SidebarContent>
 	sidebar2: Writable<SidebarContent>
+	sidebar0Visible: Writable<boolean>
+	sidebar1Visible: Writable<boolean>
+	sidebar2Visible: Writable<boolean>
+	notificationsOpen: Writable<boolean>
+	menuOpen: Writable<boolean>
 }
 
 type UiClickEventName = 'click' | 'click:double' | 'click:down' | 'click:release'
@@ -53,6 +60,26 @@ export class UIManager {
 
 		if (!uiState.sidebar2) {
 			uiState.sidebar2 = writable<SidebarContent>(null)
+		}
+
+		if (!uiState.sidebar0Visible) {
+			uiState.sidebar0Visible = writable(true)
+		}
+
+		if (!uiState.sidebar1Visible) {
+			uiState.sidebar1Visible = writable(true)
+		}
+
+		if (!uiState.sidebar2Visible) {
+			uiState.sidebar2Visible = writable(false)
+		}
+
+		if (!uiState.notificationsOpen) {
+			uiState.notificationsOpen = writable(false)
+		}
+
+		if (!uiState.menuOpen) {
+			uiState.menuOpen = writable(false)
 		}
 
 		app.State.ui = uiState
@@ -125,6 +152,72 @@ export class UIManager {
 
 	private isBrowser = typeof document !== 'undefined'
 
+	// Sidebar visibility API
+
+	public hideSidebar(id: 0 | 1 | 2) {
+		const store = [this.uiState.sidebar0Visible, this.uiState.sidebar1Visible, this.uiState.sidebar2Visible][id]
+		store.set(false)
+	}
+
+	public showSidebar(id: 0 | 1 | 2) {
+		const store = [this.uiState.sidebar0Visible, this.uiState.sidebar1Visible, this.uiState.sidebar2Visible][id]
+		store.set(true)
+	}
+
+	public hideAllSidebars() {
+		this.uiState.sidebar0Visible.set(false)
+		this.uiState.sidebar1Visible.set(false)
+		this.uiState.sidebar2Visible.set(false)
+		this.closeNotifications()
+		this.closeMenu()
+	}
+
+	public showAllSidebars() {
+		this.uiState.sidebar0Visible.set(true)
+		this.uiState.sidebar1Visible.set(true)
+		this.uiState.sidebar2Visible.set(true)
+	}
+
+	public showDefaultSidebars() {
+		this.uiState.sidebar0Visible.set(true)
+		this.uiState.sidebar1Visible.set(true)
+		this.uiState.sidebar2Visible.set(false)
+		this.closeNotifications()
+		this.closeMenu()
+	}
+
+	public applySidebarConfig(config?: SidebarConfig | null) {
+		if (!config) return this.showDefaultSidebars()
+		const resolve = (val: boolean | null | undefined) => val !== false && val !== null
+		if (0 in config) this.uiState.sidebar0Visible.set(resolve(config[0]))
+		if (1 in config) this.uiState.sidebar1Visible.set(resolve(config[1]))
+		if (2 in config) this.uiState.sidebar2Visible.set(resolve(config[2]))
+	}
+
+	// Menu & notifications toggles
+
+	public toggleMenu() {
+		const isOpen = get(this.uiState.menuOpen)
+		this.uiState.menuOpen.set(!isOpen)
+		if (!isOpen) this.closeNotifications()
+	}
+
+	public toggleNotifications() {
+		const isOpen = get(this.uiState.notificationsOpen)
+		this.uiState.notificationsOpen.set(!isOpen)
+		if (!isOpen) this.closeMenu()
+	}
+
+	public closeMenu() {
+		this.uiState.menuOpen.set(false)
+	}
+
+	public closeNotifications() {
+		this.uiState.notificationsOpen.set(false)
+	}
+
+	// Sidebar width helpers (for dynamic resizing)
+
 	public sidebarSetWidth(ID: string | number, newWidth?: number | string | null): number | string {
 		if (!this.isBrowser) return newWidth ?? 0
 
@@ -143,6 +236,14 @@ export class UIManager {
 		if (sidebarElement) {
 			sidebarElement.classList.toggle('sidebar-hidden', isHidden)
 		}
+
+		// Sync visibility store when width is set to 0
+		const numId = Number(ID)
+		if (numId === 0 || numId === 1 || numId === 2) {
+			const store = [this.uiState.sidebar0Visible, this.uiState.sidebar1Visible, this.uiState.sidebar2Visible][numId]
+			store.set(!isHidden)
+		}
+
 		return newWidth
 	}
 

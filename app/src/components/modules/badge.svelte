@@ -9,10 +9,13 @@
 	.badge {
 		display: inline-flex;
 		align-items: center;
+		gap: 6px;
 		padding: 4px 10px;
 		font-size: var(--font-size-small);
 		font-weight: 500;
 		border-radius: 12px;
+		line-height: 1.3;
+		user-select: none;
 	}
 
 	.badge-default {

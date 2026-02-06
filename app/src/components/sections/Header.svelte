@@ -1,20 +1,22 @@
 <script lang="ts">
 	import { page } from "$app/stores"
+	import Breadcrumbs from "$components/modules/breadcrumbs.svelte"
+
 	$: title = app.Config.pageTitleFull()
 	$: pageTitle = $page.data.title || app.Config.pageTitle || "Loading..."
 
+	$: segments = $page.url.pathname.split(`/`).filter(Boolean)
+	$: breadcrumbs = segments.map((seg, i) => ({
+		href: `/${segments.slice(0, i + 1).join(`/`)}`,
+		label: i === segments.length - 1 && $page.data.title ? $page.data.title : seg.replace(/-/g, ` `).replace(/\b\w/g, (c) => c.toUpperCase()),
+	}))
+
 	function toggleMenu() {
-		const el = document.querySelector(".app")
-		if (!el) return
-		el.setAttribute("notifications-open", "false")
-		el.setAttribute("menu-open", el.getAttribute("menu-open") === "true" ? "false" : "true")
+		app.UI.toggleMenu()
 	}
 
 	function toggleNotifications() {
-		const el = document.querySelector(".app")
-		if (!el) return
-		el.setAttribute("menu-open", "false")
-		el.setAttribute("notifications-open", el.getAttribute("notifications-open") === "true" ? "false" : "true")
+		app.UI.toggleNotifications()
 	}
 </script>
 
@@ -28,21 +30,7 @@
 				<i class="hidden-xxs visible-sm icon fa-light fa-user"></i>
 				<div class="hidden-xxs start-xxs visible-xs">
 					<h3 class="page-title">{pageTitle}</h3>
-
-					<div class="breadcrumbs">
-						{#each $page.url.pathname.split(`/`).filter(Boolean) as segment, i (i)}
-							<a
-								href={"/" +
-									$page.url.pathname
-										.split(`/`)
-										.slice(0, i + 1)
-										.join(`/`)}>{segment}</a
-							>
-							{#if i < $page.url.pathname.split(`/`).filter(Boolean).length - 1}
-								<span class="separator">/</span>
-							{/if}
-						{/each}
-					</div>
+					<Breadcrumbs items={breadcrumbs} />
 				</div>
 			</div>
 			<nav class="col-xxs middle-xxs end-xxs height-100p main-nav">
@@ -96,32 +84,6 @@
 		padding: calc(var(--gutter) * 0.5) calc(var(--gutter) * 2);
 	}
 
-	.breadcrumbs {
-		position: relative;
-		display: flex;
-		align-items: center;
-		gap: 4px;
-
-		& > * {
-			line-height: 0.85;
-		}
-
-		a {
-			text-decoration: none;
-			color: var(--muted-color);
-			font-size: var(--font-size-small);
-
-			&:hover {
-				color: var(--text-color);
-			}
-		}
-
-		.separator {
-			color: var(--muted-color-2);
-			font-size: var(--font-size-small);
-		}
-	}
-
 	.main-nav {
 		display: flex;
 		align-items: center;
@@ -158,13 +120,13 @@
 		}
 	}
 
-	:global(.app[menu-open="true"]) .menu-toggle {
+	:global(.app[data-menu-open="true"]) .menu-toggle {
 		color: var(--white);
 		background: var(--border-color);
 		border-color: var(--tertiary-color);
 	}
 
-	:global(.app[notifications-open="true"]) .sidebar-2-toggle {
+	:global(.app[data-notifications-open="true"]) .sidebar-2-toggle {
 		color: var(--white);
 		background: var(--border-color);
 		border-color: var(--tertiary-color);

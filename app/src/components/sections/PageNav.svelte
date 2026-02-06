@@ -34,9 +34,9 @@
 <style lang="scss" scoped>
 	.page-nav {
 		position: absolute;
-		top: var(--header-height);
-		left: var(--main-offset-x);
-		width: var(--main-width);
+		top: 0;
+		left: 0;
+		width: 100%;
 		height: var(--page-header-height);
 		transform: translateY(var(--page-nav-offset-y));
 
@@ -44,10 +44,9 @@
 		align-items: center;
 		justify-content: space-between;
 
-		background-color: var(--bg-color-primary);
+		background-color: var(--bg-color);
 		padding: calc(var(--gutter) * 0) calc(var(--gutter) * 2);
 		border-bottom: var(--border);
-		z-index: 50;
 
 		font-size: var(--font-size);
 		font-weight: 300;

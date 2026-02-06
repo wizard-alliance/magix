@@ -18,8 +18,6 @@
 
 	onMount(() => {
 		app.Config.pageTitle = "Reset Password"
-		// app.UI.sidebarSetWidth(1, 0)
-		// app.UI.sidebarSetWidth(2, 0)
 
 		// Check for reset token in URL (step 2)
 		const params = new URLSearchParams(window.location.search)
