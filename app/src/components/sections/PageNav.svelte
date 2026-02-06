@@ -1,8 +1,22 @@
 <script lang="ts">
-	export let nav: { type: string; label: string; icon?: string; href: string }[][] = []
+	type NavItem = {
+		slug?: string
+		label: string
+		href?: string | null
+		target?: string
+		icon?: string
+		permissions?: string[]
+		classes?: string
+		align?: string | null
+		children?: NavItem[]
+	}
 
-	$: left = nav[0] || []
-	$: right = nav[1] || []
+	export let nav: NavItem[] | NavItem[][] = []
+
+	// normalize: 2D array (accountNav style) or flat NavItem[] from getNavigationData
+	$: isGrouped = Array.isArray(nav[0])
+	$: left = isGrouped ? (nav as NavItem[][])[0] || [] : (nav as NavItem[]).filter((i) => i.align !== "right")
+	$: right = isGrouped ? (nav as NavItem[][])[1] || [] : (nav as NavItem[]).filter((i) => i.align === "right")
 </script>
 
 <nav class="page-nav">
@@ -10,7 +24,7 @@
 		<div class="col-xxs">
 			<div class="row gap-2">
 				{#each left as item}
-					<a href={item.href}>
+					<a href={item.href || "#"} target={item.target || "_self"} class={item.classes || ""}>
 						{#if item.icon}<i class={item.icon}></i>{/if}
 						<span>{item.label}</span>
 					</a>
@@ -21,7 +35,7 @@
 		<div class="col">
 			<div class="row gap-2 end-xxs">
 				{#each right as item}
-					<a href={item.href}>
+					<a href={item.href || "#"} target={item.target || "_self"} class={item.classes || ""}>
 						{#if item.icon}<i class={item.icon}></i>{/if}
 						<span>{item.label}</span>
 					</a>

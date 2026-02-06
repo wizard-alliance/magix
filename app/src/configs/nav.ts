@@ -1,14 +1,28 @@
-export const accountNav = [
-	[
-		{ label: "Account", icon: "fa-light fa-user", href: "/account" },
-		{ label: "Profile", icon: "fa-light fa-id-badge", href: "/account/profile" },
-		{ label: "Settings", icon: "fa-light fa-cog", href: "/account/settings" },
-	],
-	[{ label: "Home", icon: "fa-light fa-house", href: "/" }],
-]
+type NavItem = {
+	slug: string
+	label: string
+	href: string | null
+	target: string
+	icon: string
+	permissions: string[]
+	classes: string
+	align: string | null
+	children?: NavItem[]
+}
 
+// allow ie. app/overview to return the "overview" nav item, or app/overview/stats to also return the same item, but not app/news which should return null
+export const getNavigationData = (slug = "") => {
+	const segments = slug.split("/").filter(Boolean)
+	let currentLevel: NavItem[] = navigationData
+	for (const segment of segments) {
+		const found = currentLevel.find((item) => item.slug === segment)
+		if (!found) return null
+		currentLevel = found.children || []
+	}
+	return currentLevel.length > 0 ? currentLevel : null
+}
 
-export const navigationData = [
+export const navigationData: NavItem[] = [
 	{
 		slug: "app",
 		label: "App", 

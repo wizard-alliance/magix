@@ -136,6 +136,10 @@ body:not([data-app-type="electron"]) .app {
 	font-size: var(--font-size-small);
 }
 
+.text-ignore {
+	user-select: none;
+	pointer-events: none;
+}
 
 p, span, a, li, b, i, u, strong, em, label {
 	letter-spacing: inherit;
