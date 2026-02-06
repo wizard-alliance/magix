@@ -21,8 +21,8 @@
 
 	onMount(() => {
 		app.Config.pageTitle = "Register"
-		app.UI.sidebarSetWidth(1, 0)
-		app.UI.sidebarSetWidth(2, 0)
+		// app.UI.sidebarSetWidth(1, 0)
+		// app.UI.sidebarSetWidth(2, 0)
 	})
 
 	const submit = async () => {

@@ -1,5 +1,27 @@
 <script lang="ts">
+	import { onMount, onDestroy } from "svelte"
 	import NotificationRow from "$components/modules/notificationRow.svelte"
+
+	let sidebarEl: HTMLDivElement
+
+	function handleClickOutside(e: MouseEvent) {
+		if (sidebarEl && !sidebarEl.contains(e.target as Node)) {
+			const appEl = document.querySelector(".app")
+			if (appEl?.getAttribute("notifications-open") === "true") {
+				appEl.setAttribute("notifications-open", "false")
+			}
+		}
+	}
+
+	onMount(() => {
+		document.addEventListener("click", handleClickOutside, true)
+	})
+
+	onDestroy(() => {
+		if (typeof document !== "undefined") {
+			document.removeEventListener("click", handleClickOutside, true)
+		}
+	})
 
 	// Placeholder notifications for demo
 	const notifications = [
@@ -10,7 +32,7 @@
 	]
 </script>
 
-<div class="notifications__sidebar">
+<div class="notifications__sidebar" bind:this={sidebarEl}>
 	<div class="notifications-header">
 		<h3 class="title">Notifications</h3>
 		<button class="mark-read">Mark all read</button>
@@ -30,7 +52,7 @@
 
 		{#if notifications.length === 0}
 			<div class="empty">
-				<i class="fa-light fa-bell-slash"></i>
+				<i class="fa-light fa-bell-slash muted-color-2"></i>
 				<span>No notifications</span>
 			</div>
 		{/if}

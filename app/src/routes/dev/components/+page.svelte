@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { app } from "$lib/app"
 	import { onMount } from "svelte"
-	import DevSidebar from "$components/sections/sidebar/DevSidebar.svelte"
 
 	import Button from "$components/fields/button.svelte"
 	import Input from "$components/fields/input.svelte"
@@ -25,10 +24,7 @@
 	let toggleChecked = false
 	let tabActive = "tab1"
 
-	onMount(() => {
-		app.Config.pageTitle = "Components"
-		app.UI.sidebarSetContent(1, DevSidebar as any, {}, "200px")
-	})
+	onMount(() => {})
 </script>
 
 <div class="page">

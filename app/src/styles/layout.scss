@@ -1,5 +1,9 @@
 @use './GRID/GRID.v3.mixins.scss' as *;
 
+html, .app, .scrollable, .scrollable-hidden {
+	scroll-behavior: smooth;
+	-webkit-overflow-scrolling: touch;
+}
 
 .scrollable {
 	overflow-y: auto;

@@ -43,6 +43,7 @@
 	const opposite: Record<string, string> = { top: "bottom", bottom: "top", left: "right", right: "left" }
 
 	async function show(e: Event) {
+		if (!(e.target instanceof Element)) return
 		const el = (e.target as HTMLElement)?.closest("[data-tip]") as HTMLElement
 		if (!el || !el.getAttribute("data-tip")) return
 		target = el
