@@ -87,17 +87,19 @@
 
 				<div class="details">
 					{#each items as def, i}
-						<div class="detail-row">
-							<div class="detail-label">
-								<span class="detail-title">{def.label}</span>
-								<span class="muted-color text-small">{def.description}</span>
-							</div>
-							<div class="detail-value">
-								{#if def.type === "toggle"}
-									<Toggle bind:checked={toggles[def.key]} />
-								{:else if def.type === "select"}
-									<Select bind:value={values[def.key]} options={def.options ?? []} />
-								{/if}
+						<div class="col-xxs-12">
+							<div class="row middle-xxs">
+								<div class="col-xxs start-xxs">
+									<span class="detail-title">{def.label}</span>
+									<span class="muted-color text-small">{def.description}</span>
+								</div>
+								<div class="col end-xxs detail-value">
+									{#if def.type === "toggle"}
+										<Toggle bind:checked={toggles[def.key]} />
+									{:else if def.type === "select"}
+										<Select bind:value={values[def.key]} options={def.options ?? []} />
+									{/if}
+								</div>
 							</div>
 						</div>
 						{#if i < items.length - 1}<hr />{/if}
@@ -146,18 +148,9 @@
 		width: 100%;
 	}
 
-	.detail-row {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: calc(var(--gutter) * 2);
-	}
-
-	.detail-label {
-		.detail-title {
-			display: block;
-			font-weight: 500;
-		}
+	.detail-title {
+		display: block;
+		font-weight: 500;
 	}
 
 	.detail-value {

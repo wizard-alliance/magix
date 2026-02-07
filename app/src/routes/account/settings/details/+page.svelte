@@ -52,9 +52,13 @@
 		<div class="section margin-bottom-4">
 			<div class="details">
 				<form on:submit|preventDefault={save}>
-					<div class="form-grid">
-						<Input id="firstName" label="First name" bind:value={form.firstName} />
-						<Input id="lastName" label="Last name" bind:value={form.lastName} />
+					<div class="row">
+						<div class="col-xxs-12 col-md-6">
+							<Input id="firstName" label="First name" bind:value={form.firstName} />
+						</div>
+						<div class="col-xxs-12 col-md-6">
+							<Input id="lastName" label="Last name" bind:value={form.lastName} />
+						</div>
 					</div>
 					<Input id="phone" label="Phone" type="tel" bind:value={form.phone} />
 					<Input id="company" label="Company" bind:value={form.company} />
@@ -88,12 +92,6 @@
 			flex-direction: column;
 			gap: calc(var(--gutter) * 1.5);
 		}
-	}
-
-	.form-grid {
-		display: grid;
-		grid-template-columns: 1fr 1fr;
-		gap: var(--gutter);
 	}
 
 	.actions {

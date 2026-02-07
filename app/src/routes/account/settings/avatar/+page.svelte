@@ -74,27 +74,31 @@
 	{:else}
 		<div class="section margin-bottom-4">
 			<div class="details">
-				<div class="avatar-preview">
-					{#if previewUrl}
-						<img src={previewUrl} alt="Preview" class="preview-img" />
-					{:else if avatarUrl}
-						<img src={avatarUrl} alt="Avatar" class="preview-img" />
-					{:else}
-						<Avatar name={fullName || username} size="lg" />
-					{/if}
+				<div class="row center-xxs margin-bottom-2">
+					<div class="col-xxs-12">
+						{#if previewUrl}
+							<img src={previewUrl} alt="Preview" class="preview-img" />
+						{:else if avatarUrl}
+							<img src={avatarUrl} alt="Avatar" class="preview-img" />
+						{:else}
+							<Avatar name={fullName || username} size="lg" />
+						{/if}
+					</div>
 				</div>
 
-				<div class="upload-area">
-					<FileUpload
-						label="Upload new avatar"
-						buttonText="Choose image"
-						accept="image/png, image/jpeg, image/webp"
-						helperText="JPG, PNG, or WebP. Max 2MB."
-						on:change={handleFileSelect}
-					/>
+				<div class="row center-xxs margin-bottom-2">
+					<div class="col-xxs-12 col-md-6">
+						<FileUpload
+							label="Upload new avatar"
+							buttonText="Choose image"
+							accept="image/png, image/jpeg, image/webp"
+							helperText="JPG, PNG, or WebP. Max 2MB."
+							on:change={handleFileSelect}
+						/>
+					</div>
 				</div>
 
-				<div class="actions">
+				<div class="row middle-xxs gap-2">
 					<Button on:click={upload} disabled={!selectedFile || uploading} loading={uploading}>
 						{uploading ? "Uploading..." : "Upload"}
 					</Button>
@@ -118,15 +122,6 @@
 		background-color: rgba(255, 255, 255, 0.04);
 		border-radius: var(--border-radius);
 		padding: calc(var(--gutter) * 2.5);
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: calc(var(--gutter) * 2);
-	}
-
-	.avatar-preview {
-		display: flex;
-		justify-content: center;
 	}
 
 	.preview-img {
@@ -134,16 +129,5 @@
 		height: 128px;
 		border-radius: 50%;
 		object-fit: cover;
-	}
-
-	.upload-area {
-		width: 100%;
-		max-width: 320px;
-	}
-
-	.actions {
-		display: flex;
-		align-items: center;
-		gap: calc(var(--gutter) * 2);
 	}
 </style>

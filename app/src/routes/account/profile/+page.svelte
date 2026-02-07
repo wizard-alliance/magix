@@ -163,7 +163,7 @@
 				font-weight: 500;
 			}
 
-			.text-ignore detail-subtitle {
+			.detail-subtitle {
 				display: block;
 			}
 		}

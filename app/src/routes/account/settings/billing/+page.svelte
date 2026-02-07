@@ -64,9 +64,13 @@
 			<div class="details">
 				<form on:submit|preventDefault={save}>
 					<Input id="billingName" label="Billing name" bind:value={form.billingName} placeholder="Full name or company" />
-					<div class="form-grid">
-						<Input id="billingEmail" label="Billing email" type="email" bind:value={form.billingEmail} placeholder="billing@example.com" />
-						<Input id="billingPhone" label="Billing phone" type="tel" bind:value={form.billingPhone} placeholder="+1 234 567 890" />
+					<div class="row">
+						<div class="col-xxs-12 col-md-6">
+							<Input id="billingEmail" label="Billing email" type="email" bind:value={form.billingEmail} placeholder="billing@example.com" />
+						</div>
+						<div class="col-xxs-12 col-md-6">
+							<Input id="billingPhone" label="Billing phone" type="tel" bind:value={form.billingPhone} placeholder="+1 234 567 890" />
+						</div>
 					</div>
 					<Input id="vatId" label="VAT / Tax ID" bind:value={form.vatId} placeholder="Optional" helperText="Required for business invoices in some regions" />
 				</form>
@@ -84,13 +88,21 @@
 				<form on:submit|preventDefault={save}>
 					<Input id="addressLine1" label="Address line 1" bind:value={form.addressLine1} placeholder="Street address" />
 					<Input id="addressLine2" label="Address line 2" bind:value={form.addressLine2} placeholder="Apartment, suite, etc." />
-					<div class="form-grid">
-						<Input id="city" label="City" bind:value={form.city} />
-						<Input id="state" label="State / Region" bind:value={form.state} />
+					<div class="row">
+						<div class="col-xxs-12 col-md-6">
+							<Input id="city" label="City" bind:value={form.city} />
+						</div>
+						<div class="col-xxs-12 col-md-6">
+							<Input id="state" label="State / Region" bind:value={form.state} />
+						</div>
 					</div>
-					<div class="form-grid">
-						<Input id="zip" label="ZIP / Postal code" bind:value={form.zip} />
-						<Input id="country" label="Country" bind:value={form.country} />
+					<div class="row">
+						<div class="col-xxs-12 col-md-6">
+							<Input id="zip" label="ZIP / Postal code" bind:value={form.zip} />
+						</div>
+						<div class="col-xxs-12 col-md-6">
+							<Input id="country" label="Country" bind:value={form.country} />
+						</div>
 					</div>
 				</form>
 			</div>
@@ -127,12 +139,6 @@
 			flex-direction: column;
 			gap: calc(var(--gutter) * 1.5);
 		}
-	}
-
-	.form-grid {
-		display: grid;
-		grid-template-columns: 1fr 1fr;
-		gap: var(--gutter);
 	}
 
 	.actions {

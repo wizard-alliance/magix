@@ -37,11 +37,11 @@
 				<Input id="currentPassword" label="Current password" type="password" bind:value={form.currentPassword} required />
 				<Input id="newPassword" label="New password" type="password" bind:value={form.newPassword} required />
 
-				<div class="toggle-row">
+				<div class="padding-top-1 padding-bottom-1">
 					<Toggle label="Log out all other devices" bind:checked={logoutAll} />
 				</div>
 
-				<div class="actions">
+				<div class="row middle-xxs gap-2 margin-top-1">
 					<Button type="submit" disabled={loading} {loading}>
 						{loading ? "Updating..." : "Update password"}
 					</Button>
@@ -68,16 +68,5 @@
 			flex-direction: column;
 			gap: calc(var(--gutter) * 1.5);
 		}
-	}
-
-	.toggle-row {
-		padding: var(--gutter) 0;
-	}
-
-	.actions {
-		display: flex;
-		align-items: center;
-		gap: calc(var(--gutter) * 2);
-		margin-top: var(--gutter);
 	}
 </style>
