@@ -93,15 +93,15 @@
 		--sidebar-0-width: 70px;
 		--sidebar-2-width: 100%;
 		--page-nav-offset-y: calc( var(--header-height) * -1 );
-		--page-header-height: 0px;
 		
 		.app[data-menu-open="true"]:not([data-sidebar-1="hidden"]) {
-			--sidebar-1-pos: 0%;
+			--sidebar-1-width: calc( 100% - var(--sidebar-0-width) );
+			--sidebar-1-pos: 0;
 		}
 	}
 
 	.app[data-notifications-open="true"] {
-		--sidebar-2-pos: 0%;
+		--sidebar-2-pos: 0;
 	}
 
 	// Sidebar visibility via data attributes (set by layout from UIManager stores)
