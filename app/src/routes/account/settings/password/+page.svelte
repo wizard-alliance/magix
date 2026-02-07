@@ -14,11 +14,11 @@
 		loading = true
 		try {
 			await app.Auth.changePassword(form.currentPassword, form.newPassword, logoutAll)
-			app.Notify.success("Password updated. Redirecting...")
+			app.UI.Notify.success("Password updated. Redirecting...")
 			await app.Auth.logout()
 			goto("/auth/login")
 		} catch (error) {
-			app.Notify.error(`Error: ${(error as Error).message}`)
+			app.UI.Notify.error(`Error: ${(error as Error).message}`)
 		} finally {
 			loading = false
 		}

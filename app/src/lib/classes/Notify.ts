@@ -1,5 +1,4 @@
 import { mount, unmount } from 'svelte'
-import { app } from '../app.js'
 import NotifyBanner from '$components/NotifyBanner.svelte'
 
 type createPayload = {
@@ -29,7 +28,7 @@ export class Notify {
 
 	create(params: createPayload) {
 		const container = this.getContainer()
-		app.$.Success(params.message, this.prefix)
+		app.Helpers.Success(params.message, this.prefix)
 
 		container.innerHTML = ''
 

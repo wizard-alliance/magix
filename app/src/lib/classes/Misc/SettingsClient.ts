@@ -1,5 +1,4 @@
 import { get, writable, type Writable } from "svelte/store"
-import { app } from "../../app.js"
 import type { SettingsMap, SettingsResponse } from "$lib/types/types"
 
 export class SettingsClient {
@@ -52,7 +51,7 @@ export class SettingsClient {
 
 		this.loading = (async () => {
 			try {
-				const payload = await app.Request.get<SettingsResponse | null>('/settings', {
+				const payload = await app.System.Request.get<SettingsResponse | null>('/settings', {
 					useAuth: false,
 					allowRefresh: false,
 				})

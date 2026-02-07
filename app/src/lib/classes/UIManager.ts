@@ -1,5 +1,4 @@
 import { writable, get, type Writable } from 'svelte/store'
-import { app } from '../app.js'
 
 import type { ComponentType, SvelteComponent } from 'svelte'
 
@@ -36,7 +35,7 @@ export class UIManager {
 	}
 
 	private ensureUiState(): UiStateStores {
-		const uiState = app.State.ui ?? {}
+		const uiState = app.State.UI ?? {}
 		
 		if (!uiState.isDragging) {
 			uiState.isDragging = writable(false)
@@ -82,7 +81,7 @@ export class UIManager {
 			uiState.menuOpen = writable(false)
 		}
 
-		app.State.ui = uiState
+		app.State.UI = uiState
 		return uiState as UiStateStores
 	}
 
@@ -103,7 +102,7 @@ export class UIManager {
 		const data = payload ?? null
 		this.uiState.isDragging.set(true)
 		this.uiState.dragData.set(data)
-		app.$.Log('Drag started', 'UI')
+		app.Helpers.Log('Drag started', 'UI')
 		app.Events.emit('ui:drag:start', data)
 	}
 
@@ -111,7 +110,7 @@ export class UIManager {
 		const data = payload ?? null
 		this.uiState.isDragging.set(false)
 		this.uiState.dragData.set(null)
-		app.$.Log('Drag stopped', 'UI')
+		app.Helpers.Log('Drag stopped', 'UI')
 		app.Events.emit('ui:drag:end', data)
 	}
 

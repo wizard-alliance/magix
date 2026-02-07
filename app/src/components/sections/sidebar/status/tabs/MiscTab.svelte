@@ -15,7 +15,7 @@
 	const fetchHealth = async () => {
 		try {
 			isLoading = true
-			health = await app.Misc.Health.getHealth()
+			health = await app.System.Health.getHealth()
 			errorMessage = null
 		} catch (error) {
 			health = null

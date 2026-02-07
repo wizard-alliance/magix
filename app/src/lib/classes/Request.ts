@@ -93,7 +93,7 @@ export class RequestClient {
 			let req = superagent.post(url)
 			const token = this.resolveToken()
 			if (token) req = req.set('Authorization', `Bearer ${token}`)
-			req = req.attach(fieldName, file, file.name)
+			req = req.attach(fieldName, file as any, file.name)
 			if (extra) {
 				for (const [k, v] of Object.entries(extra)) req = req.field(k, v)
 			}

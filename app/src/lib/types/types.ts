@@ -133,3 +133,33 @@ export type NavigationLink = {
 	label: string
 	href: string
 }
+
+
+/**
+ * TYPES: App State
+ */
+import type { Writable } from 'svelte/store'
+import type { ComponentType, SvelteComponent } from 'svelte'
+
+type DragPayload = DragEvent | PointerEvent | MouseEvent | Record<string, unknown> | null | undefined
+type ClickPayload = MouseEvent | PointerEvent | Record<string, unknown> | null | undefined
+type SidebarContent = { component: ComponentType<SvelteComponent>, props?: Record<string, any> } | null
+
+export type UIStateStores = {
+	isDragging: Writable<boolean>
+	dragData: Writable<DragPayload | null>
+	isClicking: Writable<boolean>
+	clickData: Writable<ClickPayload | null>
+	sidebar1: Writable<SidebarContent>
+	sidebar2: Writable<SidebarContent>
+	sidebar0Visible: Writable<boolean>
+	sidebar1Visible: Writable<boolean>
+	sidebar2Visible: Writable<boolean>
+	notificationsOpen: Writable<boolean>
+	menuOpen: Writable<boolean>
+}
+
+export type AppState = {
+	currentUser: Writable<UserDBRow | UserFull | null>
+	UI: UIStateStores
+}

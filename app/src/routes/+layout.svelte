@@ -23,11 +23,11 @@
 	let sidebar2: any = null
 
 	// Sidebar visibility stores (destructured for Svelte $ reactivity)
-	const sidebar0Visible = app.State.ui.sidebar0Visible
-	const sidebar1Visible = app.State.ui.sidebar1Visible
-	const sidebar2Visible = app.State.ui.sidebar2Visible
-	const notificationsOpen = app.State.ui.notificationsOpen
-	const menuOpenStore = app.State.ui.menuOpen
+	const sidebar0Visible = app.State.UI.sidebar0Visible
+	const sidebar1Visible = app.State.UI.sidebar1Visible
+	const sidebar2Visible = app.State.UI.sidebar2Visible
+	const notificationsOpen = app.State.UI.notificationsOpen
+	const menuOpenStore = app.State.UI.menuOpen
 
 	$: title = app.Config.pageTitleFull()
 	$: pageTitle = app.Config.pageTitle || "Loading..."
@@ -52,7 +52,7 @@
 	$: attrMenu = $menuOpenStore ? `true` : `false`
 
 	$: isLoggedIn = !!currentUser
-	$: userMenuItems = app.Misc.Navigation.getMenu(isLoggedIn)
+	$: userMenuItems = app.UI.Navigation.getMenu(isLoggedIn)
 
 	beforeNavigate(({ from, to }) => {
 		if (from?.url.pathname === to?.url.pathname) return

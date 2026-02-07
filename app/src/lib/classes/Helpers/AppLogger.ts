@@ -1,6 +1,6 @@
 import type { WebSocketClient } from '../WebSocket'
 import type { EventManager } from '../Events/EventManager'
-import type { AppLogEntry, LoggerType } from '../../types/logger'
+import type { AppLogEntry, LoggerType } from '../../types/types'
 import { Log, ErrorLog, WarningLog, SuccessLog } from './Log'
 
 type LoggerResponse = {

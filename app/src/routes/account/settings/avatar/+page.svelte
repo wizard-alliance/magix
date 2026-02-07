@@ -42,9 +42,9 @@
 			if (data?.info?.avatarUrl) avatarUrl = app.Account.Avatar.url(data.info.avatarUrl) as string
 			selectedFile = null
 			previewUrl = ""
-			app.Notify.success("Avatar updated")
+			app.UI.Notify.success("Avatar updated")
 		} catch (err) {
-			app.Notify.error(`Upload failed: ${(err as Error).message}`)
+			app.UI.Notify.error(`Upload failed: ${(err as Error).message}`)
 		} finally {
 			uploading = false
 		}
@@ -54,9 +54,9 @@
 		try {
 			await app.Account.Avatar.remove()
 			avatarUrl = ""
-			app.Notify.success("Avatar removed")
+			app.UI.Notify.success("Avatar removed")
 		} catch (err) {
-			app.Notify.error(`Failed to remove avatar: ${(err as Error).message}`)
+			app.UI.Notify.error(`Failed to remove avatar: ${(err as Error).message}`)
 		}
 	}
 </script>

@@ -45,9 +45,9 @@
 				if (def.type === "toggle") values[def.key] = toggles[def.key] ? "1" : "0"
 			}
 			await app.Account.Settings.save(values)
-			app.Notify.success("Preferences saved")
+			app.UI.Notify.success("Preferences saved")
 		} catch (err) {
-			app.Notify.error(`Failed to save preferences: ${(err as Error).message}`)
+			app.UI.Notify.error(`Failed to save preferences: ${(err as Error).message}`)
 		} finally {
 			saving = false
 		}

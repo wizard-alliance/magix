@@ -27,7 +27,7 @@
 
 		// Handle successful activation redirect
 		if (activated === "true") {
-			app.Notify.success(message || "Account activated! You can now log in.", "Success", 10)
+			app.UI.Notify.success(message || "Account activated! You can now log in.", "Success", 10)
 			return history.replaceState({}, "", window.location.pathname)
 		}
 
@@ -38,11 +38,11 @@
 		}
 
 		if (errorType === "vendor_login") {
-			app.Notify.error(`${error}`, "Login failed", 60)
+			app.UI.Notify.error(`${error}`, "Login failed", 60)
 		}
 
 		if (errorType === "general") {
-			app.Notify.error(`${error}`, "Unexpected Login failure", 60)
+			app.UI.Notify.error(`${error}`, "Unexpected Login failure", 60)
 		}
 
 		if (errorType) {
@@ -56,14 +56,14 @@
 			await app.Auth.login(form)
 			goto("/account/profile")
 		} catch (error) {
-			app.Notify.error((error as Error).message)
+			app.UI.Notify.error((error as Error).message)
 		} finally {
 			loading = false
 		}
 	}
 
 	const vendorLogin = (vendor: string) => {
-		app.Notify.info(`Connecting to ${vendor} ...`, "Please wait")
+		app.UI.Notify.info(`Connecting to ${vendor} ...`, "Please wait")
 		loading = true
 		if (vendor.toLowerCase() === "discord") {
 			setTimeout(() => {
@@ -87,7 +87,7 @@
 		const success = await app.Auth.handleVendorCallback({ access: accessToken, refresh: refreshToken })
 		if (success) {
 			loading = true
-			app.Notify.success("💖 You are being redirected", "Login successful", 5)
+			app.UI.Notify.success("💖 You are being redirected", "Login successful", 5)
 
 			setTimeout(() => {
 				goto("/account/profile")
@@ -95,7 +95,7 @@
 			return
 		}
 
-		app.Notify.error("Failed to verify session", "Error")
+		app.UI.Notify.error("Failed to verify session", "Error")
 	}
 </script>
 

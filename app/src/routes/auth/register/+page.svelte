@@ -25,10 +25,10 @@
 
 	const submit = async () => {
 		if (form.password !== form.confirmPassword) {
-			return app.Notify.error("Passwords do not match")
+			return app.UI.Notify.error("Passwords do not match")
 		}
 		if (!form.tos_accepted) {
-			return app.Notify.error("Please accept the terms of service")
+			return app.UI.Notify.error("Please accept the terms of service")
 		}
 		loading = true
 		try {
@@ -36,7 +36,7 @@
 			await app.Auth.register(payload)
 			submitted = true
 		} catch (error) {
-			app.Notify.error((error as Error).message)
+			app.UI.Notify.error((error as Error).message)
 		} finally {
 			loading = false
 		}

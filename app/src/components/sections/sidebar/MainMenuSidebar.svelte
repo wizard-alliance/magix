@@ -13,8 +13,9 @@
 	const currentUser = app.State.currentUser
 
 	$: isLoggedIn = !!$currentUser
-	$: nickname = $currentUser?.info?.firstName || $currentUser?.info?.username || "Login"
-	$: avatarSrc = $currentUser?.info?.avatarUrl ? (app.Account.Avatar.url($currentUser.info.avatarUrl) ?? "") : ""
+	$: userInfo = $currentUser && "info" in $currentUser ? $currentUser.info : $currentUser
+	$: nickname = userInfo?.firstName || userInfo?.username || "Login"
+	$: avatarSrc = userInfo?.avatarUrl ? (app.Account.Avatar.url(userInfo.avatarUrl) ?? "") : ""
 
 	onMount(async () => {
 		await tick()

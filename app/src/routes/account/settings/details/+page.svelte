@@ -29,9 +29,9 @@
 		try {
 			const updated = await app.Auth.updateProfile(form)
 			if (updated && app.State.currentUser?.set) app.State.currentUser.set(updated)
-			app.Notify.success("Profile updated")
+			app.UI.Notify.success("Profile updated")
 		} catch (error) {
-			app.Notify.error(`Unable to save: ${(error as Error).message}`)
+			app.UI.Notify.error(`Unable to save: ${(error as Error).message}`)
 		} finally {
 			saving = false
 		}

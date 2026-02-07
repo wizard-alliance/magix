@@ -18,15 +18,16 @@ import { AppLogger } from "./classes/Helpers/AppLogger"
 import { Notify } from "./classes/Notify"
 import { Modal } from "./classes/Modal"
 
-// Event signals
 import { EventManager } from "./classes/Events/EventManager"
 
 import { PUBLIC_APP_TARGET } from '$env/static/public'
 
+import type { AppState } from './types/types'
+
 type AppRuntime = 'web' | 'electron'
 const runtime: AppRuntime = PUBLIC_APP_TARGET === 'electron' ? 'electron' : 'web'
 
-type AppClient = ReturnType<typeof createAppClient>
+export type AppClient = ReturnType<typeof createAppClient>
 
 export const createAppClient = () => ({
 
@@ -38,60 +39,51 @@ export const createAppClient = () => ({
 		runtime,
 		apiBaseUrl: runtime !== 'electron' ? 'http://localhost:4000/api/v1' : '/api/v1',
 	},
-	
+
 	Settings: new SettingsClient(),
 
-	// Account
+	State: {} as AppState,
+
+	// Domain
+	Auth: {} as AuthClient,
 	Account: {
 		Settings: new UserSettingsClient(),
 		Avatar: new AvatarClient(),
 		Billing: new BillingClient(),
 	},
 
-	// Misc
-	Misc: {
+	// Events (cross-domain bus — used by UI, System, and components)
+	Events: new EventManager(),
+
+	// UI — UIManager instance with sub-namespaces
+	UI: {} as UIManager & { Modal: Modal, Notify: Notify, Navigation: NavigationRegistry },
+
+	// System — infrastructure layer
+	System: {
+		Request: {} as RequestClient,
+		WS: new WebSocketClient(),
+		Logger: {} as AppLogger,
 		Health: new HealthClient(),
-		Navigation: new NavigationRegistry(),
 	},
 
-	// 
-	State: {} as any,
-	Request: {} as RequestClient,
-	UI: {} as UIManager,
-	Auth: {} as AuthClient,
-
-	// Events, WebSocket, and Polling methods
-	ws: new WebSocketClient(),
-	Events: new EventManager(),
-	Polling: {},
-
 	// Helpers
-	$ : {
-		Log: Log,
+	Helpers: {
+		Log,
 		Error: ErrorLog,
 		Warn: WarningLog,
 		Success: SuccessLog,
-		Reactive: Reactive,
-		Store: { ...store }
+		Reactive,
+		Store: { ...store },
 	},
-
-	Logger: {} as AppLogger,
-	Notify: new Notify,
-	Modal: new Modal,
 })
 
-// Make global
+// Create singleton and make globally accessible
 export const app: AppClient = createAppClient()
-
-// if (typeof window !== 'undefined' && window.app === undefined) {
-//     ;(window as any).app = app
-// }
-
 ;(globalThis as any).app = app
 
-// Initialize state stores
+// Initialize typed state stores
 app.State.currentUser = store.writable(null)
-app.State.ui = {
+app.State.UI = {
 	isDragging: store.writable(false),
 	dragData: store.writable(null),
 	isClicking: store.writable(false),
@@ -105,11 +97,17 @@ app.State.ui = {
 	menuOpen: store.writable(false),
 }
 
-app.Request = new RequestClient()
+// Phase 2 — deferred instances (depend on app existing at runtime via globalThis)
+app.System.Request = new RequestClient()
 app.Auth = new AuthClient()
 
-app.UI = new UIManager()
-app.Logger = new AppLogger({ ws: app.ws, events: app.Events })
+const uiManager = new UIManager()
+;(uiManager as any).Modal = new Modal()
+;(uiManager as any).Notify = new Notify()
+;(uiManager as any).Navigation = new NavigationRegistry()
+app.UI = uiManager as UIManager & { Modal: Modal, Notify: Notify, Navigation: NavigationRegistry }
+
+app.System.Logger = new AppLogger({ ws: app.System.WS, events: app.Events })
 
 // Restore authentication state
 app.Auth.restore()

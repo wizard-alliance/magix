@@ -31,7 +31,7 @@ export class BaseResource<TSingle, TCollection = TSingle> {
 	) { }
 
 	protected request<T>(method: HttpMethod, path: string, options: RequestOptions = {}) {
-		return app.Request.call(method, ensurePath(path), options)
+		return app.System.Request.call(method, ensurePath(path), options)
 	}
 
 	protected normalizeQuery(query?: Record<string, any> | number | string | null) {

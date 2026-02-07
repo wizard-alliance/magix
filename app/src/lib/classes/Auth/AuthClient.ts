@@ -58,7 +58,7 @@ export class AuthClient {
 	/**
 	 * Update current user in app state
 	 */
-	private updateUser(user: UserDBRow | null) {
+	private updateUser(user: UserDBRow | UserFull | null) {
 		app.State.currentUser?.set?.(user)
 	}
 
@@ -117,7 +117,7 @@ export class AuthClient {
 	 */
 	async login(payload: LoginInput) {
 		const { remember, ...body } = payload
-		const data = await app.Request.post<AuthPayload>('/account/auth/login', {
+		const data = await app.System.Request.post<AuthPayload>('/account/auth/login', {
 			body,
 			useAuth: false,
 		})
@@ -129,7 +129,7 @@ export class AuthClient {
 	 * Register a new account (requires email activation before login)
 	 */
 	async register(payload: RegisterInput) {
-		return app.Request.post<{ success: boolean; message: string }>('/auth/register', {
+		return app.System.Request.post<{ success: boolean; message: string }>('/auth/register', {
 			body: payload,
 			useAuth: false,
 		})
@@ -147,10 +147,10 @@ export class AuthClient {
 		}
 
 		try {
-			const data = await app.Request.post<UserFull>('/account/me')
+			const data = await app.System.Request.post<UserFull>('/account/me')
 			if (data && !('error' in data)) {
 				this.meCache = { data, expires: Date.now() + this.meCacheTTL }
-				this.updateUser(data as any)
+				this.updateUser(data)
 				return data
 			}
 			return null
@@ -167,7 +167,7 @@ export class AuthClient {
 		if (!refreshToken) return null
 		try {
 			const remember = this.isRemembered()
-			const data = await app.Request.post<AuthPayload>('/account/auth/refresh', {
+			const data = await app.System.Request.post<AuthPayload>('/account/auth/refresh', {
 				body: { refresh_token: refreshToken },
 				useAuth: false,
 				allowRefresh: false,
@@ -186,7 +186,7 @@ export class AuthClient {
 	async logout() {
 		const refreshToken = this.getRefreshToken()
 		if (refreshToken) {
-			await app.Request.post('/account/auth/logout', {
+			await app.System.Request.post('/account/auth/logout', {
 				body: { refresh_token: refreshToken },
 			}).catch(() => null)
 		}
@@ -197,7 +197,7 @@ export class AuthClient {
 	 * Logout from all devices
 	 */
 	async logoutAllDevices() {
-		await app.Request.post('/account/auth/logout/all-devices').catch(() => null)
+		await app.System.Request.post('/account/auth/logout/all-devices').catch(() => null)
 		this.clearSession()
 	}
 
@@ -205,7 +205,7 @@ export class AuthClient {
 	 * Change account password
 	 */
 	async changePassword(currentPassword: string, newPassword: string, logoutAll = true) {
-		return app.Request.post('/account/auth/password', {
+		return app.System.Request.post('/account/auth/password', {
 			body: { current_password: currentPassword, new_password: newPassword, logout_all: logoutAll },
 		})
 	}
@@ -215,14 +215,14 @@ export class AuthClient {
 	 */
 	async updateProfile(body: Record<string, any>) {
 		this.meCache = null
-		return app.Request.post('/account/profile', { body })
+		return app.System.Request.post('/account/profile', { body })
 	}
 
 	/**
 	 * Login via third-party vendor (OAuth)
 	 */
 	async vendorLogin(vendor: string, payload: Record<string, any>, remember = true) {
-		const data = await app.Request.post<AuthPayload>(`/account/auth/vendor/${vendor}`, {
+		const data = await app.System.Request.post<AuthPayload>(`/account/auth/vendor/${vendor}`, {
 			body: payload,
 			useAuth: false,
 		})
@@ -242,7 +242,7 @@ export class AuthClient {
 	 * Get vendor info
 	 */
 	async vendorInfo(vendor: string) {
-		return app.Request.post<{ vendor: Record<string, any> }>(`/account/auth/vendor/${vendor}`, {
+		return app.System.Request.post<{ vendor: Record<string, any> }>(`/account/auth/vendor/${vendor}`, {
 			useAuth: false,
 		})
 	}
@@ -270,7 +270,7 @@ export class AuthClient {
 	 * Request password reset - sends email with reset link
 	 */
 	async requestPasswordReset(email: string) {
-		return app.Request.post<{ success: boolean; message: string }>('/auth/reset', {
+		return app.System.Request.post<{ success: boolean; message: string }>('/auth/reset', {
 			body: { email },
 			useAuth: false,
 		})
@@ -280,7 +280,7 @@ export class AuthClient {
 	 * Confirm password reset with token
 	 */
 	async confirmPasswordReset(token: string, password: string) {
-		return app.Request.post<{ success: boolean; message: string }>('/auth/reset/confirm', {
+		return app.System.Request.post<{ success: boolean; message: string }>('/auth/reset/confirm', {
 			body: { token, password },
 			useAuth: false,
 		})

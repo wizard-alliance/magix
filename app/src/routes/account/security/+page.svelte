@@ -16,15 +16,15 @@
 	})
 
 	const logoutAllDevices = async () => {
-		const confirmed = await app.Modal.confirm("Log out all devices?", "This will end all active sessions including this one. You will need to log in again.")
+		const confirmed = await app.UI.Modal.confirm("Log out all devices?", "This will end all active sessions including this one. You will need to log in again.")
 		if (!confirmed) return
 
 		try {
 			await app.Auth.logoutAllDevices()
-			app.Notify.success("All sessions ended")
+			app.UI.Notify.success("All sessions ended")
 			goto("/auth/login")
 		} catch (error) {
-			app.Notify.error(`Error: ${(error as Error).message}`)
+			app.UI.Notify.error(`Error: ${(error as Error).message}`)
 		}
 	}
 </script>

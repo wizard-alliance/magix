@@ -129,39 +129,45 @@
 	<section>
 		<h2>Notifications — Types</h2>
 		<div class="demo">
-			<Button on:click={() => app.Notify.success(`Item saved successfully`)}><i class="fa-light fa-check"></i> <span>Success</span></Button>
-			<Button variant="danger" on:click={() => app.Notify.error(`Something went wrong`)}><i class="fa-light fa-xmark"></i> <span>Error</span></Button>
-			<Button variant="secondary" on:click={() => app.Notify.warning(`Disk space running low`)}><i class="fa-light fa-triangle-exclamation"></i> <span>Warning</span></Button>
-			<Button variant="secondary" on:click={() => app.Notify.info(`New version available`)}><i class="fa-light fa-circle-info"></i> <span>Info</span></Button>
+			<Button on:click={() => app.UI.Notify.success(`Item saved successfully`)}><i class="fa-light fa-check"></i> <span>Success</span></Button>
+			<Button variant="danger" on:click={() => app.UI.Notify.error(`Something went wrong`)}><i class="fa-light fa-xmark"></i> <span>Error</span></Button>
+			<Button variant="secondary" on:click={() => app.UI.Notify.warning(`Disk space running low`)}
+				><i class="fa-light fa-triangle-exclamation"></i> <span>Warning</span></Button
+			>
+			<Button variant="secondary" on:click={() => app.UI.Notify.info(`New version available`)}><i class="fa-light fa-circle-info"></i> <span>Info</span></Button>
 		</div>
 	</section>
 
 	<section>
 		<h2>Notifications — With Title</h2>
 		<div class="demo">
-			<Button on:click={() => app.Notify.success(`Changes published`, `Deploy`)}><i class="fa-light fa-check"></i> <span>Success + Title</span></Button>
-			<Button variant="danger" on:click={() => app.Notify.error(`Connection refused`, `Network Error`)}><i class="fa-light fa-xmark"></i> <span>Error + Title</span></Button>
-			<Button variant="secondary" on:click={() => app.Notify.warning(`Rate limit approaching`, `API Warning`)}
+			<Button on:click={() => app.UI.Notify.success(`Changes published`, `Deploy`)}><i class="fa-light fa-check"></i> <span>Success + Title</span></Button>
+			<Button variant="danger" on:click={() => app.UI.Notify.error(`Connection refused`, `Network Error`)}
+				><i class="fa-light fa-xmark"></i> <span>Error + Title</span></Button
+			>
+			<Button variant="secondary" on:click={() => app.UI.Notify.warning(`Rate limit approaching`, `API Warning`)}
 				><i class="fa-light fa-triangle-exclamation"></i> <span>Warning + Title</span></Button
 			>
-			<Button variant="secondary" on:click={() => app.Notify.info(`v2.4.0 is out`, `Update`)}><i class="fa-light fa-circle-info"></i> <span>Info + Title</span></Button>
+			<Button variant="secondary" on:click={() => app.UI.Notify.info(`v2.4.0 is out`, `Update`)}><i class="fa-light fa-circle-info"></i> <span>Info + Title</span></Button>
 		</div>
 	</section>
 
 	<section>
 		<h2>Notifications — Duration</h2>
 		<div class="demo">
-			<Button variant="ghost" on:click={() => app.Notify.info(`Gone in 2 seconds`, `Quick`, 2)}><i class="fa-light fa-bolt"></i> <span>Short (2s)</span></Button>
-			<Button variant="ghost" on:click={() => app.Notify.info(`Default 5 second toast`)}><i class="fa-light fa-clock"></i> <span>Default (5s)</span></Button>
-			<Button variant="ghost" on:click={() => app.Notify.info(`This one sticks around`, `Sticky`, 10)}><i class="fa-light fa-hourglass"></i> <span>Long (10s)</span></Button>
+			<Button variant="ghost" on:click={() => app.UI.Notify.info(`Gone in 2 seconds`, `Quick`, 2)}><i class="fa-light fa-bolt"></i> <span>Short (2s)</span></Button>
+			<Button variant="ghost" on:click={() => app.UI.Notify.info(`Default 5 second toast`)}><i class="fa-light fa-clock"></i> <span>Default (5s)</span></Button>
+			<Button variant="ghost" on:click={() => app.UI.Notify.info(`This one sticks around`, `Sticky`, 10)}
+				><i class="fa-light fa-hourglass"></i> <span>Long (10s)</span></Button
+			>
 		</div>
 	</section>
 
 	<section>
 		<h2>Notifications — create()</h2>
 		<div class="demo">
-			<Button variant="ghost" on:click={() => app.Notify.create({ message: `Raw create call` })}><span>No type (default info)</span></Button>
-			<Button variant="ghost" on:click={() => app.Notify.create({ title: `Custom`, message: `Full params example`, type: `success`, duration: 3 })}
+			<Button variant="ghost" on:click={() => app.UI.Notify.create({ message: `Raw create call` })}><span>No type (default info)</span></Button>
+			<Button variant="ghost" on:click={() => app.UI.Notify.create({ title: `Custom`, message: `Full params example`, type: `success`, duration: 3 })}
 				><span>Full params</span></Button
 			>
 		</div>
@@ -367,7 +373,7 @@
 	<section>
 		<h2>Search Input</h2>
 		<div class="demo">
-			<SearchInput placeholder="Search items..." on:submit={(e) => app.Notify.info(`Searched: ${e.detail}`)} />
+			<SearchInput placeholder="Search items..." on:submit={(e) => app.UI.Notify.info(`Searched: ${e.detail}`)} />
 			<SearchInput label="With label" placeholder="Type and press enter..." />
 		</div>
 	</section>
@@ -407,9 +413,9 @@
 			<ContextMenu
 				togglers=".context-target"
 				items={[
-					{ label: "Edit", icon: "fa-light fa-pen", action: () => app.Notify.info("Edit clicked") },
-					{ label: "Duplicate", icon: "fa-light fa-copy", action: () => app.Notify.info("Duplicate clicked") },
-					{ label: "Delete", icon: "fa-light fa-trash", action: () => app.Notify.warning("Delete clicked") },
+					{ label: "Edit", icon: "fa-light fa-pen", action: () => app.UI.Notify.info("Edit clicked") },
+					{ label: "Duplicate", icon: "fa-light fa-copy", action: () => app.UI.Notify.info("Duplicate clicked") },
+					{ label: "Delete", icon: "fa-light fa-trash", action: () => app.UI.Notify.warning("Delete clicked") },
 				]}
 			/>
 		</div>
@@ -427,7 +433,7 @@
 				<button
 					on:click={() => {
 						dropdownOpen = false
-						app.Notify.info("Profile clicked")
+						app.UI.Notify.info("Profile clicked")
 					}}
 				>
 					<i class="fa-light fa-user"></i> Profile
@@ -435,7 +441,7 @@
 				<button
 					on:click={() => {
 						dropdownOpen = false
-						app.Notify.info("Settings clicked")
+						app.UI.Notify.info("Settings clicked")
 					}}
 				>
 					<i class="fa-light fa-gear"></i> Settings
@@ -444,7 +450,7 @@
 				<button
 					on:click={() => {
 						dropdownOpen = false
-						app.Notify.warning("Logout clicked")
+						app.UI.Notify.warning("Logout clicked")
 					}}
 				>
 					<i class="fa-light fa-arrow-right-from-bracket"></i> Logout
@@ -470,7 +476,7 @@
 				}
 				const rows = Object.values(data)
 				console.log(`Repeater form data:`, rows)
-				app.Notify.success(`Logged ${rows.length} items to console`)
+				app.UI.Notify.success(`Logged ${rows.length} items to console`)
 			}}
 		>
 			<RepeaterField title="Components" bind:items={repeaterItems} addLabel="Add component" emptyLabel="No components added" minRows={2} maxRows={6}>
@@ -509,19 +515,19 @@
 		<div class="demo">
 			<Button
 				on:click={async () => {
-					const result = await app.Modal.confirm("Delete project?", "This action cannot be undone.")
-					app.Notify.info(result ? "Confirmed" : "Cancelled")
+					const result = await app.UI.Modal.confirm("Delete project?", "This action cannot be undone.")
+					app.UI.Notify.info(result ? "Confirmed" : "Cancelled")
 				}}><i class="fa-light fa-trash"></i> <span>Confirm Dialog</span></Button
 			>
 
-			<Button variant="secondary" on:click={() => app.Modal.alert("Deployment complete", "Your app is now live.", "fa-rocket")}>
+			<Button variant="secondary" on:click={() => app.UI.Modal.alert("Deployment complete", "Your app is now live.", "fa-rocket")}>
 				<i class="fa-light fa-circle-info"></i> <span>Alert Dialog</span>
 			</Button>
 
 			<Button
 				variant="ghost"
 				on:click={async () => {
-					const choice = await app.Modal.open({
+					const choice = await app.UI.Modal.open({
 						icon: "fa-code-branch",
 						title: "Merge Strategy",
 						subtitle: "How should this branch be merged?",
@@ -532,7 +538,7 @@
 							{ label: "Rebase", value: "rebase" },
 						],
 					})
-					if (choice) app.Notify.success(`Chose: ${choice}`)
+					if (choice) app.UI.Notify.success(`Chose: ${choice}`)
 				}}><i class="fa-light fa-code-branch"></i> <span>Multi-choice</span></Button
 			>
 		</div>

@@ -13,7 +13,6 @@ export interface UserMenuConfig {
 }
 
 export class NavigationRegistry {
-	private readonly tableName = ""
 	private readonly prefix = "NavigationRegistry"
 
 	links: NavigationLink[] = [

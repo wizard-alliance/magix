@@ -38,7 +38,7 @@ export class BillingClient {
 	 */
 	async get(): Promise<BillingCustomerResponse | null> {
 		try {
-			return await app.Request.get<BillingCustomerResponse>(`/billing/customer`)
+			return await app.System.Request.get<BillingCustomerResponse>(`/billing/customer`)
 		} catch {
 			return null
 		}
@@ -48,7 +48,7 @@ export class BillingClient {
 	 * Update the current user's billing info
 	 */
 	async save(data: BillingFormData): Promise<BillingCustomerResponse | null> {
-		return await app.Request.put<BillingCustomerResponse>(`/billing/customer/me`, {
+		return await app.System.Request.put<BillingCustomerResponse>(`/billing/customer/me`, {
 			body: data,
 		})
 	}

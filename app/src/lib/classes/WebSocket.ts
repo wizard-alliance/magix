@@ -1,4 +1,3 @@
-import { app } from '../app.js'
 import { PUBLIC_WS_URL } from '$env/static/public';
 
 const tickEventNames = [
@@ -75,7 +74,7 @@ export class WebSocketClient {
 		this.socket = new WS(url)
 
 		this.socket.onopen = () => {
-			app.$.Log(`WebSocket connected: ${this.url}`, this.prefix)
+			app.Helpers.Log(`WebSocket connected: ${this.url}`, this.prefix)
 			this.reconnectAttempts = 0
 		}
 
@@ -83,7 +82,7 @@ export class WebSocketClient {
 
 		this.socket.onclose = () => this.handleReconnect()
 		this.socket.onerror = (error) => {
-			app.$.Error(`WebSocket error: ${error}`, this.prefix)
+			app.Helpers.Error(`WebSocket error: ${error}`, this.prefix)
 			console.log(error)
 		}
 	}
@@ -114,7 +113,7 @@ export class WebSocketClient {
 		try {
 			return JSON.parse(raw)
 		} catch (error) {
-			app.$.Error(`WebSocket parse error`, this.prefix)
+			app.Helpers.Error(`WebSocket parse error`, this.prefix)
 			return null
 		}
 	}

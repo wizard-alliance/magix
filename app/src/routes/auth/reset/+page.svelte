@@ -35,7 +35,7 @@
 			await app.Auth.requestPasswordReset(email)
 			submitted = true
 		} catch (error) {
-			app.Notify.error((error as Error).message)
+			app.UI.Notify.error((error as Error).message)
 		} finally {
 			loading = false
 		}
@@ -43,14 +43,14 @@
 
 	const confirmReset = async () => {
 		if (newPassword !== confirmPassword) {
-			return app.Notify.error("Passwords do not match")
+			return app.UI.Notify.error("Passwords do not match")
 		}
 		loading = true
 		try {
 			await app.Auth.confirmPasswordReset(token, newPassword)
 			resetComplete = true
 		} catch (error) {
-			app.Notify.error((error as Error).message)
+			app.UI.Notify.error((error as Error).message)
 		} finally {
 			loading = false
 		}

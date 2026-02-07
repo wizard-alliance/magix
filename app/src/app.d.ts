@@ -1,6 +1,4 @@
-import type { createAppClient } from '$lib/app'
-
-type AppClient = ReturnType<typeof createAppClient>
+import type { AppClient } from '$lib/app'
 
 declare global {
 	interface Window {
