@@ -152,4 +152,8 @@
 		color: var(--muted-color);
 		margin-bottom: calc(var(--gutter) * 0.5);
 	}
+
+	.scrollable *:last-child {
+		margin-bottom: calc(var(--gutter) * 1);
+	}
 </style>

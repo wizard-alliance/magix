@@ -32,11 +32,6 @@
 </div>
 
 <style>
-	.sidebar-menu-item {
-		&:not(:first-child) {
-			margin-bottom: calc(var(--gutter) * 2);
-		}
-	}
 	span {
 		font-size: inherit;
 		font-weight: inherit;
