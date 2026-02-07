@@ -15,13 +15,15 @@
 	max-width: var(--container);
 	margin-left: auto;
 	margin-right: auto;
+	padding-right: calc(var(--gutter) * 0.5);
+	padding-left: calc(var(--gutter) * 0.5);
 }
 
 
 .row {
 	flex: 1 0 auto;
-	width: 100%;
-	max-width: 100%;
+	// width: 100%;
+	// max-width: 100%;
 	padding-right: 0;
 	padding-left: 0;
 	margin-right: calc(var(--gutter, 16px) * -0.5);

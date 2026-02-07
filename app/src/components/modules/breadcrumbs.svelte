@@ -1,11 +1,13 @@
 <script lang="ts">
 	type Crumb = { href: string; label: string }
 
+	let className = ``
+	export { className as class }
 	export let items: Crumb[] = []
 	export let separator = "/"
 </script>
 
-<nav class="breadcrumbs" aria-label="Breadcrumb">
+<nav class="breadcrumbs {className}" aria-label="Breadcrumb">
 	{#each items as crumb, i (i)}
 		<a href={crumb.href}>{crumb.label}</a>
 		{#if i < items.length - 1}

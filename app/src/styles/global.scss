@@ -19,7 +19,6 @@ html {
 }
 
 html, html * {
-	scrollbar-color: var(--tertiary-color) var(--secondary-color);
 
 	color: var(--text-color);
 	color-scheme: only dark;
@@ -28,6 +27,10 @@ html, html * {
 	line-height: 1.55;
 	font-size: var(--font-size-global);
 	letter-spacing: -0.02rem;
+
+	box-sizing: border-box;
+	
+	scrollbar-color: var(--tertiary-color) var(--primary-color);
 
 	&::-webkit-scrollbar {
 		width: 8px;

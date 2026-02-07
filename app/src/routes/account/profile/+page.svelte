@@ -22,7 +22,7 @@
 </script>
 
 <div class="page page-thin">
-	<div class="section section-header row center-xs margin-bottom-4">
+	<div class="section section-header row center-xxs margin-bottom-4">
 		<div class="col-xxs-12 margin-bottom-2">
 			<Avatar name={fullName || info.username} size="lg" />
 		</div>
@@ -47,7 +47,7 @@
 		<div class="col-xxs-12 details">
 			<div class="row">
 				<div class="col-xxs-12">
-					<div class="row center-xs middle-xs">
+					<div class="row center-xxs middle-xs">
 						<div class="col-xxs start-xxs">
 							<span class="detail-title">Name</span>
 							<span class="text-ignore detail-subtitle muted-color text-small">Your legal name</span>
@@ -61,7 +61,7 @@
 				<hr />
 
 				<div class="col-xxs-12">
-					<div class="row center-xs middle-xs">
+					<div class="row center-xxs middle-xs">
 						<div class="col-xxs start-xxs">
 							<span class="detail-title">Username</span>
 							<span class="text-ignore detail-subtitle muted-color text-small">Your username</span>
@@ -75,7 +75,7 @@
 				<hr />
 
 				<div class="col-xxs-12">
-					<div class="row center-xs middle-xs">
+					<div class="row center-xxs middle-xs">
 						<div class="col-xxs start-xxs">
 							<span class="detail-title">Phone</span>
 							<span class="text-ignore detail-subtitle muted-color text-small">Your phone number</span>
@@ -89,7 +89,7 @@
 				<hr />
 
 				<div class="col-xxs-12">
-					<div class="row center-xs middle-xs">
+					<div class="row center-xxs middle-xs">
 						<div class="col-xxs start-xxs">
 							<span class="detail-title">Company</span>
 							<span class="text-ignore detail-subtitle muted-color text-small">Your company name</span>
@@ -103,7 +103,7 @@
 				<hr />
 
 				<div class="col-xxs-12">
-					<div class="row center-xs middle-xs">
+					<div class="row center-xxs middle-xs">
 						<div class="col-xxs start-xxs">
 							<span class="detail-title">Address</span>
 							<span class="text-ignore detail-subtitle muted-color text-small">Your address</span>
@@ -117,7 +117,7 @@
 				<hr />
 
 				<div class="col-xxs-12">
-					<div class="row center-xs middle-xs">
+					<div class="row center-xxs middle-xs">
 						<div class="col-xxs start-xxs">
 							<span class="detail-title">Member since</span>
 							<span class="text-ignore detail-subtitle muted-color text-small">Your registration date</span>

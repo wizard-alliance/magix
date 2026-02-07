@@ -11,6 +11,6 @@
 	})
 </script>
 
-<section class="row center-xs middle-xs height-100p">
+<section class="row center-xxs middle-xs height-100p">
 	<Spinner />
 </section>

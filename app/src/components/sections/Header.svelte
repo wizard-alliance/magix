@@ -22,7 +22,7 @@
 				<i class="hidden-xxs visible-sm icon {pageIcon}"></i>
 				<div class="hidden-xxs start-xxs visible-xs">
 					<h3 class="page-title">{pageTitle}</h3>
-					<Breadcrumbs items={breadcrumbs} />
+					<Breadcrumbs class="hidden-xxs visible-md" items={breadcrumbs} />
 				</div>
 			</div>
 			<nav class="col-xxs middle-xxs end-xxs height-100p main-nav">

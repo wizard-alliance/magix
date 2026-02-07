@@ -43,8 +43,8 @@
 	}
 </script>
 
-<div class="col-xxs-12 col-sm-12 col-md-6 col-lg-5 center-xs auth-form-col scrollable">
-	<div class="row center-xs auth-form">
+<div class="col-xxs-12 col-sm-12 col-md-6 col-lg-5 center-xxs auth-form-col scrollable">
+	<div class="row center-xxs auth-form">
 		<div class="col-xxs-12 margin-bottom-2">
 			<h2>Create Account</h2>
 		</div>
