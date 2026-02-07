@@ -25,7 +25,8 @@ header {
 	width: 100%;
 	z-index: 100;
 	display: flex;
-
+	user-select: none;
+	
 	.left-header {
 		display: flex;
 		align-items: center;

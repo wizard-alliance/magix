@@ -65,6 +65,8 @@
 		font-size: var(--font-size);
 		font-weight: 300;
 
+		user-select: none;
+
 		a {
 			display: flex;
 			align-items: center;

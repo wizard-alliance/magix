@@ -96,7 +96,7 @@ body:not([data-app-type="electron"]) .app {
 ::view-transition-old(root),
 ::view-transition-new(root) {
 	animation-timing-function: cubic-bezier(0, 0, 0, 1);
-    animation-duration: 700ms;
+    // animation-duration: 700ms;
 }
 
 .bold {
