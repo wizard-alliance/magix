@@ -7,7 +7,7 @@
 		<nav>
 			<h2 class="title">Developer</h2>
 			<SidebarMenuItem href="/dev" icon="fa-code" label="Overview" />
-			<SidebarMenuItem href="/dev/components" icon="fa-cube" label="Components" exact={false} />
+			<SidebarMenuItem href="/dev/components" icon="fa-cube" label="Components" />
 		</nav>
 	</div>
 </div>

@@ -5,10 +5,9 @@
 	export let icon: string = "fa-circle"
 	export let label: string = ""
 	export let unread: number | null = null
-	export let exact: boolean = true
 	export let children: any[] = []
 
-	$: isActive = exact ? $page.url.pathname === href : $page.url.pathname === href || $page.url.pathname.startsWith(`${href}/`)
+	$: isActive = $page.url.pathname === href
 	$: isActiveSub = !isActive && $page.url.pathname.startsWith(`${href}/`)
 </script>
 
@@ -21,7 +20,7 @@
 	{#if children.length > 0}
 		<div class="sidebar-menu-children">
 			{#each children as child}
-				<a href={child.href} data-unread={child.unread} class:active={isActive}>
+				<a href={child.href} data-unread={child.unread} class:active={$page.url.pathname === child.href}>
 					<i class={`fa-light ${child.icon}`}></i>
 					<span>{child.label}</span>
 					<i class="indicator fa-light fa-arrow-right"></i>
@@ -166,6 +165,18 @@
 	a.active {
 		i:first-child {
 			color: var(--accent-color);
+		}
+		span {
+			color: var(--white);
+		}
+	}
+
+	a.active-sub {
+		i:first-child {
+			color: var(--accent-color);
+		}
+		span {
+			color: var(--muted-color);
 		}
 	}
 </style>
