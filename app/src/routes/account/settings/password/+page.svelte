@@ -4,25 +4,21 @@
 	import { onMount } from "svelte"
 	import Input from "$components/fields/input.svelte"
 	import Button from "$components/fields/button.svelte"
+	import Toggle from "$components/fields/toggle.svelte"
 
 	let form = { currentPassword: "", newPassword: "" }
-	let status = ""
+	let logoutAll = true
 	let loading = false
-
-	onMount(() => {
-		app.Config.pageTitle = "Change Password"
-	})
 
 	const submit = async () => {
 		loading = true
-		status = ""
 		try {
-			await app.Auth.changePassword(form.currentPassword, form.newPassword, true)
-			status = "Password updated. Redirecting..."
+			await app.Auth.changePassword(form.currentPassword, form.newPassword, logoutAll)
+			app.Notify.success("Password updated. Redirecting...")
 			await app.Auth.logout()
 			goto("/auth/login")
 		} catch (error) {
-			status = `Error: ${(error as Error).message}`
+			app.Notify.error(`Error: ${(error as Error).message}`)
 		} finally {
 			loading = false
 		}
@@ -30,48 +26,58 @@
 </script>
 
 <div class="page page-thin">
-	<h1>Change Password</h1>
+	<div class="section margin-bottom-4">
+		<h1 class="title">Change Password</h1>
+		<p class="muted-color text-small">Update your account password</p>
+	</div>
 
-	<form class="form" on:submit|preventDefault={submit}>
-		<Input id="currentPassword" label="Current password" type="password" bind:value={form.currentPassword} required />
-		<Input id="newPassword" label="New password" type="password" bind:value={form.newPassword} required />
+	<div class="section margin-bottom-4">
+		<div class="details">
+			<form on:submit|preventDefault={submit}>
+				<Input id="currentPassword" label="Current password" type="password" bind:value={form.currentPassword} required />
+				<Input id="newPassword" label="New password" type="password" bind:value={form.newPassword} required />
 
-		<div class="actions">
-			<Button type="submit" disabled={loading}>{loading ? "Updating..." : "Update password"}</Button>
-			<a href="/account/settings">Cancel</a>
+				<div class="toggle-row">
+					<Toggle label="Log out all other devices" bind:checked={logoutAll} />
+				</div>
+
+				<div class="actions">
+					<Button type="submit" disabled={loading} {loading}>
+						{loading ? "Updating..." : "Update password"}
+					</Button>
+					<a href="/account/settings" class="muted-color text-small">Back to preferences</a>
+				</div>
+			</form>
 		</div>
-
-		{#if status}
-			<p class="status">{status}</p>
-		{/if}
-	</form>
+	</div>
 </div>
 
-<style>
-	h1 {
-		margin-bottom: calc(var(--gutter) * 2);
+<style lang="scss" scoped>
+	.section .title {
+		font-size: var(--font-size-large);
+		font-weight: 600;
 	}
 
-	.form {
-		display: flex;
-		flex-direction: column;
-		gap: calc(var(--gutter) * 1.5);
+	.details {
+		background-color: rgba(255, 255, 255, 0.04);
+		border-radius: var(--border-radius);
+		padding: calc(var(--gutter) * 2.5);
+
+		form {
+			display: flex;
+			flex-direction: column;
+			gap: calc(var(--gutter) * 1.5);
+		}
+	}
+
+	.toggle-row {
+		padding: var(--gutter) 0;
 	}
 
 	.actions {
 		display: flex;
 		align-items: center;
 		gap: calc(var(--gutter) * 2);
-		margin-top: var(--gutter);
-	}
-
-	.actions a {
-		color: var(--text-color-secondary);
-		font-size: var(--font-size-small);
-	}
-
-	.status {
-		color: var(--accent-color);
 		margin-top: var(--gutter);
 	}
 </style>

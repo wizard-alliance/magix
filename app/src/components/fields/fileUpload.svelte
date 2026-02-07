@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { createEventDispatcher } from "svelte"
+
 	export let id = ""
 	export let label: string = ""
 	export let buttonText: string = "Upload file"
@@ -8,10 +10,13 @@
 	export let disabled = false
 	export let helperText = ""
 
+	const dispatch = createEventDispatcher<{ change: { files: FileList } }>()
+
 	let files: FileList | null = null
 	let input: HTMLInputElement
 
 	$: fileNames = files ? Array.from(files).map((f) => f.name) : []
+	$: if (files?.length) dispatch("change", { files })
 </script>
 
 <div class="field">

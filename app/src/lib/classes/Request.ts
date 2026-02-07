@@ -82,4 +82,34 @@ export class RequestClient {
 	delete<T = any>(path: string, options: InternalOptions = {}) {
 		return this.call<T>('delete', path, options)
 	}
+
+	/**
+	 * Upload a file via multipart/form-data
+	 */
+	async upload<T = any>(path: string, file: File, fieldName = 'file', extra?: Record<string, string>): Promise<T> {
+		const url = `${this.apiBase}${path.startsWith('/') ? path : `/${path}`}`
+
+		const doUpload = async (): Promise<T> => {
+			let req = superagent.post(url)
+			const token = this.resolveToken()
+			if (token) req = req.set('Authorization', `Bearer ${token}`)
+			req = req.attach(fieldName, file, file.name)
+			if (extra) {
+				for (const [k, v] of Object.entries(extra)) req = req.field(k, v)
+			}
+			const response = await req
+			return (response.body?.data ?? response.body) as T
+		}
+
+		try {
+			return await doUpload()
+		} catch (error: any) {
+			const status = error?.status ?? error?.response?.status
+			if (status === 401) {
+				const refreshed = await this.refreshSession()
+				if (refreshed) return await doUpload()
+			}
+			throw new Error(this.extractErrorMessage(error))
+		}
+	}
 }

@@ -86,6 +86,7 @@ export class UserRepo {
 				phone: user.phone ?? null,
 				company: user.company ?? null,
 				address: user.address ?? null,
+				avatarUrl: user.avatar_url ?? null,
 				activated: Boolean(user.activated),
 				disabled: Boolean(user.disabled),
 				deletedAt: user.deleted_at ?? null,

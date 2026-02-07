@@ -12,12 +12,13 @@
 
 	$: isLoggedIn = !!$currentUser
 	$: nickname = $currentUser?.info?.firstName || $currentUser?.info?.username || "Login"
+	$: avatarSrc = $currentUser?.info?.avatarUrl ? app.Account.Avatar.url($currentUser.info.avatarUrl) : ""
 </script>
 
 <div class="main-menu__sidebar">
 	<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
 	<div class="account" class:open={accountMenuOpen} bind:this={accountTrigger} on:click={toggleAccountMenu}>
-		<Avatar name={nickname} size="sm" />
+		<Avatar name={nickname} src={avatarSrc || ""} size="sm" />
 		<div class="name">{nickname}</div>
 		<i class="indicator fa-light fa-angle-down"></i>
 		<DropdownMenu bind:open={accountMenuOpen} bind:toggle={toggleAccountMenu} triggerRef={accountTrigger} position="top">

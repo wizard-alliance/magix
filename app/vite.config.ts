@@ -105,6 +105,7 @@ export default defineConfig({
 		alias: {
 			$lib: resolve("./src/lib"),
 			$styles: resolve("./src/styles"),
+			$uploads: resolve("../uploads"),
 		},
 	},
 	css: {

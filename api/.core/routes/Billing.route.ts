@@ -11,6 +11,7 @@ export class BillingRoute {
 		api.Router.set("GET", `${this.route}/customer`, this.getCustomer, opts)
 		api.Router.set("GET", `${this.route}/customers`, this.getCustomers, adminOpts)
 		api.Router.set("POST", `${this.route}/customer`, this.createCustomer, adminOpts)
+		api.Router.set("PUT", `${this.route}/customer/me`, this.updateMyCustomer, opts)
 		api.Router.set("PUT", `${this.route}/customer`, this.updateCustomer, adminOpts)
 		api.Router.set("DELETE", `${this.route}/customer`, this.deleteCustomer, adminOpts)
 		api.Router.set("GET", `${this.route}/customer/portal`, this.getCustomerPortal, opts)
@@ -70,7 +71,28 @@ export class BillingRoute {
 	getCustomer = async (_: any, req: Request) => {
 		const p = api.getParams(req)
 		const id = Number(p.id)
-		if (!id) return { code: 422, error: "Customer ID required" }
+
+		// If no id provided, resolve from authenticated user
+		if (!id) {
+			const authUser = (req as any).authUser
+			if (!authUser?.id) return { code: 422, error: "Customer ID required" }
+
+			const existing = await api.Billing.Customers.get({ user_id: authUser.id })
+			if (existing) return existing
+
+			// Auto-create stub billing customer from user profile
+			const fullName = [authUser.first_name, authUser.last_name].filter(Boolean).join(` `)
+			const result = await api.Billing.Customers.set({
+				user_id: authUser.id,
+				billing_name: fullName || null,
+				billing_email: authUser.email || null,
+			})
+			if (result && "id" in result) {
+				return await api.Billing.Customers.get({ id: result.id }) ?? result
+			}
+			return result
+		}
+
 		return await api.Billing.Customers.get({ id }) ?? { code: 404, error: "Customer not found" }
 	}
 
@@ -97,6 +119,61 @@ export class BillingRoute {
 		const id = Number(p.id)
 		if (!id) return { code: 422, error: "Customer ID required" }
 		return await api.Billing.Customers.delete({ id })
+	}
+
+	// Self-service billing customer update
+	updateMyCustomer = async (_: any, req: Request) => {
+		const authUser = (req as any).authUser
+		if (!authUser?.id) return { code: 401, error: "Unauthorized" }
+
+		// Ensure customer exists for this user
+		let customer = await api.Billing.Customers.get({ user_id: authUser.id })
+		if (!customer) {
+			const fullName = [authUser.first_name, authUser.last_name].filter(Boolean).join(` `)
+			const result = await api.Billing.Customers.set({
+				user_id: authUser.id,
+				billing_name: fullName || null,
+				billing_email: authUser.email || null,
+			})
+			if (!result || "error" in result) return result ?? { code: 500, error: "Failed to create customer" }
+			customer = await api.Billing.Customers.get({ user_id: authUser.id })
+			if (!customer) return { code: 500, error: "Failed to retrieve customer" }
+		}
+
+		const p = api.getParams(req)
+		const fieldMap: Record<string, string> = {
+			billingName: "billing_name",
+			billingEmail: "billing_email",
+			billingPhone: "billing_phone",
+			addressLine1: "billing_address_line1",
+			addressLine2: "billing_address_line2",
+			city: "billing_city",
+			state: "billing_state",
+			zip: "billing_zip",
+			country: "billing_country",
+			vatId: "vat_id",
+			// Also accept snake_case directly
+			billing_name: "billing_name",
+			billing_email: "billing_email",
+			billing_phone: "billing_phone",
+			billing_address_line1: "billing_address_line1",
+			billing_address_line2: "billing_address_line2",
+			billing_city: "billing_city",
+			billing_state: "billing_state",
+			billing_zip: "billing_zip",
+			billing_country: "billing_country",
+			vat_id: "vat_id",
+		}
+
+		const data: Record<string, any> = {}
+		for (const [inputKey, dbKey] of Object.entries(fieldMap)) {
+			if (p[inputKey] !== undefined) data[dbKey] = p[inputKey]
+		}
+
+		if (!Object.keys(data).length) return { code: 422, error: "No valid fields provided" }
+
+		await api.Billing.Customers.update(data, { user_id: authUser.id })
+		return await api.Billing.Customers.get({ user_id: authUser.id }) ?? { success: true }
 	}
 
 	// Products
@@ -227,14 +304,15 @@ export class BillingRoute {
 	// Checkout
 	createCheckout = async ($: any, req: Request) => {
 		const p = api.getParams(req)
+		const authUser = (req as any).authUser
 		const variantId = p.variant_id || p.variantId
 		if (!variantId) return { code: 422, error: "Variant ID required" }
 		try {
 			const result = await api.Billing.Providers.LS.createCheckout({
 				variantId,
-				email: p.email || $.user?.email,
-				name: p.name || $.user?.name,
-				customData: { user_id: $.user?.id, plan_id: p.plan_id },
+				email: p.email || authUser?.email,
+				name: p.name || [authUser?.first_name, authUser?.last_name].filter(Boolean).join(` `),
+				customData: { user_id: authUser?.id, plan_id: p.plan_id },
 				redirectUrl: p.redirect_url,
 			})
 			return result
@@ -245,7 +323,8 @@ export class BillingRoute {
 
 	// Customer Portal
 	getCustomerPortal = async ($: any, req: Request) => {
-		const customer = await api.Billing.Customers.get({ user_id: $.user?.id })
+		const authUser = (req as any).authUser
+		const customer = await api.Billing.Customers.get({ user_id: authUser?.id })
 		if (!customer) return { code: 404, error: "No billing customer found" }
 		// Need LS customer ID - would need to store this
 		// For now, return error indicating this needs setup

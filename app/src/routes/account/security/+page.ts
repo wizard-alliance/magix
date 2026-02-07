@@ -1,13 +1,13 @@
 import { getNavigationData } from "$configs/nav"
 
 export const load = () => ({
-	title: "Preferences",
-	icon: "fa-light fa-sliders",
-	description: "Manage your account preferences.",
+	title: "Security",
+	icon: "fa-light fa-shield",
+	description: "Manage your account security and active sessions.",
 	sidebars: { 0: true, 1: true, 2: false },
 	nav: getNavigationData("account/settings"),
 	seo: {
-		canonical: "/account/settings",
+		canonical: "/account/security",
 		noindex: true,
 	}
 })

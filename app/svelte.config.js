@@ -15,6 +15,7 @@ const config = {
 			$components: "./src/components",
 			$assets: "./src/assets",
 			$images: "./src/assets/images",
+			$uploads: "../uploads",
 		},
 	},
 }

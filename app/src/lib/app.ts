@@ -8,6 +8,10 @@ import { RequestClient } from "./classes/Request"
 import { UIManager } from "./classes/UIManager"
 import { AuthClient } from "./classes/Auth/AuthClient"
 
+import { UserSettingsClient } from "./classes/Account/UserSettingsClient"
+import { AvatarClient } from "./classes/Account/AvatarClient"
+import { BillingClient } from "./classes/Account/BillingClient"
+
 import { Log, ErrorLog, SuccessLog, WarningLog } from "./classes/Helpers/Log"
 import { Reactive } from "./classes/Helpers/Reactive"
 import { AppLogger } from "./classes/Helpers/AppLogger"
@@ -36,6 +40,13 @@ export const createAppClient = () => ({
 	},
 	
 	Settings: new SettingsClient(),
+
+	// Account
+	Account: {
+		Settings: new UserSettingsClient(),
+		Avatar: new AvatarClient(),
+		Billing: new BillingClient(),
+	},
 
 	// Misc
 	Misc: {

@@ -4,6 +4,10 @@ import type { UserDeviceContext } from "../schema/AuthShapes.js"
 import { CrudMethods } from "../services/CrudMethods.js"
 import { User } from "../schema/DomainShapes.js"
 import { UserDBRow } from "../schema/Database.js"
+import multer from "multer"
+import { createHash } from "node:crypto"
+import { mkdir, writeFile, unlink } from "node:fs/promises"
+import path from "node:path"
 
 
 export class AuthRoute {
@@ -36,6 +40,9 @@ export class AuthRoute {
 		// User routes
 		api.Router.set(["POST"], `${this.userRoute}/me`, this.me, this.userOptions)
 		api.Router.set(["POST"], `${this.userRoute}/profile`, this.updateProfile, this.userOptions)
+		api.Router.set(["POST"], `${this.userRoute}/settings`, this.saveSettings, this.userOptions)
+		api.Router.set(["POST"], `${this.userRoute}/avatar`, this.uploadAvatar, this.userOptions)
+		api.Router.set(["DELETE"], `${this.userRoute}/avatar`, this.deleteAvatar, this.userOptions)
 
 		// CRUD routes
 		api.Router.set("GET", `${this.userRoute}/user`, this.get, this.adminOptions)
@@ -156,6 +163,122 @@ export class AuthRoute {
 		if ($.body.lastName !== undefined) data.last_name = $.body.lastName
 
 		return await api.User.Repo.update(me.id, data)
+	}
+	// Save user key-value settings
+	saveSettings = async ($: $, req: Request, res: Response) => {
+		$ = api.Router.getParams(req)
+		const token = this.parseAccessToken($.headers as Record<string, any>)
+		const me = token ? await api.User.Repo.me(token) : null
+		if (!me || "error" in me) return me ?? { error: "Unauthorized", code: 401 }
+
+		const settings = $.body.settings
+		if (!settings || typeof settings !== "object") return { code: 422, error: "Settings object required" }
+
+		const allowedKeys = new Set([
+			"currency", "timezone", "first_day_of_week", "datetime_format",
+			"notifications_app", "notifications_mail", "notification_sound",
+			"dark_mode", "text_size",
+			"subscribe_newsletter", "debug_mode",
+		])
+
+		const db = api.DB.connection
+		let updated = 0
+
+		for (const [key, value] of Object.entries(settings)) {
+			if (!allowedKeys.has(key)) continue
+			const strValue = String(value ?? "")
+
+			const existing = await db.selectFrom("user_settings")
+				.selectAll()
+				.where("user_id", "=", me.id)
+				.where("key", "=", key)
+				.executeTakeFirst()
+
+			if (existing) {
+				await db.updateTable("user_settings")
+					.set({ value: strValue })
+					.where("user_id", "=", me.id)
+					.where("key", "=", key)
+					.execute()
+			} else {
+				await db.insertInto("user_settings")
+					.values({ user_id: me.id, key, value: strValue } as any)
+					.execute()
+			}
+			updated++
+		}
+
+		return { success: true, updated }
+	}
+
+	// Upload user avatar
+	private upload = multer({
+		storage: multer.memoryStorage(),
+		limits: { fileSize: 2 * 1024 * 1024 }, // 2MB
+		fileFilter: (_req, file, cb) => {
+			const allowed = [`image/png`, `image/jpeg`, `image/webp`]
+			cb(null, allowed.includes(file.mimetype))
+		},
+	})
+
+	uploadAvatar = async ($: $, req: Request, res: Response) => {
+		// Run multer inline (since api.Router.set doesn't support middleware injection)
+		await new Promise<void>((resolve, reject) => {
+			this.upload.single(`avatar`)(req, res, (err: any) => err ? reject(err) : resolve())
+		})
+
+		const file = (req as any).file as Express.Multer.File | undefined
+		if (!file) return { code: 422, error: `No avatar file provided` }
+
+		$ = api.Router.getParams(req, this.tableName)
+		const token = this.parseAccessToken($.headers as Record<string, any>)
+		const me = token ? await api.User.Repo.me(token) : null
+		if (!me || "error" in me) return me ?? { error: `Unauthorized`, code: 401 }
+
+		const hash = createHash(`md5`).update(file.buffer).digest(`hex`).slice(0, 8)
+		const ext = file.mimetype === `image/png` ? `png` : file.mimetype === `image/webp` ? `webp` : `jpg`
+		const relativePath = `users/avatars/profile/${hash}.${me.id}.${ext}`
+		const uploadsDir = api.Config(`UPLOAD_DIR`) || `uploads`
+		const fullDir = path.join(process.cwd(), uploadsDir, `users/avatars/profile`)
+		const fullPath = path.join(process.cwd(), uploadsDir, relativePath)
+
+		await mkdir(fullDir, { recursive: true })
+		await writeFile(fullPath, file.buffer)
+
+		// Delete old avatar if different path
+		const oldUrl = me.info.avatarUrl
+		if (oldUrl && oldUrl !== relativePath) {
+			const oldPath = path.join(process.cwd(), uploadsDir, oldUrl)
+			await unlink(oldPath).catch(() => null)
+		}
+
+		await api.DB.connection.updateTable(`users`)
+			.set({ avatar_url: relativePath } as any)
+			.where(`id`, `=`, me.id)
+			.execute()
+
+		return { success: true, avatarUrl: relativePath }
+	}
+
+	deleteAvatar = async ($: $, req: Request, res: Response) => {
+		$ = api.Router.getParams(req, this.tableName)
+		const token = this.parseAccessToken($.headers as Record<string, any>)
+		const me = token ? await api.User.Repo.me(token) : null
+		if (!me || "error" in me) return me ?? { error: `Unauthorized`, code: 401 }
+
+		const avatarUrl = me.info.avatarUrl
+		if (avatarUrl) {
+			const uploadsDir = api.Config(`UPLOAD_DIR`) || `uploads`
+			const fullPath = path.join(process.cwd(), uploadsDir, avatarUrl)
+			await unlink(fullPath).catch(() => null)
+		}
+
+		await api.DB.connection.updateTable(`users`)
+			.set({ avatar_url: null } as any)
+			.where(`id`, `=`, me.id)
+			.execute()
+
+		return { success: true }
 	}
 
 	refresh = async ($: $, req: Request, res: Response) => {

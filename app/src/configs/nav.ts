@@ -127,7 +127,7 @@ export const navigationData: NavItem[] = [
 				align: null,
 				children: [
 					{
-						slug: "Avatar",
+						slug: "avatar",
 						label: "Avatar", 
 						href: "/account/settings/avatar",
 						target: "_self", 
@@ -137,7 +137,7 @@ export const navigationData: NavItem[] = [
 						align: null,
 					},
 					{
-						slug: "Details",
+						slug: "details",
 						label: "Details", 
 						href: "/account/settings/details",
 						target: "_self", 

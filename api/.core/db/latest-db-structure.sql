@@ -457,6 +457,7 @@ CREATE TABLE `users` (
   `phone` varchar(20) DEFAULT NULL COMMENT 'Optional phone number',
   `company` varchar(255) DEFAULT NULL COMMENT 'Optional company name or affiliation',
   `address` text COMMENT 'User address in plain text',
+  `avatar_url` varchar(255) DEFAULT NULL COMMENT 'Relative path to user avatar',
   `activation_token` varchar(255) DEFAULT NULL COMMENT 'Token used to verify/activate account',
   `activated` tinyint NOT NULL DEFAULT '0' COMMENT 'Indicates if the account is activated',
   `tos_accepted` tinyint NOT NULL DEFAULT '0' COMMENT 'Indicates if user agreed to Terms of Service',

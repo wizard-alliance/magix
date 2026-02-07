@@ -33,12 +33,12 @@
 
 	<div class="section row middle-xs between-xs margin-bottom-4">
 		<div class="col-xxs-12 col-md margin-bottom-2">
-			<h2 class="title">Section title</h2>
+			<h2 class="title">Personal Information</h2>
 			<p class="muted-color text-small">Your account information</p>
 		</div>
 
 		<div class="col margin-bottom-2">
-			<Button variant="secondary" size="sm" href="/account/settings" data-tip="Edit profile">
+			<Button variant="secondary" size="sm" href="/account/settings/details" data-tip="Edit profile">
 				<i class="fa-light fa-pen"></i>
 			</Button>
 		</div>
@@ -53,6 +53,20 @@
 						</div>
 						<div class="col-xxs end-xxs muted-color text-small">
 							{#if user}{info.firstName} {info.lastName}{:else}<Spinner size="sm" />{/if}
+						</div>
+					</div>
+				</div>
+
+				<hr />
+
+				<div class="col-xxs-12">
+					<div class="row center-xxs middle-xs">
+						<div class="col-xxs start-xxs">
+							<span class="detail-title">Email</span>
+							<span class="text-ignore detail-subtitle muted-color text-small">Your email address</span>
+						</div>
+						<div class="col-xxs end-xxs muted-color text-small">
+							{#if user}{redactedEmail}{:else}<Spinner size="sm" />{/if}
 						</div>
 					</div>
 				</div>

@@ -275,6 +275,7 @@ export type UserDBRow = {
 	phone: string | null
 	company: string | null
 	address: string | null
+	avatar_url: string | null
 	activation_token: string | null
 	activated: number
 	tos_accepted: number
@@ -446,6 +447,7 @@ export const schemaColumns = {
 		phone: 'string',
 		company: 'string',
 		address: 'string',
+		avatar_url: 'string',
 		activation_token: 'string',
 		activated: 'number',
 		tos_accepted: 'number',

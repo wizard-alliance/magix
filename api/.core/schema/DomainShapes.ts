@@ -20,6 +20,7 @@ export type User = {
 	phone?: string | null
 	company?: string | null
 	address?: string | null
+	avatarUrl?: string | null
 	password?: string
 	activated: boolean
 	disabled: boolean
