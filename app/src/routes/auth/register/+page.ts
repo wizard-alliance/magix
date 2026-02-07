@@ -5,7 +5,7 @@ export const load = () => ({
 	sidebars: { 0: false, 1: false, 2: false },
 	nav: null,
 	seo: {
-		canonical: "/account/register",
+		canonical: "/auth/register",
 		noindex: true,
 	}
 })

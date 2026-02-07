@@ -129,7 +129,7 @@ export class AuthClient {
 	 * Register a new account (requires email activation before login)
 	 */
 	async register(payload: RegisterInput) {
-		return app.Request.post<{ success: boolean; message: string }>('/account/register', {
+		return app.Request.post<{ success: boolean; message: string }>('/auth/register', {
 			body: payload,
 			useAuth: false,
 		})
@@ -270,7 +270,7 @@ export class AuthClient {
 	 * Request password reset - sends email with reset link
 	 */
 	async requestPasswordReset(email: string) {
-		return app.Request.post<{ success: boolean; message: string }>('/account/reset', {
+		return app.Request.post<{ success: boolean; message: string }>('/auth/reset', {
 			body: { email },
 			useAuth: false,
 		})
@@ -280,7 +280,7 @@ export class AuthClient {
 	 * Confirm password reset with token
 	 */
 	async confirmPasswordReset(token: string, password: string) {
-		return app.Request.post<{ success: boolean; message: string }>('/account/reset/confirm', {
+		return app.Request.post<{ success: boolean; message: string }>('/auth/reset/confirm', {
 			body: { token, password },
 			useAuth: false,
 		})

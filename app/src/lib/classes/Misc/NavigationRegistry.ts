@@ -24,11 +24,11 @@ export class NavigationRegistry {
 		loggedIn: [
 			{ label: `Profile`, href: `/account/profile` },
 			{ label: `Settings`, href: `/account/settings` },
-			{ label: `Logout`, href: `/account/logout` },
+			{ label: `Logout`, href: `/auth/logout` },
 		],
 		loggedOut: [
-			{ label: `Login`, href: `/account/login` },
-			{ label: `Register`, href: `/account/register` },
+			{ label: `Login`, href: `/auth/login` },
+			{ label: `Register`, href: `/auth/register` },
 		],
 	}
 

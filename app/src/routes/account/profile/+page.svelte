@@ -10,7 +10,6 @@
 	let user: any = null
 
 	onMount(async () => {
-		// app.Config.pageTitle = "Profile"
 		const data = await app.Auth.me().catch(() => null)
 		user = data?.info
 		console.log("User info:", data)

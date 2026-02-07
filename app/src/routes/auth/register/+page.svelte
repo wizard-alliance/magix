@@ -53,7 +53,7 @@
 			<div class="col-xxs-12 success-message">
 				<i class="fas fa-envelope"></i>
 				<p>Account created! Please check your email at <strong>{form.email}</strong> to activate your account.</p>
-				<a href="/account/login" class="back-link">Go to login</a>
+				<a href="/auth/login" class="back-link">Go to login</a>
 			</div>
 		{:else}
 			<form on:submit|preventDefault={submit} class="col-xxs-12">
@@ -84,7 +84,7 @@
 			</form>
 
 			<div class="col-xxs-12">
-				<p class="hint">Already have an account? <a href="/account/login">Sign in</a></p>
+				<p class="hint">Already have an account? <a href="/auth/login">Sign in</a></p>
 			</div>
 		{/if}
 	</div>

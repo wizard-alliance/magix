@@ -67,13 +67,13 @@
 			<div class="col-xxs-12 success-message">
 				<i class="fas fa-envelope"></i>
 				<p>If an account exists for <strong>{email}</strong>, you'll receive a password reset link shortly.</p>
-				<a href="/account/login" class="back-link">Back to login</a>
+				<a href="/auth/login" class="back-link">Back to login</a>
 			</div>
 		{:else if resetComplete}
 			<div class="col-xxs-12 success-message">
 				<i class="fas fa-check-circle"></i>
 				<p>Your password has been reset successfully.</p>
-				<a href="/account/login" class="back-link">Sign in with your new password</a>
+				<a href="/auth/login" class="back-link">Sign in with your new password</a>
 			</div>
 		{:else if step === "request"}
 			<p class="col-xxs-12 hint margin-bottom-2">Enter your email and we'll send you a link to reset your password.</p>
@@ -87,7 +87,7 @@
 			</form>
 
 			<div class="col-xxs-12">
-				<p class="hint">Remember your password? <a href="/account/login">Sign in</a></p>
+				<p class="hint">Remember your password? <a href="/auth/login">Sign in</a></p>
 			</div>
 		{:else}
 			<p class="col-xxs-12 hint margin-bottom-2">Enter your new password below.</p>
@@ -103,7 +103,7 @@
 			</form>
 
 			<div class="col-xxs-12">
-				<p class="hint"><a href="/account/login">Back to login</a></p>
+				<p class="hint"><a href="/auth/login">Back to login</a></p>
 			</div>
 		{/if}
 	</div>

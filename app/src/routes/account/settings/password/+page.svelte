@@ -20,7 +20,7 @@
 			await app.Auth.changePassword(form.currentPassword, form.newPassword, true)
 			status = "Password updated. Redirecting..."
 			await app.Auth.logout()
-			goto("/account/login")
+			goto("/auth/login")
 		} catch (error) {
 			status = `Error: ${(error as Error).message}`
 		} finally {

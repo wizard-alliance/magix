@@ -25,10 +25,10 @@
 				<a href="/account/profile"><i class="fa-light fa-user"></i> Profile</a>
 				<a href="/account/settings"><i class="fa-light fa-gear"></i> Settings</a>
 				<hr />
-				<a href="/account/logout"><i class="fa-light fa-arrow-right-from-bracket"></i> Logout</a>
+				<a href="/auth/logout"><i class="fa-light fa-arrow-right-from-bracket"></i> Logout</a>
 			{:else}
-				<a href="/account/login"><i class="fa-light fa-arrow-right-to-bracket"></i> Login</a>
-				<a href="/account/register"><i class="fa-light fa-user-plus"></i> Register</a>
+				<a href="/auth/login"><i class="fa-light fa-arrow-right-to-bracket"></i> Login</a>
+				<a href="/auth/register"><i class="fa-light fa-user-plus"></i> Register</a>
 			{/if}
 		</DropdownMenu>
 	</div>

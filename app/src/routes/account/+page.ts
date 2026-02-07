@@ -1,5 +1,5 @@
 import { redirect } from "@sveltejs/kit"
 
 export const load = () => {
-	throw redirect(308, "/account/login")
+	throw redirect(308, "/auth/login")
 }

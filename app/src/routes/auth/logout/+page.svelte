@@ -7,7 +7,7 @@
 	onMount(async () => {
 		app.Config.pageTitle = "Logout"
 		await app.Auth.logout()
-		goto("/account/login")
+		goto("/auth/login")
 	})
 </script>
 

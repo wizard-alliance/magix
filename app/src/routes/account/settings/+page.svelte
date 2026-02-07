@@ -58,7 +58,7 @@
 
 		<div class="actions">
 			<Button type="submit" disabled={loading}>{loading ? "Saving..." : "Save"}</Button>
-			<a href="/account/settings/change-password">Change password</a>
+			<a href="/account/settings/password">Change password</a>
 		</div>
 
 		{#if status}

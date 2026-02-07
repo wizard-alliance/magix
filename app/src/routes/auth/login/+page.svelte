@@ -123,7 +123,7 @@
 					<Checkbox label="Keep me logged in" bind:checked={form.remember} />
 				</div>
 				<div class="col-xxs end-xxs">
-					<a href="/account/reset" class="link-muted">Forget your password?</a>
+					<a href="/auth/reset" class="link-muted">Forget your password?</a>
 				</div>
 			</div>
 
@@ -133,7 +133,7 @@
 		</form>
 
 		<div class="col-xxs-12 margin-bottom-2">
-			<p class="hint">Haven't sign up yet? <a href="/account/register">Sign up</a></p>
+			<p class="hint">Haven't sign up yet? <a href="/auth/register">Sign up</a></p>
 		</div>
 	</div>
 </div>
