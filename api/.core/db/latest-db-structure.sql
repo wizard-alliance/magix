@@ -1,4 +1,3 @@
--- Adminer 5.4.1 MySQL 8.0.30 dump
 
 SET NAMES utf8;
 SET time_zone = '+00:00';
@@ -477,5 +476,3 @@ CREATE TABLE `users` (
   KEY `idx_user_email` (`email`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Stores user account information and credentials.';
 
-
--- 2026-01-03 13:52:48 UTC
