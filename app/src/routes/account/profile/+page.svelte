@@ -17,13 +17,14 @@
 
 	$: info = user || {}
 	$: fullName = [info.firstName, info.lastName].filter(Boolean).join(" ")
+	$: avatarSrc = info.avatarUrl ? (app.Account.Avatar.url(info.avatarUrl) ?? "") : ""
 	$: redactedEmail = info.email ? info.email.replace(/(.{2}).+(@.+)/, "$1***$2") : ""
 </script>
 
 <div class="page page-thin">
 	<div class="section section-header row center-xxs margin-bottom-4">
 		<div class="col-xxs-12 margin-bottom-2">
-			<Avatar name={fullName || info.username} size="lg" />
+			<Avatar name={fullName || info.username} src={avatarSrc} size="lg" />
 		</div>
 		<div class="col-xxs-12 col-md-9 info-block">
 			<h1>{fullName || info.username}</h1>

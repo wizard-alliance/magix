@@ -3,16 +3,30 @@
 	import DropdownMenu from "$components/modules/DropdownMenu.svelte"
 	import Avatar from "$components/modules/avatar.svelte"
 	import { navigationData as navData } from "$configs/nav.js"
+	import { onMount, tick } from "svelte"
 
 	let accountMenuOpen = false
 	let toggleAccountMenu: () => void
 	let accountTrigger: HTMLElement
+	let scrollable: HTMLElement
 
 	const currentUser = app.State.currentUser
 
 	$: isLoggedIn = !!$currentUser
 	$: nickname = $currentUser?.info?.firstName || $currentUser?.info?.username || "Login"
-	$: avatarSrc = $currentUser?.info?.avatarUrl ? app.Account.Avatar.url($currentUser.info.avatarUrl) : ""
+	$: avatarSrc = $currentUser?.info?.avatarUrl ? (app.Account.Avatar.url($currentUser.info.avatarUrl) ?? "") : ""
+
+	onMount(async () => {
+		await tick()
+		const active = scrollable?.querySelector(`.active`)
+		const activeSub = scrollable?.querySelector(`.active`)
+		if (active) {
+			active.scrollIntoView({ block: `nearest`, behavior: `instant` })
+		}
+		if (!active && activeSub) {
+			activeSub.scrollIntoView({ block: `nearest`, behavior: `instant` })
+		}
+	})
 </script>
 
 <div class="main-menu__sidebar">
@@ -34,7 +48,7 @@
 		</DropdownMenu>
 	</div>
 
-	<div class="scrollable">
+	<div class="scrollable" bind:this={scrollable}>
 		{#each navData as section}
 			<nav>
 				{section.href}
@@ -42,7 +56,7 @@
 					<h3 class="title">{section.label}</h3>
 				{/if}
 				{#each section.children as item}
-					<SidebarMenuItem href={item.href} icon={item.icon} label={item.label} unread={0} children={item.children || []} />
+					<SidebarMenuItem href={item.href ?? undefined} icon={item.icon} label={item.label} unread={0} children={item.children || []} />
 				{/each}
 			</nav>
 			{#if section !== navData[navData.length - 1]}
@@ -152,6 +166,11 @@
 		text-decoration: none;
 		color: var(--muted-color);
 		margin-bottom: calc(var(--gutter) * 0.5);
+	}
+
+	.scrollable :global(.active),
+	.scrollable :global(.active-sub) {
+		scroll-margin: 50px;
 	}
 
 	.scrollable *:last-child {

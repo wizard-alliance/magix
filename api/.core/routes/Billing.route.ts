@@ -88,7 +88,7 @@ export class BillingRoute {
 				billing_email: authUser.email || null,
 			})
 			if (result && "id" in result) {
-				return await api.Billing.Customers.get({ id: result.id }) ?? result
+				return await api.Billing.Customers.get({ id: result.id ?? undefined }) ?? result
 			}
 			return result
 		}
