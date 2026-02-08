@@ -3,6 +3,8 @@ import { app } from '$lib/app'
 export const load = () => ({
 	slug: `account-settings-avatar`,
 	title: `Avatar`,
+	parent: `Settings`,
+	parents: [`Account`, `Settings`],
 	icon: `fa-light fa-image`,
 	description: `Change your profile picture.`,
 	sidebars: { 0: true, 1: true, 2: false },

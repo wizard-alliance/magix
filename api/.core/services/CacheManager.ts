@@ -71,4 +71,8 @@ export class CacheManager {
 	public clearAll(): void {
 		this.sessionCache.clear()
 	}
+
+	public size(): number {
+		return this.sessionCache.size
+	}
 }

@@ -1,5 +1,3 @@
-import type { NavigationLink } from './types'
-
 // Nav tree item (used in sidebar page-nav and global nav config)
 export type NavItem = {
 	slug: string
@@ -47,6 +45,8 @@ export type SidebarConfig = {
 export type PageLoadData = {
 	slug: string
 	title: string
+	parent?: string
+	parents?: string[]
 	icon: string
 	description: string
 	sidebars: SidebarConfig
@@ -59,6 +59,9 @@ export type PageLoadData = {
 export type PageMeta = {
 	slug: string
 	title: string
+	titleFull: string
+	parent: string
+	parents: string[]
 	icon: string
 	description: string
 	sidebars: SidebarConfig
@@ -72,6 +75,7 @@ export type AppMeta = {
 	tagline: string
 	description: string
 	version: string
+	titleSeparator: string
 	color: string
 	colorSecondary: string
 	logo: string
@@ -79,14 +83,6 @@ export type AppMeta = {
 	url: string
 	runtime: 'web' | 'electron'
 	apiBaseUrl: string
+	[key: string]: string | number | boolean
 }
 
-// Navigations sub-system
-export type NavigationsConfig = {
-	tree: NavItem[]
-	links: NavigationLink[]
-	userMenu: UserMenuConfig
-	get: (slug: string) => NavItem[] | null
-	list: () => NavigationLink[]
-	getMenu: (isLoggedIn: boolean) => DropdownItem[]
-}

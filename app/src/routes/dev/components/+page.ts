@@ -1,6 +1,8 @@
 export const load = () => ({
 	slug: `dev-components`,
 	title: `Components`,
+	parent: `Dev`,
+	parents: [`Dev`],
 	icon: `fa-light fa-puzzle-piece`,
 	description: `Component library and examples.`,
 	sidebars: { 0: true, 1: true, 2: false },

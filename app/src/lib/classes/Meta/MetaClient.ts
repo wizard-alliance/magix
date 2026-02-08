@@ -11,15 +11,17 @@ import {
 	PUBLIC_APP_VERSION,
 } from '$env/static/public'
 
-import { navigationData, getNavigationData } from '$configs/nav'
+import { Navigations } from './Navigations'
 
 import type { Writable } from 'svelte/store'
-import type { AppMeta, PageMeta, PageLoadData, NavigationsConfig, DropdownItem } from '$lib/types/meta'
-import type { NavigationLink } from '$lib/types/types'
+import type { AppMeta, PageMeta, PageLoadData } from '$lib/types/meta'
 
 const defaultPage: PageMeta = {
 	slug: ``,
 	title: `Loading...`,
+	titleFull: `Loading...`,
+	parent: ``,
+	parents: [],
 	icon: `fa-light fa-spinner`,
 	description: ``,
 	sidebars: { 0: true, 1: true, 2: false },
@@ -29,6 +31,13 @@ const defaultPage: PageMeta = {
 
 export class MetaClient {
 	private readonly prefix = `MetaClient`
+	private dbLoaded = false
+	ready: Promise<void> = Promise.resolve()
+
+	// Call once after RequestClient exists — starts DB fetch on client
+	init() {
+		if (browser) this.ready = this.loadFromDB()
+	}
 
 	// Static app-level branding + infra — immutable after init, SSR-safe
 	app: AppMeta = {
@@ -37,6 +46,7 @@ export class MetaClient {
 		description: PUBLIC_APP_DESCRIPTION || ``,
 		version: PUBLIC_APP_VERSION || `1.0.0`,
 		color: PUBLIC_APP_COLOR || `#813ece`,
+		titleSeparator: ` | `,
 		colorSecondary: ``,
 		logo: ``,
 		ogImage: ``,
@@ -47,70 +57,88 @@ export class MetaClient {
 			: `/api/v1`,
 	}
 
-	// Per-page meta — client-only writable store
+	// Per-page meta — writable store, always up to date
 	page: Writable<PageMeta> = writable({ ...defaultPage })
 
 	// Navigation sub-system
-	navigations: NavigationsConfig = {
-		tree: navigationData,
-		links: [
-			{ label: `Home`, href: `/home` },
-		] as NavigationLink[],
-		userMenu: {
-			loggedIn: [
-				{ label: `Profile`, href: `/account/profile` },
-				{ label: `Settings`, href: `/account/settings` },
-				{ label: `Logout`, href: `/auth/logout` },
-			],
-			loggedOut: [
-				{ label: `Login`, href: `/auth/login` },
-				{ label: `Register`, href: `/auth/register` },
-			],
-		},
-		get: (slug: string) => getNavigationData(slug),
-		list: () => this.navigations.links,
-		getMenu: (isLoggedIn: boolean) =>
-			isLoggedIn ? this.navigations.userMenu.loggedIn : this.navigations.userMenu.loggedOut,
-	}
-
-	// Computed full title: "AppName - PageTitle"
-	titleFull = (pageTitle?: string) => {
-		const current = get(this.page)
-		return `${this.app.name} - ${pageTitle || current.title || `Loading...`}`
-	}
+	navigations = new Navigations()
 
 	// Called by layout on every navigation — bridges SvelteKit $page.data → Meta store
+	// Layering: .env → page.ts → DB (if loaded)
 	setPage = (data: Partial<PageLoadData>) => {
 		if (!data || !data.slug) return
 
+		const title = data.title || `Loading...`
+		const parent = data.parent || ``
+		const parents = data.parents || []
+
 		const merged: PageMeta = {
-			slug: data.slug || ``,
-			title: data.title || `Loading...`,
+			slug: data.slug,
+			title,
+			titleFull: this.buildTitle(title, parent),
+			parent,
+			parents,
 			icon: data.icon || `fa-light fa-file`,
 			description: data.description || ``,
 			sidebars: data.sidebars || { 0: true, 1: true, 2: false },
 			nav: data.nav || null,
-			seo: data.seo || {},
+			seo: { ...data.seo },
 		}
 
 		this.page.set(merged)
 
-		// Apply sidebar config (UIManager must be instantiated before MetaClient)
-		if (browser && typeof app !== 'undefined' && app.UI?.applySidebarConfig) {
+		if (browser && typeof app !== `undefined` && app.UI?.applySidebarConfig) {
 			app.UI.applySidebarConfig(merged.sidebars)
 		}
 	}
 
-	// Future: overlay DB-fetched meta onto page store by slug
-	// async loadFromDB(slug: string) {
-	// 	const dbMeta = await app.System.Request.get(`/meta/${slug}`)
-	// 	if (dbMeta) this.setPage({ ...get(this.page), ...dbMeta })
-	// }
+	// Fetch all settings from DB → merge into app
+	// _ prefix = boolean, numeric strings = number, rest = string
+	async loadFromDB() {
+		if (this.dbLoaded === true) return
 
-	// Svelte store contract — allows $app.Meta.page syntax if needed
+		try {
+			const rows = await app.System.Request.get<{ key: string, value: string | null }[]>(`/settings`, { useAuth: false })
+			console.log(`${this.prefix}: loaded ${rows.length} settings from DB`, rows)
+			if (rows.length === 0) return
+			for (const { key: rawKey, value: rawValue } of rows) {
+				if (!rawKey) continue
+
+				// _ prefix → boolean, strip underscore
+				if (rawKey.startsWith(`_`)) {
+					this.app[rawKey.slice(1)] = rawValue === `1` || rawValue?.toLowerCase() === `true`
+					continue
+				}
+
+				this.app[rawKey] = this.coerceValue(rawValue)
+			}
+
+			this.dbLoaded = true
+		} catch (error) {
+			console.warn(`${this.prefix}: failed to load settings from DB`, error)
+		}
+	}
+
+	// Coerce a raw string value to number if numeric, otherwise string
+	private coerceValue(raw: string | null): string | number {
+		if (raw === null || raw === ``) return ``
+		const num = Number(raw)
+		return !isNaN(num) && raw.trim() !== `` ? num : raw
+	}
+
+	isDBLoaded = () => this.dbLoaded
+
+	// Svelte store contract
 	subscribe(run: (value: PageMeta) => void) {
 		return this.page.subscribe(run)
 	}
 
 	getPage = () => get(this.page)
+
+	// Build the full page title: [appName] [sep] [parent] / [title]
+	buildTitle = (title: string, parent?: string): string => {
+		const sep = this.app.titleSeparator
+		const prefix = parent ? `${parent} → ${title}` : title
+		return `${prefix}${sep}${this.app.name}`
+	}
 }

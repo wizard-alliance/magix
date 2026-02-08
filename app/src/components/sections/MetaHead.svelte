@@ -7,8 +7,9 @@
 	$: appUrl = app.Meta.app.url
 
 	// page-level meta (from page.ts load data — SSR-safe via $page.data)
+	$: parent = $page.data.parent || ``
 	$: pageTitle = $page.data.title || `Loading...`
-	$: fullTitle = `${appName} - ${pageTitle}`
+	$: fullTitle = app.Meta.buildTitle(pageTitle, parent)
 	$: description = $page.data.description || app.Meta.app.description || ``
 	$: seo = $page.data.seo || {}
 

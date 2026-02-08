@@ -42,7 +42,7 @@ declare global {
 
 		// Services
 		Router: import('../services/RouteService.ts').RouteController
-		Cache: import('../services/CacheManager.ts').CacheMethods
+		Cache: import('../services/CacheManager.ts').CacheManager
 		DB: import('../services/DatabaseClient.js').DatabaseClient
 		Mail: import('../services/MailService.js').MailService
 		Tickrate: import('../services/Tickrate.js').Tickrate

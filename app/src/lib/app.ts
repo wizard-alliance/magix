@@ -6,6 +6,7 @@ import { WebSocketClient } from "./classes/System/WebSocket"
 import { RequestClient } from "./classes/System/Request"
 import { AppLogger } from "./classes/System/AppLogger"
 import { AuthClient } from "./classes/Auth/AuthClient"
+import { CacheClient } from "./classes/Data/CacheClient"
 
 import { UserSettingsClient } from "./classes/Account/UserSettingsClient"
 import { AvatarClient } from "./classes/Account/AvatarClient"
@@ -25,12 +26,21 @@ export type AppClient = ReturnType<typeof createAppClient>
 
 export const createAppClient = () => ({
 
+	System: {
+		Request: {} as RequestClient,
+		WS: new WebSocketClient(),
+		Logger: {} as AppLogger,
+	},
+
+	Cache: {} as CacheClient,
+
 	Meta: new MetaClient(),
 
 	State: {} as AppState,
 
 	// Domain
 	Auth: {} as AuthClient,
+
 	Account: {
 		Settings: new UserSettingsClient(),
 		Avatar: new AvatarClient(),
@@ -43,13 +53,6 @@ export const createAppClient = () => ({
 	// UI — UIManager instance with sub-namespaces
 	UI: {} as UIManager & { Modal: Modal, Notify: Notify },
 
-	// System — infrastructure layer
-	System: {
-		Request: {} as RequestClient,
-		WS: new WebSocketClient(),
-		Logger: {} as AppLogger,
-		Health: new HealthClient(),
-	},
 
 	// Helpers
 	Helpers: {
@@ -84,6 +87,9 @@ app.State.UI = {
 
 // Phase 2 — deferred instances (depend on app existing at runtime via globalThis)
 app.System.Request = new RequestClient()
+app.Cache = new CacheClient()
+app.Cache.checkVersion()
+app.Meta.init()
 app.Auth = new AuthClient()
 
 const uiManager = new UIManager()

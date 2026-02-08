@@ -165,7 +165,8 @@ export class RouteController {
 	}
 
 	public return(raw: any, res: Response, req: Request, $?: $): ApiResponse {
-		const data = (typeof raw === "object" && raw !== null) ? { ...raw } : raw
+		const data = Array.isArray(raw) ? raw
+			: (typeof raw === "object" && raw !== null) ? { ...raw } : raw
 		const code = Number(data.code) || 200
 		const errorMessage = data.errorMessage || data.error || null
 		const error = code >= 400 ? true : (data.error ?? false)

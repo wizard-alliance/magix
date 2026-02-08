@@ -3,6 +3,8 @@ import { app } from '$lib/app'
 export const load = () => ({
 	slug: `account-security`,
 	title: `Security`,
+	parent: `Account`,
+	parents: [`Account`],
 	icon: `fa-light fa-shield`,
 	description: `Manage your account security and active sessions.`,
 	sidebars: { 0: true, 1: true, 2: false },

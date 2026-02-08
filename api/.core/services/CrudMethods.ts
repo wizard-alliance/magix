@@ -35,6 +35,7 @@ export class CrudMethods<Shape = any, DBRow = any> {
 	async create(tableName: string, params: Partial<DBRow> = {}): Promise<any> {
 		try {
 			const result = await this.DB.insertInto(tableName as any).values(params).executeTakeFirst()
+			api.Cache.clearAll()
 			return toBigIntSafe(result)
 		} catch (error: any) {
 			return { error }
@@ -46,6 +47,7 @@ export class CrudMethods<Shape = any, DBRow = any> {
 			let query = this.DB.updateTable(tableName as any).set(data)
 			query = api.Utils.applyWhere(query, where)
 			const result = await query.executeTakeFirst()
+			api.Cache.clearAll()
 			return toBigIntSafe(result)
 		} catch (error: any) {
 			return { error }
@@ -58,6 +60,7 @@ export class CrudMethods<Shape = any, DBRow = any> {
 			query = api.Utils.applyWhere(query, params)
 			const result = await query.executeTakeFirst()
 			const safe = toBigIntSafe(result)
+			api.Cache.clearAll()
 			return safe?.numDeletedRows < 1 ? null : safe
 		} catch (error: any) {
 			return { error }

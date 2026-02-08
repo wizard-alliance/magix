@@ -4,6 +4,8 @@ export const load = () => ({
 	slug: `account-profile`,
 	ID: null,
 	title: `Your profile`,
+	parent: `Account`,
+	parents: [`Account`],
 	icon: `fa-light fa-id-badge`,
 	description: `View and edit your personal profile information.`,
 

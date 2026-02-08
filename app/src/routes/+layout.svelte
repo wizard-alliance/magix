@@ -15,6 +15,7 @@
 	import Header from "$components/sections/Header.svelte"
 	import GlobalTooltip from "$components/modules/GlobalTooltip.svelte"
 	import MetaHead from "$components/sections/MetaHead.svelte"
+	import AppLoader from "$components/modules/AppLoader.svelte"
 
 	let userMenuItems: DropdownItem[] = []
 	let menuOpen = false
@@ -82,31 +83,38 @@
 	})
 </script>
 
-<MetaHead />
+{#await app.Meta.ready then}
+	<MetaHead />
+{/await}
 
 <div class="app" data-sidebar-0={attrSidebar0} data-sidebar-1={attrSidebar1} data-sidebar-2={attrSidebar2} data-notifications-open={attrNotifications} data-menu-open={attrMenu}>
 	<GlobalTooltip />
-	<Header />
 
-	<aside class="sidebar sidebar-0 scrollable-hidden">
-		<GlobalMenuSidebar />
-	</aside>
+	{#await app.Meta.ready}
+		<AppLoader />
+	{:then}
+		<Header />
 
-	<aside class="sidebar sidebar-1 scrollable-hidden">
-		<MainMenuSidebar />
-	</aside>
+		<aside class="sidebar sidebar-0 scrollable-hidden">
+			<GlobalMenuSidebar />
+		</aside>
 
-	<main class="main">
-		{#if $page.data.nav}
-			<PageNav nav={$page.data.nav} />
-		{/if}
+		<aside class="sidebar sidebar-1 scrollable-hidden">
+			<MainMenuSidebar />
+		</aside>
 
-		<div class="scrollable">
-			<slot />
-		</div>
-	</main>
+		<main class="main">
+			{#if $page.data.nav}
+				<PageNav nav={$page.data.nav} />
+			{/if}
 
-	<aside class="sidebar sidebar-2 scrollable">
-		<NotificationsSidebar />
-	</aside>
+			<div class="scrollable">
+				<slot />
+			</div>
+		</main>
+
+		<aside class="sidebar sidebar-2 scrollable">
+			<NotificationsSidebar />
+		</aside>
+	{/await}
 </div>
