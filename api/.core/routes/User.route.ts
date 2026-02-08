@@ -5,8 +5,7 @@ import { CrudMethods } from "../services/CrudMethods.js"
 import { User } from "../schema/DomainShapes.js"
 import { UserDBRow } from "../schema/Database.js"
 import multer from "multer"
-import { createHash } from "node:crypto"
-import { mkdir, writeFile, unlink } from "node:fs/promises"
+import { unlink } from "node:fs/promises"
 import path from "node:path"
 
 
@@ -235,29 +234,32 @@ export class AuthRoute {
 		const me = token ? await api.User.Repo.me(token) : null
 		if (!me || "error" in me) return me ?? { error: `Unauthorized`, code: 401 }
 
-		const hash = createHash(`md5`).update(file.buffer).digest(`hex`).slice(0, 8)
-		const ext = file.mimetype === `image/png` ? `png` : file.mimetype === `image/webp` ? `webp` : `jpg`
-		const relativePath = `users/avatars/profile/${hash}.${me.id}.${ext}`
-		const uploadsDir = api.Config(`UPLOAD_DIR`) || `uploads`
-		const fullDir = path.join(process.cwd(), uploadsDir, `users/avatars/profile`)
-		const fullPath = path.join(process.cwd(), uploadsDir, relativePath)
+		const record = await api.FileManager.upload(file.buffer, {
+			category: `avatar`,
+			userId: me.id,
+			mimetype: file.mimetype,
+		})
 
-		await mkdir(fullDir, { recursive: true })
-		await writeFile(fullPath, file.buffer)
-
-		// Delete old avatar if different path
+		// Clean up old avatar if path changed
 		const oldUrl = me.info.avatarUrl
-		if (oldUrl && oldUrl !== relativePath) {
-			const oldPath = path.join(process.cwd(), uploadsDir, oldUrl)
-			await unlink(oldPath).catch(() => null)
+		if (oldUrl && oldUrl !== record.variants.original.path) {
+			if (oldUrl.startsWith(`avatar/`)) {
+				// New schema — delete via FileManager
+				const oldFilename = oldUrl.split(`/`).pop()!
+				await api.FileManager.delete(`avatar`, oldFilename)
+			} else {
+				// Transitional: handles legacy paths (users/avatars/profile/...)
+				const uploadsDir = api.Config(`FS_UPLOAD_DIR`) || `uploads`
+				await unlink(path.join(process.cwd(), uploadsDir, oldUrl)).catch(() => null)
+			}
 		}
 
 		await api.DB.connection.updateTable(`users`)
-			.set({ avatar_url: relativePath } as any)
+			.set({ avatar_url: record.variants.original.path } as any)
 			.where(`id`, `=`, me.id)
 			.execute()
 
-		return { success: true, avatarUrl: relativePath }
+		return { success: true, ...record }
 	}
 
 	deleteAvatar = async ($: $, req: Request, res: Response) => {
@@ -268,9 +270,14 @@ export class AuthRoute {
 
 		const avatarUrl = me.info.avatarUrl
 		if (avatarUrl) {
-			const uploadsDir = api.Config(`UPLOAD_DIR`) || `uploads`
-			const fullPath = path.join(process.cwd(), uploadsDir, avatarUrl)
-			await unlink(fullPath).catch(() => null)
+			if (avatarUrl.startsWith(`avatar/`)) {
+				const filename = avatarUrl.split(`/`).pop()!
+				await api.FileManager.delete(`avatar`, filename)
+			} else {
+				// Transitional: handles legacy paths
+				const uploadsDir = api.Config(`FS_UPLOAD_DIR`) || `uploads`
+				await unlink(path.join(process.cwd(), uploadsDir, avatarUrl)).catch(() => null)
+			}
 		}
 
 		await api.DB.connection.updateTable(`users`)

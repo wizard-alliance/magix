@@ -53,6 +53,7 @@ export type UserDBRow = {
 	company?: string | null
 	address?: string | null
 	avatarUrl?: string | null
+	avatar?: any | null
 	activated: boolean
 	disabled: boolean
 	created: string | null

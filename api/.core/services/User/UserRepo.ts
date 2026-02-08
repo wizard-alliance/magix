@@ -75,6 +75,18 @@ export class UserRepo {
 			})),
 		}))
 
+		// Resolve avatar file record if avatar exists
+		let avatar = null
+		if (user.avatar_url) {
+			try {
+				const filename = user.avatar_url.split(`/`).pop()!
+				const category = user.avatar_url.startsWith(`avatar/`) ? `avatar` : null
+				if (category) {
+					avatar = await api.FileManager.getFile(category, filename)
+				}
+			} catch { /* file missing on disk — leave null */ }
+		}
+
 		return {
 			id: user.id,
 			info: {
@@ -87,6 +99,7 @@ export class UserRepo {
 				company: user.company ?? null,
 				address: user.address ?? null,
 				avatarUrl: user.avatar_url ?? null,
+				avatar,
 				activated: Boolean(user.activated),
 				disabled: Boolean(user.disabled),
 				deletedAt: user.deleted_at ?? null,

@@ -112,8 +112,8 @@ export class AppServer {
 		api.Express.use(api.$Express.urlencoded({ extended: true }))
 
 		// Enable uploads directory serving
-		const uploadsDir = path.join(process.cwd(), (api.Config('UPLOAD_DIR') || '/uploads'))
-		api.Express.use(`/static/${api.Config('UPLOAD_DIR')}`, api.$Express.static(uploadsDir))
+		const uploadsDir = path.join(process.cwd(), (api.Config('FS_UPLOAD_DIR') || '/uploads'))
+		api.Express.use(`/static/${api.Config('FS_UPLOAD_DIR')}`, api.$Express.static(uploadsDir))
 
 		// request logging (pre-route)
 		api.Express.use((req, res, next) => {

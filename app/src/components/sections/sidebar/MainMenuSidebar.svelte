@@ -15,7 +15,9 @@
 	$: isLoggedIn = !!$currentUser
 	$: userInfo = $currentUser && "info" in $currentUser ? $currentUser.info : $currentUser
 	$: nickname = userInfo?.firstName || userInfo?.username || "Login"
-	$: avatarSrc = userInfo?.avatarUrl ? (app.Account.Avatar.url(userInfo.avatarUrl) ?? "") : ""
+	$: avatarResolved = userInfo?.avatar ? app.Account.Avatar.resolve(userInfo.avatar, 32) : null
+	$: avatarSrc = avatarResolved?.src || (userInfo?.avatarUrl ? (app.Account.Avatar.url(userInfo.avatarUrl) ?? "") : "")
+	$: avatarSrcset = avatarResolved?.srcset || ""
 
 	onMount(async () => {
 		await tick()
@@ -33,7 +35,7 @@
 <div class="main-menu__sidebar">
 	<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
 	<div class="account" class:open={accountMenuOpen} bind:this={accountTrigger} on:click={toggleAccountMenu}>
-		<Avatar name={nickname} src={avatarSrc || ""} size="sm" />
+		<Avatar name={nickname} src={avatarSrc || ""} srcset={avatarSrcset} size="sm" />
 		<div class="name">{nickname}</div>
 		<i class="indicator fa-light fa-angle-down"></i>
 		<DropdownMenu bind:open={accountMenuOpen} bind:toggle={toggleAccountMenu} triggerRef={accountTrigger} position="top">

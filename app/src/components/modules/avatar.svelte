@@ -1,10 +1,13 @@
 <script lang="ts">
 	export let name: string = ""
 	export let src: string = ""
+	export let srcset: string = ""
 	export let size: "xsm" | "sm" | "md" | "128" | "256" | "lg" = "md"
 	export let href: string = ""
 	export let tip: string = ""
 	export let tipPos: "top" | "right" | "bottom" | "left" = "top"
+
+	const sizeMap: Record<string, string> = { xsm: "24", sm: "32", md: "48", lg: "64", "128": "128", "256": "256" }
 
 	$: initials = name
 		.split(" ")
@@ -13,11 +16,13 @@
 		.slice(0, 2)
 		.join("")
 		.toUpperCase()
+
+	$: sizePx = sizeMap[size] || "48"
 </script>
 
 {#snippet avatarContent()}
 	{#if src}
-		<img class="avatar-content" {src} alt={name} />
+		<img class="avatar-content" {src} srcset={srcset || undefined} sizes={srcset ? `${sizePx}px` : undefined} alt={name} />
 	{:else if initials}
 		<span class="avatar-content">{initials}</span>
 	{/if}

@@ -81,7 +81,7 @@ export class DatabaseClient {
 
 	get connection(): Kysely<DatabaseSchema> {
 		if (!this.isConfigured()) {
-			throw api.Error("Database connection is not configured", "DatabaseClient")
+			throw api.Error("watDatabase connection is not configured", "DatabaseClient")
 		}
 
 		if (!this.instance) {

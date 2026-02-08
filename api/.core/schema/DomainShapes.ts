@@ -21,6 +21,7 @@ export type User = {
 	company?: string | null
 	address?: string | null
 	avatarUrl?: string | null
+	avatar?: import('../services/FileManager.js').FileRecord | null
 	password?: string
 	activated: boolean
 	disabled: boolean

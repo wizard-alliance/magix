@@ -11,6 +11,7 @@
 	let fullName = ""
 	let username = ""
 	let avatarUrl = ""
+	let avatarSrcset = ""
 	let selectedFile: File | null = null
 	let previewUrl = ""
 
@@ -20,7 +21,15 @@
 		if (info) {
 			fullName = [info.firstName, info.lastName].filter(Boolean).join(" ")
 			username = info.username || ""
-			if (info.avatarUrl) avatarUrl = app.Account.Avatar.url(info.avatarUrl) as string
+			if (info.avatar) {
+				const resolved = app.Account.Avatar.resolve(info.avatar, 128)
+				if (resolved) {
+					avatarUrl = resolved.src
+					avatarSrcset = resolved.srcset
+				}
+			} else if (info.avatarUrl) {
+				avatarUrl = app.Account.Avatar.url(info.avatarUrl) as string
+			}
 		}
 		loading = false
 	})
@@ -39,7 +48,16 @@
 		try {
 			await app.Account.Avatar.upload(selectedFile)
 			const data = await app.Auth.me(true)
-			if (data?.info?.avatarUrl) avatarUrl = app.Account.Avatar.url(data.info.avatarUrl) as string
+			if (data?.info?.avatar) {
+				const resolved = app.Account.Avatar.resolve(data.info.avatar, 128)
+				if (resolved) {
+					avatarUrl = resolved.src
+					avatarSrcset = resolved.srcset
+				}
+			} else if (data?.info?.avatarUrl) {
+				avatarUrl = app.Account.Avatar.url(data.info.avatarUrl) as string
+				avatarSrcset = ""
+			}
 			selectedFile = null
 			previewUrl = ""
 			app.UI.Notify.success("Avatar updated")
@@ -54,6 +72,7 @@
 		try {
 			await app.Account.Avatar.remove()
 			avatarUrl = ""
+			avatarSrcset = ""
 			app.UI.Notify.success("Avatar removed")
 		} catch (err) {
 			app.UI.Notify.error(`Failed to remove avatar: ${(err as Error).message}`)
@@ -79,7 +98,7 @@
 						{#if previewUrl}
 							<img src={previewUrl} alt="Preview" class="preview-img" />
 						{:else if avatarUrl}
-							<img src={avatarUrl} alt="Avatar" class="preview-img" />
+							<img src={avatarUrl} srcset={avatarSrcset || undefined} sizes="128px" alt="Avatar" class="preview-img" />
 						{:else}
 							<Avatar name={fullName || username} size="lg" />
 						{/if}

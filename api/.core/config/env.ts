@@ -1,4 +1,5 @@
 import "dotenv/config"
+import { normalize } from "path"
 
 const resolvedApiBaseUrl = process.env.API_BASE_URL && process.env.API_BASE_URL.length > 0
 	? process.env.API_BASE_URL
@@ -31,7 +32,9 @@ const envDefaults: Record<string, string | number | boolean> = {
 	SMTP_PASSWORD: "",
 	SMTP_SECURE: false,
 
-	UPLOAD_DIR: "uploads",
+	FS_UPLOAD_DIR: "uploads",
+	FS_IMAGE_SIZES: "128,256,1024,1400",
+	FS_BLOCKED_EXTENSIONS: "exe,bat,cmd,sh,msi,dll,com,scr,ps1,vbs,wsf,jar,app,action,csh,inf,reg,lnk,pif,hta",
 	BCRYPT_ROUNDS: 12,
 
 	JWT_SECRET: "change-me",
@@ -63,8 +66,24 @@ export const env = {
 	...process.env,
 }
 
-export const Config = (key: string): string => {
+export const Config = (key: string = ''): string | Record<string, unknown> => {
 	const normalizedKey = key.toUpperCase().trim()
+
+	if(normalizedKey === "") {
+		return env as Record<string, unknown>
+	}
+
+	// Get record from partial match with *
+	if (normalizedKey.includes("*")) {
+		const regex = new RegExp(`^${normalizedKey.replace(/\*/g, ".*")}$`)
+		const matchedKeys = Object.keys(env).filter(k => regex.test(k))
+		const result: Record<string, string> = {}
+		matchedKeys.forEach(k => {
+			result[k] = env[k] as string
+		})
+		return result
+	}
+
 	const envValue = env[normalizedKey]
 
 	if (envValue === undefined) {
