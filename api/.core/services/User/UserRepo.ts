@@ -123,11 +123,11 @@ export class UserRepo {
 		
 		if (options?.limit) query = query.limit(options.limit)
 		if (options?.offset) query = query.offset(options.offset)
-		const results = query.execute() as any
+		const results = await query.execute()
 
 		// Loop through IDs and get full user data
 		const users: UserFull[] = []
-		for await (const row of results) {
+		for (const row of results) {
 			const user = await this.get(row.id)
 			if (user) users.push(user)
 		}

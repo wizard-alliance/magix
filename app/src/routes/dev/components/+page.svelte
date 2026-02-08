@@ -18,6 +18,7 @@
 	import Spinner from "$components/modules/spinner.svelte"
 	import ProgressBar from "$components/modules/progressBar.svelte"
 	import Table from "$components/modules/table.svelte"
+	import AdvancedTable from "$components/modules/AdvancedTable.svelte"
 	import Pagination from "$components/modules/pagination.svelte"
 	import ContextMenu from "$components/modules/contextMenu.svelte"
 	import DropdownMenu from "$components/modules/DropdownMenu.svelte"
@@ -358,6 +359,18 @@
 				rows={[
 					{ name: "Alice", email: "alice@example.com", role: "Admin" },
 					{ name: "Bob", email: "bob@example.com", role: "User" },
+				]}
+			/>
+		</div>
+	</section>
+
+	<section>
+		<h2>Advanced Table</h2>
+		<div class="demo" style="width:100%">
+			<AdvancedTable
+				rows={[
+					{ id: 1, username: "alice", firstName: "Alice", lastName: "Smith", email: "alice@example.com" },
+					{ id: 2, username: "bob", firstName: "Bob", lastName: "Jones", email: "bob@example.com" },
 				]}
 			/>
 		</div>

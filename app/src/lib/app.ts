@@ -13,6 +13,7 @@ import { AvatarClient } from "./classes/Account/AvatarClient"
 import { BillingClient } from "./classes/Account/BillingClient"
 
 import { SettingsResource } from "./classes/Admin/SettingsResource"
+import { UsersResource } from "./classes/Admin/UsersResource"
 
 import { Log, ErrorLog, SuccessLog, WarningLog } from "./classes/System/Log"
 import { Reactive } from "./classes/Helpers/Reactive"
@@ -51,6 +52,7 @@ export const createAppClient = () => ({
 
 	Admin: {
 		Settings: new SettingsResource(),
+		Users: new UsersResource(),
 	},
 
 	// Events (cross-domain bus — used by UI, System, and components)
