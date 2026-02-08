@@ -8,6 +8,8 @@ const COOKIE_OPTS = `path=/; SameSite=Strict${IS_SECURE ? '; Secure' : ''}`
 const isBrowser = typeof document !== 'undefined'
 
 export class AuthClient {
+	ready: Promise<void> = Promise.resolve()
+
 	private keys = {
 		access: 'auth_access_token',
 		refresh: 'auth_refresh_token',
@@ -141,7 +143,10 @@ export class AuthClient {
 
 		if (!force) {
 			const cached = app.Cache.get<UserFull>('auth:me')
-			if (cached) return cached
+			if (cached) {
+				this.updateUser(cached)
+				return cached
+			}
 		}
 
 		try {
@@ -289,9 +294,9 @@ export class AuthClient {
 	 */
 	restore() {
 		if (this.getAccessToken()) {
-			this.me().catch(() => null)
+			this.ready = this.me().then(() => {}).catch(() => {})
 		} else if (this.getRefreshToken()) {
-			this.refresh().catch(() => null)
+			this.ready = this.refresh().then(() => {}).catch(() => {})
 		}
 	}
 

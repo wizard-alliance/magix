@@ -19,8 +19,10 @@
 
 	let userMenuItems: DropdownItem[] = []
 	let menuOpen = false
-	let currentUser: any = null
 	let prevRouteClass = ""
+
+	const currentUserStore = app.State.currentUser
+	$: currentUser = $currentUserStore
 	let sidebar1: any = null
 	let sidebar2: any = null
 
@@ -66,13 +68,6 @@
 	})
 
 	onMount(() => {
-		// Subscribe to currentUser state
-		if (app.State.currentUser?.subscribe) {
-			app.State.currentUser.subscribe((user: any) => {
-				currentUser = user
-			})
-		}
-
 		// Close menu on outside click
 		const handleUserMenuClick = (e: MouseEvent) => {
 			const target = e.target as HTMLElement
@@ -83,14 +78,14 @@
 	})
 </script>
 
-{#await app.Meta.ready then}
+{#await Promise.all([app.Meta.ready, app.Auth.ready]) then}
 	<MetaHead />
 {/await}
 
 <div class="app" data-sidebar-0={attrSidebar0} data-sidebar-1={attrSidebar1} data-sidebar-2={attrSidebar2} data-notifications-open={attrNotifications} data-menu-open={attrMenu}>
 	<GlobalTooltip />
 
-	{#await app.Meta.ready}
+	{#await Promise.all([app.Meta.ready, app.Auth.ready])}
 		<AppLoader />
 	{:then}
 		<Header />

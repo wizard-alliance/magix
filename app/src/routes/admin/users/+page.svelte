@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { app } from "$lib/app"
+	import { goto } from "$app/navigation"
 	import { onMount, onDestroy } from "svelte"
 	import type { UserFull, UserDBRow } from "$lib/types/types"
 	import Spinner from "$components/modules/spinner.svelte"
@@ -116,7 +117,7 @@
 
 	const handleAction = (e: CustomEvent<{ event: string; row: Record<string, any>; index: number }>) => {
 		const { event, row } = e.detail
-		if (event === `edit`) app.UI.Notify.info(`Edit user ${row.Name || row.ID}`)
+		if (event === `edit`) goto(`/admin/users/${row.ID}`)
 		if (event === `view`) app.UI.Notify.info(`View user ${row.Name || row.ID}`)
 		if (event === `delete`) app.UI.Notify.warning(`Delete user ${row.Name || row.ID}`)
 	}
