@@ -27,7 +27,7 @@ export class AvatarClient {
 	 */
 	url(relativePath: string | null | undefined): string | null {
 		if (!relativePath) return null
-		const base = app.Config.apiBaseUrl.replace(/\/api\/v\d+\/?$/, '')
+		const base = app.Meta.app.apiBaseUrl.replace(/\/api\/v\d+\/?$/, '')
 		return `${base}/static/uploads/${relativePath}`
 	}
 
@@ -38,7 +38,7 @@ export class AvatarClient {
 	resolve(avatar: any, size?: number): { src: string, srcset: string } | null {
 		if (!avatar || !avatar.variants) return null
 
-		const base = app.Config.apiBaseUrl.replace(/\/api\/v\d+\/?$/, '')
+		const base = app.Meta.app.apiBaseUrl.replace(/\/api\/v\d+\/?$/, '')
 		const prefix = (url: string) => `${base}${url}`
 
 		const pick = size ? (avatar.variants[String(size)] ?? avatar.variants.original) : avatar.variants.original

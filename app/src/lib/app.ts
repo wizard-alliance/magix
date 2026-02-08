@@ -1,8 +1,7 @@
 import * as store from 'svelte/store'
 
 import { HealthClient } from "./classes/Misc/HealthClient"
-import { SettingsClient } from "./classes/Misc/SettingsClient"
-import { NavigationRegistry } from "./classes/Misc/NavigationRegistry"
+import { MetaClient } from "./classes/Meta/MetaClient"
 import { WebSocketClient } from "./classes/System/WebSocket"
 import { RequestClient } from "./classes/System/Request"
 import { AppLogger } from "./classes/System/AppLogger"
@@ -20,27 +19,13 @@ import { Modal } from "./classes/UI/Modal"
 
 import { EventManager } from "./classes/Events/EventManager"
 
-import { PUBLIC_APP_TARGET } from '$env/static/public'
-
 import type { AppState } from './types/types'
-
-type AppRuntime = 'web' | 'electron'
-const runtime: AppRuntime = PUBLIC_APP_TARGET === 'electron' ? 'electron' : 'web'
 
 export type AppClient = ReturnType<typeof createAppClient>
 
 export const createAppClient = () => ({
 
-	Config: {
-		name: `App`,
-		tagline: `Framework: Front-end app`,
-		pageTitle: `Loading...`,
-		pageTitleFull: (pageTitle?: string) => `${app.Config.name} - ${pageTitle || app.Config.pageTitle}`,
-		runtime,
-		apiBaseUrl: runtime !== 'electron' ? 'http://localhost:4000/api/v1' : '/api/v1',
-	},
-
-	Settings: new SettingsClient(),
+	Meta: new MetaClient(),
 
 	State: {} as AppState,
 
@@ -56,7 +41,7 @@ export const createAppClient = () => ({
 	Events: new EventManager(),
 
 	// UI — UIManager instance with sub-namespaces
-	UI: {} as UIManager & { Modal: Modal, Notify: Notify, Navigation: NavigationRegistry },
+	UI: {} as UIManager & { Modal: Modal, Notify: Notify },
 
 	// System — infrastructure layer
 	System: {
@@ -104,8 +89,7 @@ app.Auth = new AuthClient()
 const uiManager = new UIManager()
 ;(uiManager as any).Modal = new Modal()
 ;(uiManager as any).Notify = new Notify()
-;(uiManager as any).Navigation = new NavigationRegistry()
-app.UI = uiManager as UIManager & { Modal: Modal, Notify: Notify, Navigation: NavigationRegistry }
+app.UI = uiManager as UIManager & { Modal: Modal, Notify: Notify }
 
 app.System.Logger = new AppLogger({ ws: app.System.WS, events: app.Events })
 

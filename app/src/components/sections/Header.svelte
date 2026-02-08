@@ -2,9 +2,8 @@
 	import { page } from "$app/stores"
 	import Breadcrumbs from "$components/modules/breadcrumbs.svelte"
 
-	$: title = app.Config.pageTitleFull()
-	$: pageTitle = $page.data.title || app.Config.pageTitle || "Loading..."
-	$: pageIcon = $page.data.icon || "fa-solid fa-file"
+	$: pageTitle = $page.data.title || `Loading...`
+	$: pageIcon = $page.data.icon || `fa-solid fa-file`
 	$: segments = $page.url.pathname.split(`/`).filter(Boolean)
 	$: breadcrumbs = segments.map((seg, i) => ({
 		href: `/${segments.slice(0, i + 1).join(`/`)}`,
@@ -14,7 +13,7 @@
 
 <header>
 	<div class="left-header">
-		<a class="logo" href="/" aria-label={app.Config.name}>{app.Config.name}</a>
+		<a class="logo" href="/" aria-label={app.Meta.app.name}>{app.Meta.app.name}</a>
 	</div>
 	<div class="right-header">
 		<div class="row middle-xs height-100p">

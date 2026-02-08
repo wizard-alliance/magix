@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { app } from "$lib/app"
-	import { onMount } from "svelte"
 	import Input from "$components/fields/input.svelte"
 	import Checkbox from "$components/fields/checkbox.svelte"
 	import Button from "$components/fields/button.svelte"
@@ -18,10 +17,6 @@
 	}
 	let loading = false
 	let submitted = false
-
-	onMount(() => {
-		app.Config.pageTitle = "Register"
-	})
 
 	const submit = async () => {
 		if (form.password !== form.confirmPassword) {

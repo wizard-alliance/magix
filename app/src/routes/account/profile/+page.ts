@@ -1,17 +1,18 @@
-import { getNavigationData } from "$configs/nav"
+import { app } from '$lib/app'
 
 export const load = () => ({
+	slug: `account-profile`,
 	ID: null,
-	title: "Your profile",
-	icon: "fa-light fa-id-badge",
-	description: "View and edit your personal profile information.",
+	title: `Your profile`,
+	icon: `fa-light fa-id-badge`,
+	description: `View and edit your personal profile information.`,
 
     sidebars: { 0: true, 1: true, 2: false },
-	nav: getNavigationData("account/settings"),
+	nav: app.Meta.navigations.get(`account/settings`),
 
 	seo: {
-        canonical: "/account/profile",
+        canonical: `/account/profile`,
         noindex: false,
-        ogImage: "/images/og-profile.png",
+        ogImage: `/images/og-profile.png`,
     }
 })

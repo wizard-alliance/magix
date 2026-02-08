@@ -6,7 +6,7 @@
 	import { page } from "$app/stores"
 	import { beforeNavigate, onNavigate } from "$app/navigation"
 
-	import type { DropdownItem } from "$lib/classes/Misc/NavigationRegistry"
+	import type { DropdownItem } from "$lib/types/meta"
 
 	import MainMenuSidebar from "$components/sections/sidebar/MainMenuSidebar.svelte"
 	import GlobalMenuSidebar from "$components/sections/sidebar/GlobalMenuSidebar.svelte"
@@ -14,6 +14,7 @@
 	import PageNav from "$components/sections/PageNav.svelte"
 	import Header from "$components/sections/Header.svelte"
 	import GlobalTooltip from "$components/modules/GlobalTooltip.svelte"
+	import MetaHead from "$components/sections/MetaHead.svelte"
 
 	let userMenuItems: DropdownItem[] = []
 	let menuOpen = false
@@ -29,19 +30,14 @@
 	const notificationsOpen = app.State.UI.notificationsOpen
 	const menuOpenStore = app.State.UI.menuOpen
 
-	$: title = app.Config.pageTitleFull()
-	$: pageTitle = app.Config.pageTitle || "Loading..."
+	// Bridge SvelteKit page data → app.Meta on every navigation
+	$: if ($page.data.slug) app.Meta.setPage($page.data)
 
 	$: routeClass = `page-${$page.url.pathname.split(`/`).filter(Boolean).join(`-`) || `home`}`
 	$: if (typeof document !== `undefined`) {
 		if (prevRouteClass) document.documentElement.classList.remove(prevRouteClass)
 		document.documentElement.classList.add(routeClass)
 		prevRouteClass = routeClass
-	}
-
-	// Apply sidebar config from page load data (flash-free, runs during SSR)
-	$: if ($page.data.sidebars !== undefined) {
-		app.UI.applySidebarConfig($page.data.sidebars)
 	}
 
 	// Derive attribute values from stores (used in template bindings)
@@ -52,7 +48,7 @@
 	$: attrMenu = $menuOpenStore ? `true` : `false`
 
 	$: isLoggedIn = !!currentUser
-	$: userMenuItems = app.UI.Navigation.getMenu(isLoggedIn)
+	$: userMenuItems = app.Meta.navigations.getMenu(isLoggedIn)
 
 	beforeNavigate(({ from, to }) => {
 		if (from?.url.pathname === to?.url.pathname) return
@@ -86,9 +82,7 @@
 	})
 </script>
 
-<svelte:head>
-	<title>{title}</title>
-</svelte:head>
+<MetaHead />
 
 <div class="app" data-sidebar-0={attrSidebar0} data-sidebar-1={attrSidebar1} data-sidebar-2={attrSidebar2} data-notifications-open={attrNotifications} data-menu-open={attrMenu}>
 	<GlobalTooltip />

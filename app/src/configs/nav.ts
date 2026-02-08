@@ -1,14 +1,4 @@
-type NavItem = {
-	slug: string
-	label: string
-	href: string | null
-	target: string
-	icon: string
-	permissions: string[]
-	classes: string
-	align: string | null
-	children?: NavItem[]
-}
+import type { NavItem } from '$lib/types/meta'
 
 // allow ie. app/overview to return the "overview" nav item, or app/overview/stats to also return the same item, but not app/news which should return null
 export const getNavigationData = (slug = "") => {

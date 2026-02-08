@@ -12,7 +12,6 @@
 	let loading = false
 
 	onMount(() => {
-		app.Config.pageTitle = "Login"
 		verifyVendorLogin()
 
 		handleErrors()

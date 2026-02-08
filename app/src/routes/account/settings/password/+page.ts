@@ -1,13 +1,14 @@
-import { getNavigationData } from "$configs/nav"
+import { app } from '$lib/app'
 
 export const load = () => ({
-	title: "Change Password",
-	icon: "fa-light fa-key",
-	description: "Update your account password.",
+	slug: `account-settings-password`,
+	title: `Change Password`,
+	icon: `fa-light fa-key`,
+	description: `Update your account password.`,
 	sidebars: { 0: true, 1: true, 2: false },
-	nav: getNavigationData("account/settings"),
+	nav: app.Meta.navigations.get(`account/settings`),
 	seo: {
-		canonical: "/account/settings/password",
+		canonical: `/account/settings/password`,
 		noindex: true,
 	}
 })

@@ -234,7 +234,7 @@ export class AuthClient {
 	 * Get vendor OAuth redirect URL
 	 */
 	getVendorRedirectUrl(vendor: string, returnUrl?: string) {
-		const base = `${app.Config.apiBaseUrl}/account/auth/vendor/${vendor}/redirect`
+		const base = `${app.Meta.app.apiBaseUrl}/account/auth/vendor/${vendor}/redirect`
 		return returnUrl ? `${base}?returnUrl=${encodeURIComponent(returnUrl)}` : base
 	}
 

@@ -6,7 +6,7 @@
 <div class="global-menu__sidebar">
 	<div class="top">
 		<div class="scrollable padding-top-2">
-			<Avatar name={app.Config.name} data-tip-icon="fa-circle-info" data-tip-pos="right" data-tip="Go to project: 0" size="md" />
+			<Avatar name={app.Meta.app.name} data-tip-icon="fa-circle-info" data-tip-pos="right" data-tip="Go to project: 0" size="md" />
 			<Avatar name="b" data-tip-icon="fa-circle-info" data-tip-pos="right" data-tip="Go to project: 1" size="md" />
 			<Avatar name="c" data-tip-icon="fa-circle-info" data-tip-pos="right" data-tip="Go to project: 2" size="md" />
 			<Avatar name="d" href="#" data-tip-icon="fa-circle-info" data-tip-pos="right" data-tip="Go to project: 3" size="md" />

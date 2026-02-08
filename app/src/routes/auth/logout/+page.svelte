@@ -5,7 +5,6 @@
 	import Spinner from "$components/modules/spinner.svelte"
 
 	onMount(async () => {
-		app.Config.pageTitle = "Logout"
 		await app.Auth.logout()
 		goto("/auth/login")
 	})

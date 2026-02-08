@@ -1,13 +1,14 @@
-import { getNavigationData } from "$configs/nav"
+import { app } from '$lib/app'
 
 export const load = () => ({
-	title: "Account Details",
-	icon: "fa-light fa-file-signature",
-	description: "Edit your personal information.",
+	slug: `account-settings-details`,
+	title: `Account Details`,
+	icon: `fa-light fa-file-signature`,
+	description: `Edit your personal information.`,
 	sidebars: { 0: true, 1: true, 2: false },
-	nav: getNavigationData("account/settings"),
+	nav: app.Meta.navigations.get(`account/settings`),
 	seo: {
-		canonical: "/account/settings/details",
+		canonical: `/account/settings/details`,
 		noindex: true,
 	}
 })
