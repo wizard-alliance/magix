@@ -4,18 +4,24 @@
 	export let checked = false
 	export let label: string = ""
 	export let disabled = false
+	export let labelPosition: "left" | "right" | "top" | "bottom" = "right"
 
 	if (!id) {
 		id = `toggle-${Math.random().toString(36).substring(2, 15)}`
 	}
 </script>
 
-<label class="toggle" class:disabled for={id}>
+<label class="toggle pos-{labelPosition}" class:disabled for={id}>
+	{#if label && (labelPosition === "top" || labelPosition === "left")}
+		<span class="toggle-label">{label}</span>
+	{/if}
 	<input {id} {name} type="checkbox" bind:checked {disabled} value="true" />
 	<span class="track">
 		<span class="thumb"></span>
 	</span>
-	{#if label}<span class="toggle-label">{label}</span>{/if}
+	{#if label && (labelPosition === "bottom" || labelPosition === "right")}
+		<span class="toggle-label">{label}</span>
+	{/if}
 </label>
 
 <style>
@@ -25,6 +31,20 @@
 		gap: calc(var(--gutter) * 1);
 		cursor: pointer;
 		user-select: none;
+
+		&.pos-top,
+		&.pos-bottom {
+			flex-direction: column;
+			align-items: flex-start;
+		}
+
+		&.pos-top {
+			flex-direction: column;
+		}
+
+		&.pos-bottom {
+			flex-direction: column-reverse;
+		}
 
 		&.disabled {
 			opacity: 0.5;

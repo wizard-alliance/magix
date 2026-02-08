@@ -9,7 +9,7 @@
 		change: { items: any[] }
 	}>()
 
-	export let title = "Repeater"
+	export let title = ""
 	export let items: any[] = []
 	export let addLabel = "Add row"
 	export let emptyLabel = "No entries yet"
@@ -96,17 +96,16 @@
 </script>
 
 <div class="rpt">
-	<div class="rpt-top">
-		<div class="rpt-title">
-			<span>{title}</span>
-			{#if maxRows !== null}
-				<span class="rpt-count">{items.length}/{maxRows}</span>
-			{/if}
+	{#if title}
+		<div class="rpt-top">
+			<div class="rpt-title">
+				<span>{title}</span>
+				{#if maxRows !== null}
+					<span class="rpt-count">{items.length}/{maxRows}</span>
+				{/if}
+			</div>
 		</div>
-		<Button variant="secondary" size="sm" disabled={atLimit} on:click={addRow}>
-			<i class="fa-light fa-plus"></i> <span>{addLabel}</span>
-		</Button>
-	</div>
+	{/if}
 
 	{#if !items.length}
 		<div class="rpt-empty">{emptyLabel}</div>
@@ -127,7 +126,7 @@
 					<i class="rpt-chevron fa-light fa-chevron-right" class:is-open={expanded}></i>
 				{/if}
 				<span class="rpt-label">
-					{#if getRowLabel}{getRowLabel(item, index)}{:else}#{index + 1}{/if}
+					{#if getRowLabel}{@html getRowLabel(item, index)}{:else}#{index + 1}{/if}
 				</span>
 				<div class="rpt-actions">
 					<button type="button" title="Duplicate" disabled={atLimit} on:click|stopPropagation={() => duplicateRow(index)}>
@@ -149,6 +148,15 @@
 			{/if}
 		</div>
 	{/each}
+
+	<div class="rpt-bottom">
+		{#if maxRows !== null && title}
+			<span class="rpt-count">{items.length}/{maxRows}</span>
+		{/if}
+		<Button variant="secondary" size="sm" disabled={atLimit} on:click={addRow}>
+			<i class="fa-light fa-plus"></i> <span>{addLabel}</span>
+		</Button>
+	</div>
 </div>
 
 <style lang="scss">
@@ -163,6 +171,13 @@
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
+	}
+
+	.rpt-bottom {
+		display: flex;
+		align-items: center;
+		justify-content: flex-end;
+		gap: calc(var(--gutter) * 1);
 	}
 
 	.rpt-title {
@@ -260,5 +275,6 @@
 	.rpt-body {
 		padding: calc(var(--gutter) * 1.5);
 		border-top: var(--border);
+		gap: calc(var(--gutter) * 1);
 	}
 </style>

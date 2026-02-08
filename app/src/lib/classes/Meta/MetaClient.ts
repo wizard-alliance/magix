@@ -99,7 +99,7 @@ export class MetaClient {
 
 		try {
 			const rows = await app.System.Request.get<{ key: string, value: string | null }[]>(`/settings`, { useAuth: false })
-			console.log(`${this.prefix}: loaded ${rows.length} settings from DB`, rows)
+
 			if (rows.length === 0) return
 			for (const { key: rawKey, value: rawValue } of rows) {
 				if (!rawKey) continue
@@ -127,6 +127,12 @@ export class MetaClient {
 	}
 
 	isDBLoaded = () => this.dbLoaded
+
+	// Force re-fetch settings from DB
+	async reload() {
+		this.dbLoaded = false
+		await this.loadFromDB()
+	}
 
 	// Svelte store contract
 	subscribe(run: (value: PageMeta) => void) {
