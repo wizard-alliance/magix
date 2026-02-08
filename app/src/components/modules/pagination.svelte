@@ -6,7 +6,20 @@
 
 	const dispatch = createEventDispatcher()
 
-	$: pages = Array.from({ length: total }, (_, i) => i + 1)
+	$: pages = buildPages(current, total)
+
+	function buildPages(cur: number, tot: number): (number | `...`)[] {
+		if (tot <= 7) return Array.from({ length: tot }, (_, i) => i + 1)
+		const set = new Set<number>([1, tot])
+		for (let i = Math.max(2, cur - 1); i <= Math.min(tot - 1, cur + 1); i++) set.add(i)
+		const sorted = [...set].sort((a, b) => a - b)
+		const result: (number | `...`)[] = []
+		for (let i = 0; i < sorted.length; i++) {
+			if (i > 0 && sorted[i] - sorted[i - 1] > 1) result.push(`...`)
+			result.push(sorted[i])
+		}
+		return result
+	}
 
 	function go(p: number) {
 		if (p >= 1 && p <= total && p !== current) {
@@ -21,7 +34,11 @@
 		<i class="fa-light fa-chevron-left"></i>
 	</button>
 	{#each pages as p}
-		<button class:active={p === current} on:click={() => go(p)}>{p}</button>
+		{#if p === `...`}
+			<span class="ellipsis">…</span>
+		{:else}
+			<button class:active={p === current} on:click={() => go(p)}>{p}</button>
+		{/if}
 	{/each}
 	<button disabled={current === total} on:click={() => go(current + 1)}>
 		<i class="fa-light fa-chevron-right"></i>
@@ -32,6 +49,18 @@
 	.pagination {
 		display: flex;
 		gap: 4px;
+		align-items: center;
+	}
+
+	.ellipsis {
+		min-width: 32px;
+		height: 32px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		color: var(--muted-color);
+		font-size: var(--font-size-small);
+		user-select: none;
 	}
 
 	button {

@@ -24,6 +24,7 @@
 	import DropdownMenu from "$components/modules/DropdownMenu.svelte"
 	import RepeaterField from "$components/modules/repeaterField.svelte"
 	import Breadcrumbs from "$components/modules/breadcrumbs.svelte"
+	import DateString from "$components/modules/DateString.svelte"
 
 	let radioValue = "a"
 	let toggleChecked = false
@@ -369,10 +370,30 @@
 		<div class="demo" style="width:100%">
 			<AdvancedTable
 				rows={[
-					{ id: 1, username: "alice", firstName: "Alice", lastName: "Smith", email: "alice@example.com" },
-					{ id: 2, username: "bob", firstName: "Bob", lastName: "Jones", email: "bob@example.com" },
+					{ id: 1, username: "alice", firstName: "Alice", lastName: "Smith", email: "alice@example.com", active: true, created: "2025-06-01" },
+					{ id: 2, username: "bob", firstName: "Bob", lastName: "Jones", email: "bob@example.com", active: false, created: "2025-07-15" },
+					{ id: 3, username: "carol", firstName: "Carol", lastName: "White", email: "carol@example.com", active: true, created: "2025-08-20" },
+					{ id: 4, username: "dave", firstName: "Dave", lastName: "Brown", email: "dave@example.com", active: true, created: "2025-09-10" },
 				]}
+				pagination={2}
+				scrollable="x"
+				stickyColumns={[0]}
+				colActions={[
+					{ name: `Edit`, icon: `fa-light fa-pen`, event: `edit` },
+					{ name: `Delete`, icon: `fa-light fa-trash`, event: `delete` },
+				]}
+				on:action={(e) => app.UI.Notify.info(`${e.detail.event}: ${e.detail.row.username}`)}
 			/>
+		</div>
+	</section>
+
+	<section>
+		<h2>Date String</h2>
+		<div class="demo">
+			<DateString value="2024-01-15T10:30:00Z" />
+			<DateString value="2025-12-01" out="date" />
+			<DateString value="2026-02-08T14:00:00Z" out="datetime" />
+			<DateString value="2020-06-01" />
 		</div>
 	</section>
 

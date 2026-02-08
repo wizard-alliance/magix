@@ -31,17 +31,24 @@
 			const fullName = `${userRaw.info.firstName ?? ``} ${userRaw.info.lastName ?? ``}`.trim()
 			user.ID = userRaw.id
 			user.Avatar = { src: resolved?.src ?? ``, name: fullName || userRaw.info.username }
-			user.Email = userRaw.info.email
 			user.Name = fullName
+			user.Email = userRaw.info.email
 			user.Created = userRaw.info.created
-			// user.Disabled = userRaw.info.disabled
-			user.Active = userRaw.info.activated
+			user.Updated = userRaw.info.updated
 
-			// user.Updated = userRaw.info.updated
+			user.Disabled = userRaw.info.disabled
+			user.Active = userRaw.info.activated
 			// user.Perms = userRaw.permissions.join(", ")
 			tableData.push(user)
 		}
 		return tableData
+	}
+
+	const handleAction = (e: CustomEvent<{ event: string; row: Record<string, any>; index: number }>) => {
+		const { event, row } = e.detail
+		if (event === `edit`) app.UI.Notify.info(`Edit user ${row.Name || row.ID}`)
+		if (event === `view`) app.UI.Notify.info(`View user ${row.Name || row.ID}`)
+		if (event === `delete`) app.UI.Notify.warning(`Delete user ${row.Name || row.ID}`)
 	}
 </script>
 
@@ -57,7 +64,18 @@
 		</div>
 	{:else}
 		<div class="section">
-			<AdvancedTable rows={users} />
+			<AdvancedTable
+				rows={users}
+				pagination={8}
+				stickyColumns={[0, 1, 2]}
+				scrollable="x"
+				colActions={[
+					{ name: `Edit`, icon: `fa-light fa-pen`, event: `edit` },
+					{ name: `View`, icon: `fa-light fa-eye`, event: `view` },
+					{ name: `Delete`, icon: `fa-light fa-trash`, event: `delete` },
+				]}
+				on:action={handleAction}
+			/>
 		</div>
 	{/if}
 </div>
