@@ -1,10 +1,15 @@
 <script lang="ts">
 	import { app } from "$lib/app"
 	import { onMount } from "svelte"
+	import { PUBLIC_MAX_FILE_SIZE_IMAGE } from "$env/static/public"
 	import Avatar from "$components/modules/avatar.svelte"
 	import FileUpload from "$components/fields/fileUpload.svelte"
 	import Button from "$components/fields/button.svelte"
 	import Spinner from "$components/modules/spinner.svelte"
+
+	const maxFileSize = Number(PUBLIC_MAX_FILE_SIZE_IMAGE) || 5_000_000
+	const maxFileSizeMB = (maxFileSize / 1_000_000).toFixed(0)
+	const allowedMimes = [`image/png`, `image/jpeg`, `image/avif`]
 
 	let loading = true
 	let uploading = false
@@ -36,10 +41,20 @@
 
 	const handleFileSelect = (e: CustomEvent<{ files: FileList }>) => {
 		const file = e.detail?.files?.[0]
-		if (file) {
-			selectedFile = file
-			previewUrl = URL.createObjectURL(file)
+		if (!file) return
+
+		if (!allowedMimes.includes(file.type)) {
+			app.UI.Notify.error(`Unsupported image format. Use JPG, PNG, or AVIF`)
+			return
 		}
+
+		if (file.size > maxFileSize) {
+			app.UI.Notify.error(`File exceeds the ${maxFileSizeMB}MB size limit`)
+			return
+		}
+
+		selectedFile = file
+		previewUrl = URL.createObjectURL(file)
 	}
 
 	const upload = async () => {
@@ -110,8 +125,8 @@
 						<FileUpload
 							label="Upload new avatar"
 							buttonText="Choose image"
-							accept="image/png, image/jpeg, image/webp"
-							helperText="JPG, PNG, or WebP. Max 2MB."
+							accept="image/png, image/jpeg, image/avif"
+							helperText="JPG, PNG, or AVIF. Max {maxFileSizeMB}MB."
 							on:change={handleFileSelect}
 						/>
 					</div>

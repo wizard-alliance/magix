@@ -211,20 +211,33 @@ export class AuthRoute {
 	}
 
 	// Upload user avatar
+	private readonly avatarMaxSize = 5 * 1_000_000 // 5MB
+	private readonly avatarAllowedMimes = [`image/png`, `image/jpeg`, `image/avif`]
+
 	private upload = multer({
 		storage: multer.memoryStorage(),
-		limits: { fileSize: 2 * 1024 * 1024 }, // 2MB
+		limits: { fileSize: this.avatarMaxSize },
 		fileFilter: (_req, file, cb) => {
-			const allowed = [`image/png`, `image/jpeg`, `image/webp`]
-			cb(null, allowed.includes(file.mimetype))
+			if (!this.avatarAllowedMimes.includes(file.mimetype)) {
+				return cb(Object.assign(new Error(`Unsupported image format. Use JPG, PNG, or AVIF`), { code: 415 }) as any)
+			}
+			cb(null, true)
 		},
 	})
 
 	uploadAvatar = async ($: $, req: Request, res: Response) => {
-		// Run multer inline (since api.Router.set doesn't support middleware injection)
-		await new Promise<void>((resolve, reject) => {
-			this.upload.single(`avatar`)(req, res, (err: any) => err ? reject(err) : resolve())
-		})
+		// Run multer — catch size/type errors
+		try {
+			await new Promise<void>((resolve, reject) => {
+				this.upload.single(`avatar`)(req, res, (err: any) => err ? reject(err) : resolve())
+			})
+		} catch (err: any) {
+			if (err?.code === `LIMIT_FILE_SIZE`) {
+				const limitMB = (this.avatarMaxSize / 1_000_000).toFixed(0)
+				return { code: 413, error: `File exceeds the ${limitMB}MB size limit` }
+			}
+			return { code: err.code && typeof err.code === `number` ? err.code : 415, error: err.message || `Upload failed` }
+		}
 
 		const file = (req as any).file as Express.Multer.File | undefined
 		if (!file) return { code: 422, error: `No avatar file provided` }
@@ -238,7 +251,9 @@ export class AuthRoute {
 			category: `avatar`,
 			userId: me.id,
 			mimetype: file.mimetype,
-		})
+		}).catch((err: any) => ({ error: err.message || `Upload failed`, code: err.code || 500 }))
+
+		if (`error` in record) return record
 
 		// Clean up old avatar if path changed
 		const oldUrl = me.info.avatarUrl

@@ -2,7 +2,7 @@ export class AvatarClient {
 
 	/**
 	 * Upload a new avatar image
-	 * @param file - image file (png, jpeg, avif — max 2MB)
+	 * @param file - image file (png, jpeg, avif — max 5MB)
 	 */
 	async upload(file: File) {
 		const result = await app.System.Request.upload<any>(

@@ -5,6 +5,7 @@ declare interface ImportMetaEnv {
 	readonly APP_NAME: string
 	readonly APP_TAGLINE: string
 	readonly PUBLIC_APP_TARGET: 'web' | 'electron'
+	readonly PUBLIC_MAX_FILE_SIZE_IMAGE: string
 }
 
 declare interface ImportMeta {

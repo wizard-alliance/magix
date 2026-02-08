@@ -123,6 +123,14 @@ export class FileManager {
 			}
 		}
 
+		// Enforce size limits from config
+		const isImg = this.isImage(detected?.mime || declaredMime)
+		const maxSize = Number(api.Config(isImg ? `FS_MAX_FILE_SIZE_IMAGE` : `FS_MAX_FILE_SIZE`) || 0)
+		if (maxSize > 0 && buffer.length > maxSize) {
+			const limitMB = (maxSize / 1_000_000).toFixed(0)
+			throw Object.assign(new Error(`File exceeds the ${limitMB}MB size limit`), { code: 413 })
+		}
+
 		return { ext: detected?.ext || declaredExt, mime: detected?.mime || declaredMime }
 	}
 

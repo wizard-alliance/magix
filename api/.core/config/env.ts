@@ -35,6 +35,8 @@ const envDefaults: Record<string, string | number | boolean> = {
 	FS_UPLOAD_DIR: "uploads",
 	FS_IMAGE_SIZES: "128,256,1024,1400",
 	FS_BLOCKED_EXTENSIONS: "exe,bat,cmd,sh,msi,dll,com,scr,ps1,vbs,wsf,jar,app,action,csh,inf,reg,lnk,pif,hta",
+	FS_MAX_FILE_SIZE: 100_000_000,
+	FS_MAX_FILE_SIZE_IMAGE: 8_000_000,
 	BCRYPT_ROUNDS: 12,
 
 	JWT_SECRET: "change-me",
