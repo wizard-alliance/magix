@@ -3,20 +3,20 @@ import * as store from 'svelte/store'
 import { HealthClient } from "./classes/Misc/HealthClient"
 import { SettingsClient } from "./classes/Misc/SettingsClient"
 import { NavigationRegistry } from "./classes/Misc/NavigationRegistry"
-import { WebSocketClient } from "./classes/WebSocket"
-import { RequestClient } from "./classes/Request"
-import { UIManager } from "./classes/UIManager"
+import { WebSocketClient } from "./classes/System/WebSocket"
+import { RequestClient } from "./classes/System/Request"
+import { AppLogger } from "./classes/System/AppLogger"
 import { AuthClient } from "./classes/Auth/AuthClient"
 
 import { UserSettingsClient } from "./classes/Account/UserSettingsClient"
 import { AvatarClient } from "./classes/Account/AvatarClient"
 import { BillingClient } from "./classes/Account/BillingClient"
 
-import { Log, ErrorLog, SuccessLog, WarningLog } from "./classes/Helpers/Log"
+import { Log, ErrorLog, SuccessLog, WarningLog } from "./classes/System/Log"
 import { Reactive } from "./classes/Helpers/Reactive"
-import { AppLogger } from "./classes/Helpers/AppLogger"
-import { Notify } from "./classes/Notify"
-import { Modal } from "./classes/Modal"
+import { UIManager } from "./classes/UI/UIManager"
+import { Notify } from "./classes/UI/Notify"
+import { Modal } from "./classes/UI/Modal"
 
 import { EventManager } from "./classes/Events/EventManager"
 
