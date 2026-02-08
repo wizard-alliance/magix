@@ -115,23 +115,39 @@ export class UserRepo {
 	
 
 	/**
-	 * List all non-deleted users
+	 * List all non-deleted users with optional search and filters
 	 */
-	list = async (options?: { limit?: number; offset?: number }): Promise<UserFull[]> => {
-		// Select IDs of non-deleted users
+	list = async (options?: { limit?: number; offset?: number; search?: string; disabled?: number; activated?: number }): Promise<UserFull[]> => {
 		let query = this.db.selectFrom("users").select("id").where("deleted_at", "is", null)
-		
+
+		if (options?.disabled !== undefined) query = query.where("disabled", "=", options.disabled)
+		if (options?.activated !== undefined) query = query.where("activated", "=", options.activated)
+
+		if (options?.search) {
+			const term = `%${options.search}%`
+			const numericId = Number(options.search)
+			query = query.where((eb) =>
+				eb.or([
+					eb("first_name", "like", term),
+					eb("last_name", "like", term),
+					eb("email", "like", term),
+					eb("username", "like", term),
+					eb("company", "like", term),
+					...(Number.isFinite(numericId) && numericId > 0 ? [eb("id", "=", numericId)] : []),
+				])
+			)
+		}
+
 		if (options?.limit) query = query.limit(options.limit)
 		if (options?.offset) query = query.offset(options.offset)
 		const results = await query.execute()
 
-		// Loop through IDs and get full user data
 		const users: UserFull[] = []
 		for (const row of results) {
 			const user = await this.get(row.id)
 			if (user) users.push(user)
 		}
-	
+
 		return users
 	}
 

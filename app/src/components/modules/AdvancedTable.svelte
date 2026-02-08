@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { createEventDispatcher, tick, onMount } from "svelte"
+	import { createEventDispatcher, tick, onMount, onDestroy } from "svelte"
 	import Avatar from "$components/modules/avatar.svelte"
 	import Badge from "$components/modules/badge.svelte"
 	import DateString from "$components/modules/DateString.svelte"
@@ -35,6 +35,18 @@
 
 	onMount(() => {
 		computeOffsets()
+		window.addEventListener(`resize`, computeOffsets)
+		const appEl = document.querySelector(`.app`) || document.body
+		if (ctxPortal) appEl.appendChild(ctxPortal)
+		document.addEventListener(`click`, handleCtxOutsideClick, true)
+		document.addEventListener(`keydown`, handleCtxKeydown)
+	})
+
+	onDestroy(() => {
+		window.removeEventListener(`resize`, computeOffsets)
+		ctxPortal?.remove()
+		document.removeEventListener(`click`, handleCtxOutsideClick, true)
+		document.removeEventListener(`keydown`, handleCtxKeydown)
 	})
 
 	async function computeOffsets() {
@@ -58,8 +70,18 @@
 	let actionOpen: number | null = null
 	let actionTriggers: HTMLElement[] = []
 
+	// Row context menu
+	let ctxOpen = false
+	let ctxX = 0
+	let ctxY = 0
+	let ctxRow: Record<string, any> | null = null
+	let ctxRowIndex = -1
+	let ctxPortal: HTMLDivElement
+	let ctxRef: HTMLDivElement | null = null
+
 	function onGridScroll(e: Event) {
 		scrolled = (e.target as HTMLElement).scrollLeft > 5
+		closeCtx()
 	}
 
 	function onPageChange(e: CustomEvent<number>) {
@@ -83,6 +105,46 @@
 		if (typeof value === `object`) return JSON.stringify(value)
 		return String(value)
 	}
+
+	// Context menu helpers
+	function closeCtx() {
+		ctxOpen = false
+		ctxRow = null
+	}
+
+	async function onRowContext(e: MouseEvent, row: Record<string, any>, index: number) {
+		if (!colActions.length) return
+		e.preventDefault()
+		actionOpen = null
+		ctxRow = row
+		ctxRowIndex = index
+		ctxX = e.clientX
+		ctxY = e.clientY
+		ctxOpen = true
+		await tick()
+		if (ctxRef) {
+			const appEl = document.querySelector(`.app`) as HTMLElement
+			const bounds = appEl ? appEl.getBoundingClientRect() : { left: 0, top: 0, right: window.innerWidth, bottom: window.innerHeight }
+			const rect = ctxRef.getBoundingClientRect()
+			const pad = 8
+			if (rect.right > bounds.right - pad) ctxX = Math.max(bounds.left + pad, bounds.right - pad - rect.width)
+			if (rect.bottom > bounds.bottom - pad) ctxY = Math.max(bounds.top + pad, bounds.bottom - pad - rect.height)
+		}
+	}
+
+	function onCtxAction(action: { name: string; icon: string; event: string }) {
+		if (ctxRow) dispatch(`action`, { event: action.event, row: ctxRow, index: ctxRowIndex })
+		closeCtx()
+	}
+
+	const handleCtxOutsideClick = (e: MouseEvent) => {
+		if (!ctxOpen) return
+		if (ctxRef && !ctxRef.contains(e.target as Node)) closeCtx()
+	}
+
+	const handleCtxKeydown = (e: KeyboardEvent) => {
+		if (e.key === `Escape` && ctxOpen) closeCtx()
+	}
 </script>
 
 <div class="advanced-table" class:responsive class:scrollable-x={scrollable === `x`} class:scrollable-y={scrollable === `y`}>
@@ -102,7 +164,8 @@
 
 			<!-- Rows -->
 			{#each displayRows as row, rowIndex}
-				<div class="table-row">
+				<!-- svelte-ignore a11y_no_static_element_interactions -->
+				<div class="table-row" class:active={actionOpen === rowIndex || (ctxOpen && ctxRowIndex === rowIndex)} on:contextmenu={(e) => onRowContext(e, row, rowIndex)}>
 					{#each columns as col, i}
 						{#if col === `Actions`}
 							<div
@@ -173,7 +236,22 @@
 	{/if}
 </div>
 
+<div bind:this={ctxPortal}>
+	{#if ctxOpen && colActions.length}
+		<div bind:this={ctxRef} class="row-ctx-menu" style={`left: ${ctxX}px; top: ${ctxY}px`}>
+			{#each colActions as action}
+				<button type="button" on:click={() => onCtxAction(action)}>
+					{#if action.icon}<i class={action.icon}></i>{/if}
+					<span>{action.name}</span>
+				</button>
+			{/each}
+		</div>
+	{/if}
+</div>
+
 <style lang="scss" scoped>
+	@use "../../styles/GRID/GRID.v3.mixins.scss" as *;
+
 	.advanced-table {
 		width: 100%;
 		overflow: hidden;
@@ -208,15 +286,18 @@
 		max-width: 250px;
 		min-width: 80px;
 		padding: calc(var(--gutter) * 2) calc(var(--gutter) * 2);
+		transition: background var(--animationDefaultSpeed) var(--animationEasing);
 
 		&.sticky {
 			position: sticky;
 			z-index: 1;
-			transition: background var(--animationDefaultSpeed) var(--animationEasing);
 		}
 
 		.scrolled &.sticky {
 			background-color: color-mix(in srgb, var(--quaternary-color) 70%, var(--primary-color));
+			@include md {
+				background-color: transparent;
+			}
 		}
 
 		&.table-col-key {
@@ -279,11 +360,13 @@
 		grid-column: 1 / -1;
 		grid-template-columns: subgrid;
 
-		&:hover .table-col-value {
+		&:hover .table-col-value,
+		&.active .table-col-value {
 			background-color: var(--secondary-color);
 		}
-		&:hover .table-col-value.sticky {
-			background-color: var(--tertiary-color);
+		&:hover .table-col-value.sticky,
+		&.active .table-col-value.sticky {
+			background-color: var(--secondary-color);
 		}
 	}
 
@@ -300,12 +383,14 @@
 	}
 
 	/* Responsive card mode */
-	@media (max-width: 40rem) {
+	@include sm {
 		.advanced-table.responsive {
+			padding: calc(var(--gutter) * 0.5);
+
 			.table-grid {
 				display: flex;
 				flex-direction: column;
-				gap: calc(var(--gutter) * 2);
+				gap: calc(var(--gutter) * 1);
 				overflow: visible;
 			}
 
@@ -314,29 +399,40 @@
 			}
 
 			.table-row {
-				display: flex;
-				flex-direction: column;
+				display: grid;
+				grid-template-columns: auto 1fr;
+				align-items: center;
 				background: var(--secondary-color);
-				border-radius: 8px;
-				padding: calc(var(--gutter) * 1.5);
-				gap: calc(var(--gutter) * 0.75);
+				border-radius: var(--border-radius);
+				padding: calc(var(--gutter) * 1) calc(var(--gutter) * 1.25);
+				gap: calc(var(--gutter) * 0.25) calc(var(--gutter) * 1.5);
 			}
 
 			.table-col.table-col-value {
 				max-width: none;
 				min-width: 0;
 				border-bottom: none;
-				padding: calc(var(--gutter) * 0.5) 0;
+				padding: calc(var(--gutter) * 0.35) 0;
 				white-space: normal;
+				font-size: var(--font-size-small);
 
 				&::before {
 					content: attr(data-label);
 					display: inline-block;
-					min-width: 80px;
+					font-size: var(--font-size-xs);
 					font-weight: 500;
-					color: var(--muted-color);
-					margin-right: calc(var(--gutter) * 1);
+					color: var(--muted-color-2);
+					min-width: 0;
+					margin-right: 0;
 					flex-shrink: 0;
+				}
+
+				&.table-col-actions {
+					grid-column: 1 / -1;
+					justify-content: flex-end;
+					border-top: 1px solid var(--border-color);
+					padding-top: calc(var(--gutter) * 0.5);
+					margin-top: calc(var(--gutter) * 0.25);
 				}
 
 				&.table-col-actions::before {
@@ -347,6 +443,74 @@
 					position: static;
 				}
 			}
+		}
+	}
+
+	// Row context menu (portaled to .app)
+	.row-ctx-menu {
+		position: fixed;
+		z-index: 99999;
+		display: flex;
+		flex-direction: column;
+		background-color: rgba(22, 23, 29, 0.25);
+		backdrop-filter: blur(10px);
+		border: 1px solid var(--border-color);
+		box-shadow: 0 4px 60px rgba(0, 0, 0, 0.25);
+		padding: calc(var(--gutter) * 1.5) calc(var(--gutter) * 1);
+		gap: calc(var(--gutter) * 0.5);
+		border-radius: var(--border-radius);
+		animation: ctxFade 120ms ease-out;
+		transform-origin: top left;
+		overflow: hidden;
+		user-select: none;
+		min-width: fit-content;
+
+		button {
+			display: flex;
+			align-items: center;
+			gap: calc(var(--gutter) * 1);
+			width: 100%;
+			padding: calc(var(--gutter) * 1) calc(var(--gutter) * 1.5);
+			cursor: pointer;
+			white-space: nowrap;
+			text-align: left;
+			background: transparent;
+			border: none;
+			color: inherit;
+			font: inherit;
+			font-size: var(--font-size-small);
+			border-radius: var(--border-radius);
+
+			i {
+				font-size: var(--font-size-small);
+				opacity: 0.65;
+			}
+
+			span {
+				flex: 1;
+			}
+
+			&:hover {
+				background-color: rgba(44, 46, 56, 0.4);
+				i {
+					opacity: 1;
+				}
+			}
+
+			&:active {
+				background-color: rgba(44, 46, 56, 0.6);
+			}
+		}
+	}
+
+	@keyframes ctxFade {
+		from {
+			opacity: 0;
+			transform: scale(0.95);
+		}
+		to {
+			opacity: 1;
+			transform: scale(1);
 		}
 	}
 </style>

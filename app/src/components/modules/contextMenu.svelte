@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { createEventDispatcher, onDestroy, onMount } from "svelte"
+	import { createEventDispatcher, onDestroy, onMount, tick } from "svelte"
 
 	type MenuItem = {
 		label: string
@@ -18,10 +18,16 @@
 
 	const dispatch = createEventDispatcher<{ close: void }>()
 
+	let portalEl: HTMLDivElement
 	let menuRef: HTMLDivElement | null = null
 	let isOpen = false
 	let x = 0
 	let y = 0
+
+	function getBounds() {
+		const el = document.querySelector(".app") as HTMLElement
+		return el ? el.getBoundingClientRect() : { left: 0, top: 0, right: window.innerWidth, bottom: window.innerHeight }
+	}
 
 	const closeMenu = () => {
 		if (!isOpen) return
@@ -34,7 +40,7 @@
 		requestAnimationFrame(() => menuRef?.focus())
 	}
 
-	const openMenu = (event: MouseEvent) => {
+	const openMenu = async (event: MouseEvent) => {
 		registry.forEach((closer) => {
 			if (closer !== closeMenu) closer()
 		})
@@ -43,6 +49,16 @@
 		isOpen = true
 		registry.add(closeMenu)
 		focusMenu()
+
+		await tick()
+
+		if (menuRef) {
+			const bounds = getBounds()
+			const rect = menuRef.getBoundingClientRect()
+			const pad = 8
+			if (rect.right > bounds.right - pad) x = Math.max(bounds.left + pad, bounds.right - pad - rect.width)
+			if (rect.bottom > bounds.bottom - pad) y = Math.max(bounds.top + pad, bounds.bottom - pad - rect.height)
+		}
 	}
 
 	const matchesToggler = (target: EventTarget | null) => {
@@ -85,6 +101,9 @@
 	}
 
 	onMount(() => {
+		const target = document.querySelector(".app") || document.body
+		if (portalEl) target.appendChild(portalEl)
+
 		document.addEventListener("contextmenu", handleGlobalContextMenu)
 		document.addEventListener("click", handleGlobalClick)
 		document.addEventListener("keydown", handleGlobalKeydown)
@@ -93,6 +112,7 @@
 	onDestroy(() => {
 		if (typeof document === "undefined") return
 		closeMenu()
+		portalEl?.remove()
 		document.removeEventListener("contextmenu", handleGlobalContextMenu)
 		document.removeEventListener("click", handleGlobalClick)
 		document.removeEventListener("keydown", handleGlobalKeydown)
@@ -105,18 +125,20 @@
 	}
 </script>
 
-{#if isOpen}
-	<div bind:this={menuRef} role="menu" tabindex="-1" class="context-menu" style={`top: ${y}px; left: ${x}px;`} on:click|stopPropagation on:keydown={handleMenuKeydown}>
-		{#each items as item}
-			<button type="button" class="context-menu__item" role="menuitem" on:click={() => handleItemClick(item)}>
-				{#if item.icon}
-					<i class={`context-menu__icon ${item.icon}`}></i>
-				{/if}
-				<span class="context-menu__label">{item.label}</span>
-			</button>
-		{/each}
-	</div>
-{/if}
+<div bind:this={portalEl}>
+	{#if isOpen}
+		<div bind:this={menuRef} role="menu" tabindex="-1" class="context-menu" style={`top: ${y}px; left: ${x}px;`} on:click|stopPropagation on:keydown={handleMenuKeydown}>
+			{#each items as item}
+				<button type="button" class="context-menu__item" role="menuitem" on:click={() => handleItemClick(item)}>
+					{#if item.icon}
+						<i class={`context-menu__icon ${item.icon}`}></i>
+					{/if}
+					<span class="context-menu__label">{item.label}</span>
+				</button>
+			{/each}
+		</div>
+	{/if}
+</div>
 
 <style lang="scss" scoped>
 	.context-menu {
@@ -134,7 +156,7 @@
 		border: 1px solid var(--border-color);
 		box-shadow: 0 4px 60px rgba(0, 0, 0, 0.25);
 
-		z-index: 1000;
+		z-index: 99999;
 		min-width: fit-content;
 		padding: calc(var(--gutter) * 1.5) calc(var(--gutter) * 1);
 		gap: calc(var(--gutter) * 0.5);

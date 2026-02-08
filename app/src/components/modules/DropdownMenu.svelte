@@ -1,13 +1,15 @@
 <script lang="ts">
-	import { onMount, onDestroy } from "svelte"
+	import { onMount, onDestroy, tick } from "svelte"
 
 	export let open = false
 	export let anchor: "left" | "right" = "left"
 	export let position: "top" | "bottom" = "bottom"
 	export let triggerRef: HTMLElement | null = null
 
+	let portalEl: HTMLDivElement
 	let menuRef: HTMLDivElement | null = null
-	let isActive = false
+	let x = 0
+	let y = 0
 
 	export const close = () => {
 		open = false
@@ -17,19 +19,38 @@
 		open = !open
 	}
 
-	// Delay active class for animation
+	function getBounds() {
+		const el = document.querySelector(".app") as HTMLElement
+		return el ? el.getBoundingClientRect() : { left: 0, top: 0, right: window.innerWidth, bottom: window.innerHeight }
+	}
+
+	async function updatePosition() {
+		if (!triggerRef) return
+		const rect = triggerRef.getBoundingClientRect()
+		const gap = 6
+		x = anchor === "right" ? rect.right : rect.left
+		y = position === "top" ? rect.top - gap : rect.bottom + gap
+
+		await tick()
+
+		if (menuRef) {
+			const bounds = getBounds()
+			const menu = menuRef.getBoundingClientRect()
+			const pad = 8
+			if (menu.right > bounds.right - pad) x -= menu.right - (bounds.right - pad)
+			if (menu.left < bounds.left + pad) x += bounds.left + pad - menu.left
+			if (menu.bottom > bounds.bottom - pad) y -= menu.bottom - (bounds.bottom - pad)
+			if (menu.top < bounds.top + pad) y += bounds.top + pad - menu.top
+		}
+	}
+
 	$: if (open) {
-		requestAnimationFrame(() => {
-			isActive = true
-		})
-	} else {
-		isActive = false
+		updatePosition()
 	}
 
 	const handleClickOutside = (event: MouseEvent) => {
 		if (!open) return
 		const target = event.target as Node
-		// Don't close if clicking the trigger element (toggle handles that)
 		if (triggerRef?.contains(target)) return
 		if (menuRef && !menuRef.contains(target)) {
 			close()
@@ -37,51 +58,61 @@
 	}
 
 	const handleKeydown = (event: KeyboardEvent) => {
-		if (event.key === "Escape" && open) {
-			close()
-		}
+		if (event.key === "Escape" && open) close()
 	}
 
 	onMount(() => {
+		const target = document.querySelector(".app") || document.body
+		if (portalEl) target.appendChild(portalEl)
+
 		document.addEventListener("click", handleClickOutside, true)
 		document.addEventListener("keydown", handleKeydown)
 	})
 
 	onDestroy(() => {
 		if (typeof document === "undefined") return
+		portalEl?.remove()
 		document.removeEventListener("click", handleClickOutside, true)
 		document.removeEventListener("keydown", handleKeydown)
 	})
 </script>
 
-{#if open}
-	<div class="dropdown-menu" class:active={isActive} class:anchor-right={anchor === "right"} class:position-top={position === "top"} bind:this={menuRef}>
-		<slot />
-	</div>
-{/if}
+<div bind:this={portalEl}>
+	{#if open}
+		<div bind:this={menuRef} class="dropdown-menu" class:anchor-right={anchor === "right"} class:position-top={position === "top"} style={`left: ${x}px; top: ${y}px;`}>
+			<slot />
+		</div>
+	{/if}
+</div>
 
 <style>
 	.dropdown-menu {
-		position: absolute;
-		z-index: 999999;
+		position: fixed;
+		z-index: 99999;
 		min-width: 160px;
-		width: 90%;
 		background-color: var(--primary-color-transp);
 		backdrop-filter: blur(6px);
 		border: var(--border);
 		border-radius: var(--border-radius);
 		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 		overflow: hidden;
-		transition: all 600ms cubic-bezier(0, 0, 0, 1);
+		transform: translate(var(--tx, 0%), var(--ty, 0%));
+		transform-origin: top left;
+		animation: dropdownFade 120ms ease-out;
 	}
 
 	.dropdown-menu.anchor-right {
-		right: calc(var(--gutter) * 1.5);
+		--tx: -100%;
+		transform-origin: top right;
 	}
 
 	.dropdown-menu.position-top {
-		bottom: 100%;
-		margin-bottom: calc(var(--gutter) * 1.5);
+		--ty: -100%;
+		transform-origin: bottom left;
+	}
+
+	.dropdown-menu.anchor-right.position-top {
+		transform-origin: bottom right;
 	}
 
 	.dropdown-menu :global(*) {
@@ -102,8 +133,7 @@
 		cursor: pointer;
 		text-decoration: none;
 		padding: calc(var(--gutter) * 1.5) calc(var(--gutter) * 1.5);
-
-		transition: all 600ms cubic-bezier(0, 0, 0, 1);
+		transition: background-color 150ms ease;
 	}
 
 	.dropdown-menu :global(a:hover),
@@ -116,13 +146,14 @@
 		border-top: var(--border);
 	}
 
-	.dropdown-menu:not(.active) {
-		opacity: 0;
-		transform: translateY(10px);
-	}
-
-	.dropdown-menu:not(.active) :global(a),
-	.dropdown-menu:not(.active) :global(button) {
-		transform: translateY(10px);
+	@keyframes dropdownFade {
+		from {
+			opacity: 0;
+			transform: translate(var(--tx, 0%), var(--ty, 0%)) scale(0.95);
+		}
+		to {
+			opacity: 1;
+			transform: translate(var(--tx, 0%), var(--ty, 0%)) scale(1);
+		}
 	}
 </style>

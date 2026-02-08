@@ -77,8 +77,21 @@ export class AuthRoute {
 	}
 
 	getMany = async ($: any, req: Request) => {
+		const search = req.query.search as string | undefined
+		const permission = req.query.permission as string | undefined
 		const p = api.Router.getParams(req, this.tableName)
-		return await api.User.Repo.list({ limit: Number(p.query.limit) || 100, offset: Number(p.query.offset) || 0 })
+
+		const listOptions: Record<string, any> = {
+			limit: Number(p.query.limit) || 100,
+			offset: Number(p.query.offset) || 0,
+		}
+		if (search) listOptions.search = search
+		if (p.query.disabled !== undefined) listOptions.disabled = Number(p.query.disabled)
+		if (p.query.activated !== undefined) listOptions.activated = Number(p.query.activated)
+
+		let users = await api.User.Repo.list(listOptions)
+		if (permission) users = users.filter((u) => u.permissions.includes(permission))
+		return users
 	}
 
 	update = async ($: any, req: Request) => {
