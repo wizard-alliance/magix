@@ -10,7 +10,14 @@ import { CacheClient } from "./classes/Data/CacheClient"
 
 import { UserSettingsClient } from "./classes/Account/UserSettingsClient"
 import { AvatarClient } from "./classes/Account/AvatarClient"
-import { BillingClient } from "./classes/Account/BillingClient"
+
+import { CustomerResource } from "./classes/Commerce/CustomerResource"
+import { OrdersResource } from "./classes/Commerce/OrdersResource"
+import { SubscriptionsResource } from "./classes/Commerce/SubscriptionsResource"
+import { ProductsResource } from "./classes/Commerce/ProductsResource"
+import { InvoicesResource } from "./classes/Commerce/InvoicesResource"
+import { CheckoutClient } from "./classes/Commerce/CheckoutClient"
+import { LSAdminClient } from "./classes/Commerce/LSAdminClient"
 
 import { SettingsResource } from "./classes/Admin/SettingsResource"
 import { UsersResource } from "./classes/Admin/UsersResource"
@@ -47,7 +54,16 @@ export const createAppClient = () => ({
 	Account: {
 		Settings: new UserSettingsClient(),
 		Avatar: new AvatarClient(),
-		Billing: new BillingClient(),
+	},
+
+	Commerce: {
+		Customer: new CustomerResource(),
+		Orders: new OrdersResource(),
+		Subscriptions: new SubscriptionsResource(),
+		Products: new ProductsResource(),
+		Invoices: new InvoicesResource(),
+		Checkout: new CheckoutClient(),
+		Admin: { LS: new LSAdminClient() },
 	},
 
 	Admin: {

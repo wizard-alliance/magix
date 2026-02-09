@@ -62,6 +62,10 @@ export class BillingRoute {
 		api.Router.set("GET", `${this.route}/ls/customer`, this.lsGetCustomer, adminOpts)
 		api.Router.set("POST", `${this.route}/ls/sync`, this.lsSync, adminOpts)
 		api.Router.set("POST", `${this.route}/ls/sync/products`, this.lsSyncProducts, adminOpts)
+		api.Router.set("POST", `${this.route}/ls/sync/customers`, this.lsSyncCustomers, adminOpts)
+		api.Router.set("POST", `${this.route}/ls/sync/orders`, this.lsSyncOrders, adminOpts)
+		api.Router.set("POST", `${this.route}/ls/sync/subscriptions`, this.lsSyncSubscriptions, adminOpts)
+		api.Router.set("POST", `${this.route}/ls/sync/invoices`, this.lsSyncInvoices, adminOpts)
 
 		// Webhook (public for MoR)
 		api.Router.set("POST", `${this.route}/webhook`, this.webhook)
@@ -143,7 +147,6 @@ export class BillingRoute {
 		const p = api.getParams(req)
 		const fieldMap: Record<string, string> = {
 			billingName: "billing_name",
-			billingEmail: "billing_email",
 			billingPhone: "billing_phone",
 			addressLine1: "billing_address_line1",
 			addressLine2: "billing_address_line2",
@@ -154,7 +157,6 @@ export class BillingRoute {
 			vatId: "vat_id",
 			// Also accept snake_case directly
 			billing_name: "billing_name",
-			billing_email: "billing_email",
 			billing_phone: "billing_phone",
 			billing_address_line1: "billing_address_line1",
 			billing_address_line2: "billing_address_line2",
@@ -170,10 +172,32 @@ export class BillingRoute {
 			if (p[inputKey] !== undefined) data[dbKey] = p[inputKey]
 		}
 
+		// billing_email is always locked to the user's account email
+		data.billing_email = authUser.email
+
 		if (!Object.keys(data).length) return { code: 422, error: "No valid fields provided" }
 
 		await api.Billing.Customers.update(data, { user_id: authUser.id })
-		return await api.Billing.Customers.get({ user_id: authUser.id }) ?? { success: true }
+		const updated = await api.Billing.Customers.get({ user_id: authUser.id })
+
+		// Push changes to MoR if customer is linked
+		if (updated?.providerCustomerId) {
+			try {
+				const lsFields: Record<string, any> = {}
+				if (data.billing_name) lsFields.name = data.billing_name
+				lsFields.email = authUser.email
+				if (data.billing_city) lsFields.city = data.billing_city
+				if (data.billing_state) lsFields.region = data.billing_state
+				if (data.billing_country) lsFields.country = data.billing_country
+				if (Object.keys(lsFields).length) {
+					await api.Billing.Providers.LS.updateCustomer(updated.providerCustomerId, lsFields)
+				}
+			} catch (e: any) {
+				api.Log(`Failed to push customer update to LS: ${e.message}`)
+			}
+		}
+
+		return updated ?? { success: true }
 	}
 
 	// Products
@@ -186,7 +210,9 @@ export class BillingRoute {
 
 	getProducts = async (_: any, req: Request) => {
 		const p = api.getParams(req)
-		return await api.Billing.Products.getMany({ is_active: 1 }, { limit: Number(p.limit) || 100, offset: Number(p.offset) || 0 })
+		const where: Record<string, any> = {}
+		if (p.active !== undefined) where.is_active = Number(p.active)
+		return await api.Billing.Products.getMany(where, { limit: Number(p.limit) || 100, offset: Number(p.offset) || 0 })
 	}
 
 	createProduct = async (_: any, req: Request) => {
@@ -313,7 +339,7 @@ export class BillingRoute {
 				email: p.email || authUser?.email,
 				name: p.name || [authUser?.first_name, authUser?.last_name].filter(Boolean).join(` `),
 				customData: { user_id: authUser?.id, plan_id: p.plan_id },
-				redirectUrl: p.redirect_url,
+				redirectUrl: p.redirectUrl || p.redirect_url,
 			})
 			return result
 		} catch (e: any) {
@@ -366,19 +392,27 @@ export class BillingRoute {
 		if (signature && rawBody) {
 			try {
 				const { eventName, data, customData } = await api.Billing.Providers.LS.handleWebhook(rawBody, signature)
-				return await api.Billing.Events.process({ event: eventName as any, data, customData })
+				api.Logger.set(`Webhook received: ${eventName}`, `Webhook`)
+				const result = await api.Billing.Events.process({ event: eventName as any, data, customData })
+				api.Logger.set(`Webhook result: ${eventName} → ${result.success ? `ok` : result.error}`, `Webhook`, result.success ? `success` : `error`)
+				return result
 			} catch (e: any) {
+				api.Logger.set(`Webhook auth failed: ${e.message}`, `Webhook`, `error`)
 				return { code: 401, error: e.message }
 			}
 		}
 
 		// Dev/test mode: accept unverified webhooks
 		const p = api.getParams(req)
-		return await api.Billing.Events.process({
-			event: p.meta?.event_name,
+		const eventName = p.meta?.event_name
+		api.Logger.set(`Webhook received (dev): ${eventName}`, `Webhook`)
+		const result = await api.Billing.Events.process({
+			event: eventName,
 			data: p.data?.attributes ?? p.data ?? {},
 			customData: p.meta?.custom_data ?? {},
 		})
+		api.Logger.set(`Webhook result: ${eventName} → ${result.success ? `ok` : result.error}`, `Webhook`, result.success ? `success` : `error`)
+		return result
 	}
 
 	// ─────────────────────────────────────────────────────────────
@@ -489,6 +523,38 @@ export class BillingRoute {
 	lsSyncProducts = async () => {
 		try {
 			return await api.Billing.Providers.LS.syncProducts()
+		} catch (e: any) {
+			return { code: 500, error: e.message }
+		}
+	}
+
+	lsSyncCustomers = async () => {
+		try {
+			return await api.Billing.Providers.LS.syncCustomers()
+		} catch (e: any) {
+			return { code: 500, error: e.message }
+		}
+	}
+
+	lsSyncOrders = async () => {
+		try {
+			return await api.Billing.Providers.LS.syncOrders()
+		} catch (e: any) {
+			return { code: 500, error: e.message }
+		}
+	}
+
+	lsSyncSubscriptions = async () => {
+		try {
+			return await api.Billing.Providers.LS.syncSubscriptions()
+		} catch (e: any) {
+			return { code: 500, error: e.message }
+		}
+	}
+
+	lsSyncInvoices = async () => {
+		try {
+			return await api.Billing.Providers.LS.syncInvoices()
 		} catch (e: any) {
 			return { code: 500, error: e.message }
 		}

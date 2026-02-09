@@ -7,9 +7,9 @@
 
 	let loading = true
 	let saving = false
+	let accountEmail = ""
 	let form = {
 		billingName: "",
-		billingEmail: "",
 		billingPhone: "",
 		addressLine1: "",
 		addressLine2: "",
@@ -22,8 +22,10 @@
 
 	onMount(async () => {
 		try {
-			const data = await app.Account.Billing.get()
-			if (data) form = { ...form, ...app.Account.Billing.toForm(data) }
+			const user = await app.Auth.me()
+			accountEmail = user?.info?.email || ""
+			const data = await app.Commerce.Customer.get()
+			if (data) form = { ...form, ...app.Commerce.Customer.toForm(data) }
 		} catch {
 			// No billing data yet — keep defaults
 		}
@@ -33,7 +35,7 @@
 	const save = async () => {
 		saving = true
 		try {
-			await app.Account.Billing.save(form)
+			await app.Commerce.Customer.saveMe(form)
 			app.UI.Notify.success("Billing info saved")
 		} catch (err) {
 			app.UI.Notify.error(`Failed to save billing info: ${(err as Error).message}`)
@@ -66,7 +68,8 @@
 					<Input id="billingName" label="Billing name" bind:value={form.billingName} placeholder="Full name or company" />
 					<div class="row">
 						<div class="col-xxs-12 col-md-6">
-							<Input id="billingEmail" label="Billing email" type="email" bind:value={form.billingEmail} placeholder="billing@example.com" />
+							<Input id="billingEmail" label="Billing email" type="email" value={accountEmail} disabled />
+							<a href="/account/settings/email" class="helper-link">Change email address</a>
 						</div>
 						<div class="col-xxs-12 col-md-6">
 							<Input id="billingPhone" label="Billing phone" type="tel" bind:value={form.billingPhone} placeholder="+1 234 567 890" />
@@ -138,6 +141,16 @@
 			display: flex;
 			flex-direction: column;
 			gap: calc(var(--gutter) * 1.5);
+		}
+	}
+
+	.helper-link {
+		display: inline-block;
+		margin-top: calc(var(--gutter) * 0.5);
+		font-size: var(--font-size-small);
+		opacity: 0.6;
+		&:hover {
+			opacity: 1;
 		}
 	}
 

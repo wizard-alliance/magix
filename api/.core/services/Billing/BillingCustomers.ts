@@ -20,6 +20,7 @@ const toShape = (row: BillingCustomerDBRow): BillingCustomer => ({
 		longitude: row.billing_longitude,
 	},
 	vatId: row.vat_id,
+	providerCustomerId: row.provider_customer_id,
 	created: row.created,
 	updated: row.updated,
 })
@@ -50,9 +51,28 @@ export class BillingCustomers {
 	}
 
 	async set(params: Partial<BillingCustomerDBRow>) {
-		if (!params.user_id && !params.company_id) {
-			return { error: "A customer must have either a user or a company. Choose one.", code: 422 }
+		const isGuest = params.is_guest === 1
+		if (!isGuest && !params.user_id && !params.company_id) {
+			return { error: "A customer must have a user, a company, or be a guest.", code: 422 }
 		}
+
+		// Auto-claim: if creating for a user, check if a guest customer exists with the same email
+		if (params.user_id && params.billing_email) {
+			const guest = await this.db.selectFrom("billing_customers").selectAll()
+				.where("is_guest", "=", 1)
+				.where("billing_email", "=", params.billing_email)
+				.executeTakeFirst()
+			if (guest) {
+				// Claim the guest record — attach user, preserve orders/subscriptions
+				await this.db.updateTable("billing_customers").set({
+					user_id: params.user_id,
+					is_guest: 0,
+					billing_name: params.billing_name || guest.billing_name,
+				}).where("id", "=", guest.id!).executeTakeFirst()
+				return { id: Number(guest.id), claimed: true }
+			}
+		}
+
 		if (params.user_id) {
 			const existing = await this.db.selectFrom("billing_customers").select("id").where("user_id", "=", params.user_id).executeTakeFirst()
 			if (existing) return { error: "A billing customer already exists for this user", code: 409 }

@@ -19,6 +19,7 @@
 
 	const quickLinks = [
 		{ href: "/account/settings/details", icon: "fa-light fa-file-signature", label: "Details" },
+		{ href: "/account/settings/email", icon: "fa-light fa-envelope", label: "Email" },
 		{ href: "/account/settings/avatar", icon: "fa-light fa-image", label: "Avatar" },
 		{ href: "/account/settings/password", icon: "fa-light fa-lock", label: "Password" },
 		{ href: "/account/settings/billing", icon: "fa-light fa-credit-card", label: "Billing" },

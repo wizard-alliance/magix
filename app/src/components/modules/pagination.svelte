@@ -30,7 +30,7 @@
 </script>
 
 <div class="pagination">
-	<button disabled={current === 1} on:click={() => go(current - 1)}>
+	<button aria-label="Previous page" disabled={current === 1} on:click={() => go(current - 1)}>
 		<i class="fa-light fa-chevron-left"></i>
 	</button>
 	{#each pages as p}
@@ -40,7 +40,7 @@
 			<button class:active={p === current} on:click={() => go(p)}>{p}</button>
 		{/if}
 	{/each}
-	<button disabled={current === total} on:click={() => go(current + 1)}>
+	<button aria-label="Next page" disabled={current === total} on:click={() => go(current + 1)}>
 		<i class="fa-light fa-chevron-right"></i>
 	</button>
 </div>

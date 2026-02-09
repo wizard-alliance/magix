@@ -36,6 +36,10 @@ export class AuthRoute {
 		api.Router.set(["POST"], `${this.userRoute}/reset/confirm`, this.confirmReset)
 		api.Router.set(["GET"], `${this.userRoute}/confirm`, this.confirmActivation)
 
+		// Email change
+		api.Router.set(["POST"], `${this.userRoute}/email/change`, this.requestEmailChange, this.userOptions)
+		api.Router.set(["GET"], `${this.userRoute}/confirm-email-change`, this.confirmEmailChange)
+
 		// User routes
 		api.Router.set(["POST"], `${this.userRoute}/me`, this.me, this.userOptions)
 		api.Router.set(["POST"], `${this.userRoute}/profile`, this.updateProfile, this.userOptions)
@@ -488,6 +492,34 @@ export class AuthRoute {
 				params.set("error", result.error)
 			}
 			res.redirect(`${baseUrl}/account/login?${params.toString()}`)
+			return null
+		}
+
+		return result
+	}
+
+	requestEmailChange = async ($: $, req: Request) => {
+		$ = api.Router.getParams(req)
+		const authUser = (req as any).authUser
+		if (!authUser?.id) return { error: "Unauthorized", code: 401 }
+		return await api.User.Auth.requestEmailChange(authUser.id, $.body.email ?? $.body.newEmail ?? "")
+	}
+
+	confirmEmailChange = async ($: $, req: Request, res: Response) => {
+		$ = api.Router.getParams(req)
+		const token = (req.query.token as string) ?? $.body.token ?? ""
+		const result = await api.User.Auth.confirmEmailChange(token)
+
+		if (req.method === "GET") {
+			const baseUrl = api.Config("WEB_URL") || "http://localhost:5173"
+			const params = new URLSearchParams()
+			if ("success" in result) {
+				params.set("emailChanged", "true")
+				params.set("message", result.message)
+			} else {
+				params.set("error", result.error)
+			}
+			res.redirect(`${baseUrl}/account/settings/email?${params.toString()}`)
 			return null
 		}
 

@@ -461,4 +461,102 @@ export class AuthService {
 
 		return { valid: true, user: fromSig.user ?? undefined }
 	}
+
+	/** Request email change - sends verification to new email */
+	async requestEmailChange(userId: number, newEmail: string): Promise<{ success: true; message: string } | { error: string; code?: number }> {
+		if (!newEmail) return { error: "New email required", code: 400 }
+
+		const normalized = normalizeEmail(newEmail)
+		const user = await api.User.Repo.get(userId)
+		if (!user) return { error: "User not found", code: 404 }
+
+		if (normalized === user.info.email) {
+			return { error: "New email is the same as your current email", code: 400 }
+		}
+
+		// Check if email is already taken
+		const existing = await this.db.selectFrom("users")
+			.select("id")
+			.where("email", "=", normalized)
+			.where("deleted_at", "is", null)
+			.executeTakeFirst()
+		if (existing) return { error: "Email is already in use", code: 409 }
+
+		const token = randomUUID()
+		const expires = futureUtcDateTime(24 * 60 * 60 * 1000) // 24 hours
+
+		await this.db.updateTable("users")
+			.set({
+				pending_email: normalized,
+				email_change_token: token,
+				email_change_token_expiration: expires,
+			} as any)
+			.where("id", "=", userId)
+			.execute()
+
+		const baseUrl = api.Config("API_BASE_URL") || "http://localhost:1337"
+		const confirmUrl = `${baseUrl}/api/v1/account/confirm-email-change?token=${token}`
+
+		await api.Mail.send({
+			to: normalized,
+			subject: "Confirm your new email address",
+			template: "confirm-email-change",
+			data: {
+				user: { name: user.info.firstName || user.info.username },
+				verify: { url: confirmUrl, expiresIn: "24 hours", newEmail: normalized },
+			},
+		})
+
+		return { success: true, message: "A verification link has been sent to your new email address." }
+	}
+
+	/** Confirm email change with token */
+	async confirmEmailChange(token: string): Promise<{ success: true; message: string } | { error: string; code?: number }> {
+		if (!token) return { error: "Token required", code: 400 }
+
+		const user = await this.db.selectFrom("users")
+			.select(["id", "pending_email", "email_change_token_expiration"])
+			.where("email_change_token" as any, "=", token)
+			.executeTakeFirst()
+
+		if (!user || !user.pending_email) {
+			return { error: "Invalid or expired token", code: 400 }
+		}
+
+		if (user.email_change_token_expiration) {
+			const expires = parseUtcDateTimeMs(user.email_change_token_expiration)
+			if (Date.now() > expires) {
+				return { error: "Token has expired. Please request a new email change.", code: 400 }
+			}
+		}
+
+		// Check the new email isn't taken (race condition guard)
+		const taken = await this.db.selectFrom("users")
+			.select("id")
+			.where("email", "=", user.pending_email)
+			.where("deleted_at", "is", null)
+			.executeTakeFirst()
+		if (taken) return { error: "Email is already in use", code: 409 }
+
+		// Apply the email change
+		await this.db.updateTable("users")
+			.set({
+				email: user.pending_email,
+				pending_email: null,
+				email_change_token: null,
+				email_change_token_expiration: null,
+			} as any)
+			.where("id", "=", user.id!)
+			.execute()
+
+		// Sync billing_customers email
+		try {
+			await api.Billing.Customers.update(
+				{ billing_email: user.pending_email },
+				{ user_id: user.id! as any }
+			)
+		} catch { /* no billing customer yet — fine */ }
+
+		return { success: true, message: "Email address updated successfully." }
+	}
 }

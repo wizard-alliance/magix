@@ -16,6 +16,7 @@ export type BillingCustomerDBRow = {
 	billing_latitude: number | null
 	billing_longitude: number | null
 	vat_id: string | null
+	provider_customer_id: string | null
 	created: string | null
 	updated: string | null
 	deleted_at: string | null
@@ -289,6 +290,9 @@ export type UserDBRow = {
 	activation_token_expiration: string | null
 	failed_login_attempts: number
 	lockout_until: string | null
+	pending_email: string | null
+	email_change_token: string | null
+	email_change_token_expiration: string | null
 }
 
 
@@ -311,6 +315,7 @@ export const schemaColumns = {
 		billing_latitude: 'number',
 		billing_longitude: 'number',
 		vat_id: 'string',
+		provider_customer_id: 'string',
 		created: 'date',
 		updated: 'date',
 		deleted_at: 'date'
@@ -460,7 +465,10 @@ export const schemaColumns = {
 		tfa_secret: 'string',
 		activation_token_expiration: 'date',
 		failed_login_attempts: 'number',
-		lockout_until: 'date'
+		lockout_until: 'date',
+		pending_email: 'string',
+		email_change_token: 'string',
+		email_change_token_expiration: 'date'
 	},
 
 	user_devices: {

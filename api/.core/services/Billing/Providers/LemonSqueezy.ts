@@ -85,8 +85,8 @@ export class LemonSqueezyProvider {
 				type: 'checkouts',
 				attributes: {
 					checkout_data: {
-						email,
-						name,
+						email: email || undefined,
+						name: name || undefined,
 						custom: Object.keys(custom).length ? custom : undefined,
 					},
 					product_options: {
@@ -155,6 +155,22 @@ export class LemonSqueezyProvider {
 	}
 
 	// ─────────────────────────────────────────────────────────────
+	// Customers
+	// ─────────────────────────────────────────────────────────────
+
+	async updateCustomer(customerId: string | number, attrs: Record<string, any>) {
+		const payload = {
+			data: {
+				type: `customers`,
+				id: String(customerId),
+				attributes: attrs,
+			},
+		}
+		const result = await this.request(`PATCH`, `/customers/${customerId}`, payload)
+		return result.data
+	}
+
+	// ─────────────────────────────────────────────────────────────
 	// Store Data (for admin/sync)
 	// ─────────────────────────────────────────────────────────────
 
@@ -164,7 +180,6 @@ export class LemonSqueezyProvider {
 	}
 
 	async getProducts() {
-		// Products are scoped to your store via API key, no filter needed
 		const result = await this.request('GET', `/products`)
 		return result.data
 	}
@@ -175,7 +190,6 @@ export class LemonSqueezyProvider {
 	}
 
 	async getVariants(productId?: string | number) {
-		// Variants can be filtered by product_id, otherwise returns all for your store
 		const filter = productId ? `?filter[product_id]=${productId}` : ``
 		const result = await this.request('GET', `/variants${filter}`)
 		return result.data
@@ -211,12 +225,34 @@ export class LemonSqueezyProvider {
 	}
 
 	// ─────────────────────────────────────────────────────────────
+	// Paginated Fetch (for historical sync)
+	// ─────────────────────────────────────────────────────────────
+
+	private async fetchAll(endpoint: string): Promise<any[]> {
+		const all: any[] = []
+		let page = 1
+		while (true) {
+			const sep = endpoint.includes(`?`) ? `&` : `?`
+			const result = await this.request<any>(`GET`, `${endpoint}${sep}page[number]=${page}&page[size]=50`)
+			if (result.data) all.push(...result.data)
+			const last = result.meta?.page?.lastPage ?? 1
+			if (page >= last) break
+			page++
+		}
+		return all
+	}
+
+	// ─────────────────────────────────────────────────────────────
 	// Sync
 	// ─────────────────────────────────────────────────────────────
 
 	async sync() {
 		const results = {
+			customers: await this.syncCustomers(),
 			products: await this.syncProducts(),
+			orders: await this.syncOrders(),
+			subscriptions: await this.syncSubscriptions(),
+			invoices: await this.syncInvoices(),
 		}
 		return results
 	}
@@ -225,24 +261,18 @@ export class LemonSqueezyProvider {
 		const stats = { created: 0, updated: 0, errors: [] as string[] }
 
 		try {
-			const products = await this.getProducts()
-			const variants = await this.getVariants()
+			const products = await this.fetchAll(`/products`)
+			const variants = await this.fetchAll(`/variants`)
 
-			// Build product lookup
 			const productMap = new Map<string, any>()
-			for (const p of products) {
-				productMap.set(p.id, p)
-			}
+			for (const p of products) productMap.set(p.id, p)
 
 			for (const variant of variants) {
 				try {
 					const product = productMap.get(String(variant.attributes.product_id))
 					const variantId = String(variant.id)
-
-					// Check if product exists
 					const existing = await api.Billing.Products.get({ provider_variant_id: variantId })
 
-					// Determine type from LS fields
 					let productType = `one_time`
 					if (product?.attributes?.pay_what_you_want) {
 						productType = `pwyw`
@@ -263,7 +293,7 @@ export class LemonSqueezyProvider {
 						interval_count: variant.attributes.interval_count || 1,
 						trial_days: variant.attributes.trial_interval === `day` ? (variant.attributes.trial_interval_count || 0) : 0,
 						description: variant.attributes.description || product?.attributes?.description || null,
-						is_active: variant.attributes.status === `published` ? 1 : 0,
+						is_active: product?.attributes?.status === `published` ? 1 : 0,
 					}
 
 					if (existing) {
@@ -281,6 +311,230 @@ export class LemonSqueezyProvider {
 			stats.errors.push(`Sync failed: ${e.message}`)
 		}
 
+		return stats
+	}
+
+	async syncCustomers() {
+		const stats = { created: 0, updated: 0, errors: [] as string[] }
+		try {
+			const lsCustomers = await this.fetchAll(`/customers`)
+			for (const c of lsCustomers) {
+				try {
+					const a = c.attributes
+					const lsId = String(c.id)
+					const existing = await api.Billing.Customers.getMany({ provider_customer_id: lsId })
+					const match = existing[0] ?? null
+
+					const data: Record<string, any> = {
+						billing_name: a.name || null,
+						billing_email: a.email || null,
+						billing_city: a.city || null,
+						billing_state: a.region || null,
+						billing_country: a.country || null,
+						provider_customer_id: lsId,
+					}
+
+					if (match) {
+						await api.Billing.Customers.update(data, { id: match.id })
+						stats.updated++
+					} else {
+						// Try email match to backfill provider_customer_id
+						const emailMatch = a.email ? (await api.Billing.Customers.getMany({ billing_email: a.email }))[0] : null
+						if (emailMatch) {
+							await api.Billing.Customers.update(data, { id: emailMatch.id })
+							stats.updated++
+						} else {
+							await api.Billing.Customers.set({ ...data, is_guest: 1 } as any)
+							stats.created++
+						}
+					}
+				} catch (e: any) {
+					stats.errors.push(`Customer ${c.id}: ${e.message}`)
+				}
+			}
+		} catch (e: any) {
+			stats.errors.push(`Sync failed: ${e.message}`)
+		}
+		return stats
+	}
+
+	async syncOrders() {
+		const stats = { created: 0, updated: 0, errors: [] as string[] }
+		try {
+			const lsOrders = await this.fetchAll(`/orders`)
+			for (const o of lsOrders) {
+				try {
+					const a = o.attributes
+					const providerOrderId = String(o.id)
+
+					// Resolve customer
+					const lsCustId = String(a.customer_id)
+					const customers = await api.Billing.Customers.getMany({ provider_customer_id: lsCustId })
+					let customer = customers[0] ?? null
+					if (!customer && a.user_email) {
+						const emailMatch = await api.Billing.Customers.getMany({ billing_email: a.user_email })
+						customer = emailMatch[0] ?? null
+					}
+					if (!customer) {
+						stats.errors.push(`Order ${o.id}: no matching customer (LS customer ${lsCustId})`)
+						continue
+					}
+
+					// Check existing
+					const existing = await api.Billing.Orders.getMany({ provider_order_id: providerOrderId })
+					const match = existing[0] ?? null
+
+					const orderData: Record<string, any> = {
+						customer_id: customer.id,
+						type: `purchase`,
+						provider_id: 1,
+						provider_order_id: providerOrderId,
+						amount: a.total ?? 0,
+						currency: a.currency || `USD`,
+						status: a.status === `paid` ? `paid` : a.status === `refunded` ? `refunded` : `pending`,
+						paid_at: a.status === `paid` ? (a.created_at ? new Date(a.created_at).toISOString().slice(0, 19).replace(`T`, ` `) : null) : null,
+					}
+
+					if (match) {
+						await api.Billing.Orders.update({ status: orderData.status, amount: orderData.amount }, { id: match.id })
+						stats.updated++
+					} else {
+						const result = await api.Billing.Orders.set(orderData)
+						stats.created++
+						// Auto-create invoice
+						if (result && `insertId` in result || `id` in result) {
+							const orderId = Number((result as any).id ?? (result as any).insertId)
+							if (orderId) {
+								try {
+									await api.Billing.Invoices.set({
+										order_id: orderId,
+										customer_id: customer.id,
+										billing_info_snapshot: JSON.stringify(customer.billingAddress ?? {}),
+										billing_order_snapshot: JSON.stringify({ amount: orderData.amount, currency: orderData.currency, status: orderData.status }),
+										pdf_url: a.urls?.receipt ?? null,
+									})
+								} catch { /* invoice creation is best-effort */ }
+							}
+						}
+					}
+				} catch (e: any) {
+					stats.errors.push(`Order ${o.id}: ${e.message}`)
+				}
+			}
+		} catch (e: any) {
+			stats.errors.push(`Sync failed: ${e.message}`)
+		}
+		return stats
+	}
+
+	async syncSubscriptions() {
+		const stats = { created: 0, updated: 0, errors: [] as string[] }
+		try {
+			const lsSubs = await this.fetchAll(`/subscriptions`)
+			for (const s of lsSubs) {
+				try {
+					const a = s.attributes
+					const providerSubId = String(s.id)
+
+					// Resolve customer
+					const lsCustId = String(a.customer_id)
+					const customers = await api.Billing.Customers.getMany({ provider_customer_id: lsCustId })
+					let customer = customers[0] ?? null
+					if (!customer && a.user_email) {
+						const emailMatch = await api.Billing.Customers.getMany({ billing_email: a.user_email })
+						customer = emailMatch[0] ?? null
+					}
+					if (!customer) {
+						stats.errors.push(`Subscription ${s.id}: no matching customer`)
+						continue
+					}
+
+					// Resolve plan by variant
+					let planId: number | undefined
+					if (a.variant_id) {
+						const product = await api.Billing.Products.get({ provider_variant_id: String(a.variant_id) })
+						if (product) planId = product.id
+					}
+
+					const toDate = (iso: string | null) => iso ? new Date(iso).toISOString().slice(0, 19).replace(`T`, ` `) : undefined
+
+					const existing = await api.Billing.Subscriptions.get({ provider_subscription_id: providerSubId })
+
+					const subData: Record<string, any> = {
+						customer_id: customer.id,
+						plan_id: planId,
+						provider_subscription_id: providerSubId,
+						status: a.status || `active`,
+						current_period_start: toDate(a.created_at),
+						current_period_end: toDate(a.renews_at || a.ends_at),
+						cancel_at_period_end: a.cancelled ? 1 : 0,
+						canceled_at: toDate(a.ends_at),
+					}
+
+					if (existing) {
+						await api.Billing.Subscriptions.update({
+							status: subData.status,
+							current_period_end: subData.current_period_end,
+							cancel_at_period_end: subData.cancel_at_period_end,
+						}, { id: existing.id })
+						stats.updated++
+					} else {
+						await api.Billing.Subscriptions.set(subData)
+						stats.created++
+					}
+				} catch (e: any) {
+					stats.errors.push(`Subscription ${s.id}: ${e.message}`)
+				}
+			}
+		} catch (e: any) {
+			stats.errors.push(`Sync failed: ${e.message}`)
+		}
+		return stats
+	}
+
+	async syncInvoices() {
+		const stats = { created: 0, updated: 0, errors: [] as string[] }
+		try {
+			const lsInvoices = await this.fetchAll(`/subscription-invoices`)
+			for (const inv of lsInvoices) {
+				try {
+					const a = inv.attributes
+					const providerSubId = String(a.subscription_id)
+
+					// Resolve subscription → customer
+					const sub = await api.Billing.Subscriptions.get({ provider_subscription_id: providerSubId })
+					if (!sub) {
+						stats.errors.push(`Invoice ${inv.id}: no matching subscription (LS sub ${providerSubId})`)
+						continue
+					}
+
+					// Find matching order (by subscription_id)
+					const orders = await api.Billing.Orders.getMany({ subscription_id: sub.id })
+					const orderId = orders[0]?.id ?? null
+					if (!orderId) continue // no order to attach to
+
+					// Check if invoice exists for this order already
+					const existingInvoices = await api.Billing.Invoices.getMany({ order_id: orderId })
+					if (existingInvoices.length > 0) {
+						stats.updated++
+						continue
+					}
+
+					await api.Billing.Invoices.set({
+						order_id: orderId,
+						customer_id: sub.customerId,
+						billing_info_snapshot: JSON.stringify({}),
+						billing_order_snapshot: JSON.stringify({ amount: a.total ?? 0, currency: a.currency || `USD`, status: a.status }),
+						pdf_url: a.urls?.invoice_url ?? null,
+					})
+					stats.created++
+				} catch (e: any) {
+					stats.errors.push(`Invoice ${inv.id}: ${e.message}`)
+				}
+			}
+		} catch (e: any) {
+			stats.errors.push(`Sync failed: ${e.message}`)
+		}
 		return stats
 	}
 

@@ -1,3 +1,4 @@
+-- Adminer 5.4.1 MySQL 8.0.30 dump
 
 SET NAMES utf8;
 SET time_zone = '+00:00';
@@ -24,12 +25,14 @@ CREATE TABLE `billing_customers` (
   `billing_latitude` decimal(10,7) DEFAULT NULL COMMENT 'Latitude for billing location',
   `billing_longitude` decimal(10,7) DEFAULT NULL COMMENT 'Longitude for billing location',
   `vat_id` varchar(50) DEFAULT NULL COMMENT 'VAT or tax ID number if applicable',
+  `provider_customer_id` varchar(255) DEFAULT NULL COMMENT 'LemonSqueezy customer ID',
   `created` datetime DEFAULT CURRENT_TIMESTAMP COMMENT 'Timestamp when the record was created',
   `updated` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Timestamp when the record was last updated',
   `deleted_at` datetime DEFAULT NULL COMMENT 'Soft delete timestamp',
   PRIMARY KEY (`id`),
   UNIQUE KEY `idx_user_id` (`user_id`),
   UNIQUE KEY `idx_company_id` (`company_id`),
+  UNIQUE KEY `idx_provider_customer_id` (`provider_customer_id`),
   KEY `fk_billing_customers_user` (`user_id`),
   KEY `fk_billing_customers_company` (`company_id`),
   CONSTRAINT `fk_billing_customers_company` FOREIGN KEY (`company_id`) REFERENCES `user_organization` (`id`) ON DELETE CASCADE,
@@ -470,9 +473,14 @@ CREATE TABLE `users` (
   `activation_token_expiration` datetime DEFAULT NULL COMMENT 'Timestamp when the activation token expires',
   `failed_login_attempts` int DEFAULT '0' COMMENT 'Number of consecutive failed login attempts',
   `lockout_until` datetime DEFAULT NULL COMMENT 'If set, user is locked out until this timestamp',
+  `pending_email` varchar(255) DEFAULT NULL,
+  `email_change_token` varchar(255) DEFAULT NULL,
+  `email_change_token_expiration` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `unique_username` (`username`),
   UNIQUE KEY `unique_email` (`email`),
   KEY `idx_user_email` (`email`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Stores user account information and credentials.';
 
+
+-- 2026-02-09 06:05:01 UTC

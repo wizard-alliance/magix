@@ -1,0 +1,19 @@
+<h1 style="margin: 0 0 24px; font-size: 22px; font-weight: 600; color: #1a1a1a;">Confirm your new email</h1>
+
+<p style="margin: 0 0 16px; color: #3c3c3c; font-size: 15px; line-height: 1.6;">Hi {{user.name, 'there'}},</p>
+
+<p style="margin: 0 0 24px; color: #3c3c3c; font-size: 15px; line-height: 1.6;">You requested to change your email address to <strong>{{verify.newEmail}}</strong>. Please confirm by clicking the button below.</p>
+
+<p style="margin: 0 0 32px;">
+	<a href="{{verify.url}}" style="display: inline-block; background: {{app.color, '#813ece'}}; color: #ffffff; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-size: 15px; font-weight: 600; border: 1px solid {{app.color, '#813ece'}};">Confirm Email Change</a>
+</p>
+
+<p style="margin: 0 0 24px; color: #706d6b; font-size: 13px; line-height: 1.5;">Button not working? Copy and paste this link into your browser:<br>
+	<a href="{{verify.url}}" style="color: {{app.color, '#813ece'}}; word-break: break-all;">{{verify.url}}</a>
+</p>
+
+<p style="margin: 0 0 16px; color: #706d6b; font-size: var(--font-size-small); line-height: 1.5;">This link expires in {{verify.expiresIn, '24 hours'}}. If you didn't request this change, you can safely ignore this email.</p>
+
+<p style="margin: 0; color: #706d6b; font-size: var(--font-size-small);">
+	The {{app.name, 'MagiX'}} Team
+</p>

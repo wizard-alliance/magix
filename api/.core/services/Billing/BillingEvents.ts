@@ -12,6 +12,9 @@ export type LemonSqueezyEventType =
 	| "subscription_expired"
 	| "subscription_payment_success"
 	| "subscription_payment_failed"
+	// Customer events
+	| "customer_created"
+	| "customer_updated"
 	// Optional events
 	| "subscription_updated"
 	| "subscription_resumed"
@@ -47,6 +50,9 @@ export class BillingEvents {
 		this.handlers.set("subscription_expired", this.onSubscriptionExpired.bind(this))
 		this.handlers.set("subscription_payment_success", this.onPaymentSuccess.bind(this))
 		this.handlers.set("subscription_payment_failed", this.onPaymentFailed.bind(this))
+		// Customer events
+		this.handlers.set("customer_created", this.onCustomerCreated.bind(this))
+		this.handlers.set("customer_updated", this.onCustomerUpdated.bind(this))
 		// Optional events
 		this.handlers.set("subscription_updated", this.onSubscriptionUpdated.bind(this))
 		this.handlers.set("subscription_resumed", this.onSubscriptionResumed.bind(this))
@@ -73,35 +79,65 @@ export class BillingEvents {
 
 	private async findOrCreateCustomer(data: any, customData: any) {
 		const email = data.user_email
-		if (!email) {
-			api.Log(`No email in webhook data, cannot create customer`, this.prefix)
+		const lsCustomerId = data.customer_id ? String(data.customer_id) : null
+
+		if (!email && !lsCustomerId) {
+			api.Log(`No email or customer_id in webhook data, cannot resolve customer`, this.prefix)
 			return null
 		}
 
-		// 1. Check if billing_customer exists by email
-		let customer = await api.Billing.Customers.get({ billing_email: email })
+		// 1. Lookup by provider_customer_id (fastest, most reliable)
+		if (lsCustomerId) {
+			const byProvider = await api.Billing.Customers.getMany({ provider_customer_id: lsCustomerId })
+			if (byProvider[0]) {
+				api.Log(`Found customer by provider_customer_id: ${byProvider[0].id}`, this.prefix)
+				return byProvider[0]
+			}
+		}
+
+		// 2. Resolve user_id from customData or email lookup (trusted identity)
+		const user = email ? await api.User.Repo.get(email) : null
+		const userId = customData?.user_id ? Number(customData.user_id) : user?.id || null
+
+		// 3. Lookup by user_id — takes priority over email
+		let customer = null as any
+		if (userId) {
+			customer = await api.Billing.Customers.get({ user_id: userId })
+			if (customer) {
+				api.Log(`Found existing billing customer by user_id: ${customer.id}`, this.prefix)
+				const backfill: Record<string, any> = {}
+				if (lsCustomerId && !customer.providerCustomerId) backfill.provider_customer_id = lsCustomerId
+				if (email && !customer.billingEmail) backfill.billing_email = email
+				if (Object.keys(backfill).length) await api.Billing.Customers.update(backfill, { id: customer.id })
+				return customer
+			}
+		}
+
+		// 4. Fallback: lookup by email (least trusted — covers guest purchases)
+		customer = email ? await api.Billing.Customers.get({ billing_email: email }) : null
 		if (customer) {
-			api.Log(`Found existing billing customer: ${customer.id}`, this.prefix)
+			api.Log(`Found existing billing customer by email: ${customer.id}`, this.prefix)
+			if (lsCustomerId && !customer.providerCustomerId) {
+				await api.Billing.Customers.update({ provider_customer_id: lsCustomerId }, { id: customer.id })
+			}
 			return customer
 		}
 
-		// 2. Check if user exists with this email - link them
-		const user = await api.User.Repo.get(email)
-		const userId = customData?.user_id ? Number(customData.user_id) : user?.id || null
-
-		// 3. Create new billing_customer (with or without user link)
+		// 5. Create new billing_customer (guest if no userId)
 		api.Log(`Creating billing customer for email: ${email}, user_id: ${userId}`, this.prefix)
 		try {
 			const result = await api.Billing.Customers.set({
-				user_id: userId || undefined,
-				billing_name: data.user_name || null,
+				...(userId ? { user_id: userId } : { is_guest: 1 }),
+				billing_name: data.user_name || data.name || null,
 				billing_email: email,
+				provider_customer_id: lsCustomerId,
 			})
 			api.Log(`Billing.Customers.set result: ${JSON.stringify(result)}`, this.prefix)
 			if (`id` in result && result.id) {
 				customer = await api.Billing.Customers.get({ id: result.id })
 				return customer
 			}
+			if (`error` in result) api.Log(`Billing.Customers.set error: ${result.error}`, this.prefix)
 		} catch (e: any) {
 			api.Log(`Error creating billing customer: ${e.message}`, this.prefix)
 		}
@@ -124,9 +160,22 @@ export class BillingEvents {
 				amount: data.total,
 				currency: data.currency,
 				status: data.status === `paid` ? `paid` : `pending`,
-				paid_at: data.status === `paid` ? new Date().toISOString() : null,
+				paid_at: data.status === `paid` ? new Date().toISOString().slice(0, 19).replace(`T`, ` `) : null,
 			})
 			api.Log(`Order created: ${JSON.stringify(result)}`, this.prefix)
+
+			// Auto-create invoice
+			const orderId = Number((result as any)?.id ?? (result as any)?.insertId)
+			if (orderId) {
+				try {
+					await api.Billing.Invoices.set({
+						order_id: orderId,
+						customer_id: customer.id,
+						billing_info_snapshot: JSON.stringify(customer.billingAddress ?? {}),
+						billing_order_snapshot: JSON.stringify({ amount: data.total, currency: data.currency, status: data.status }),
+					})
+				} catch { /* invoice creation is best-effort */ }
+			}
 		} catch (e: any) {
 			api.Log(`Error creating order: ${e.message}`, this.prefix)
 		}
@@ -230,8 +279,23 @@ export class BillingEvents {
 			amount: data.total,
 			currency: data.currency,
 			status: `paid`,
-			paid_at: new Date().toISOString(),
+			paid_at: new Date().toISOString().slice(0, 19).replace(`T`, ` `),
 		})
+
+		// Auto-create invoice for renewal
+		const recentOrders = await api.Billing.Orders.getMany({ provider_order_id: String(data.id) })
+		const newOrder = recentOrders[0]
+		if (newOrder) {
+			try {
+				const cust = await api.Billing.Customers.get({ id: sub.customerId })
+				await api.Billing.Invoices.set({
+					order_id: newOrder.id,
+					customer_id: sub.customerId,
+					billing_info_snapshot: JSON.stringify(cust?.billingAddress ?? {}),
+					billing_order_snapshot: JSON.stringify({ amount: data.total, currency: data.currency, status: `paid` }),
+				})
+			} catch { /* best-effort */ }
+		}
 
 		await api.Billing.Subscriptions.update({
 			status: `active`,
@@ -257,6 +321,36 @@ export class BillingEvents {
 	// ─────────────────────────────────────────────────────────────
 	// Optional / Future handlers (empty stubs)
 	// ─────────────────────────────────────────────────────────────
+
+	private async onCustomerCreated(data: any, customData: any) {
+		api.Log(`Event triggered: customer_created`, this.prefix)
+		await this.findOrCreateCustomer(data, customData)
+	}
+
+	private async onCustomerUpdated(data: any, _customData: any) {
+		api.Log(`Event triggered: customer_updated`, this.prefix)
+		const lsCustomerId = data.id ? String(data.id) : null
+		if (!lsCustomerId) return
+
+		const customers = await api.Billing.Customers.getMany({ provider_customer_id: lsCustomerId })
+		const customer = customers[0]
+		if (!customer) {
+			api.Log(`customer_updated: no local customer for LS ${lsCustomerId}`, this.prefix)
+			return
+		}
+
+		const updateData: Record<string, any> = {}
+		if (data.name !== undefined) updateData.billing_name = data.name
+		if (data.email !== undefined) updateData.billing_email = data.email
+		if (data.city !== undefined) updateData.billing_city = data.city
+		if (data.region !== undefined) updateData.billing_state = data.region
+		if (data.country !== undefined) updateData.billing_country = data.country
+
+		if (Object.keys(updateData).length) {
+			await api.Billing.Customers.update(updateData, { id: customer.id })
+			api.Log(`Customer ${customer.id} updated from LS webhook`, this.prefix)
+		}
+	}
 
 	private async onPaymentRefunded(_data: any, _customData: any) {
 		api.Log(`Event triggered: subscription_payment_refunded`, this.prefix)

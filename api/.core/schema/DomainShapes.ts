@@ -83,6 +83,7 @@ export type BillingCustomer = {
 		longitude: number | null
 	}
 	vatId: string | null
+	providerCustomerId: string | null
 	created: string | null
 	updated: string | null
 }
