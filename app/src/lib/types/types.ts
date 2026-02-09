@@ -29,6 +29,29 @@ export type UserDBRow = {
 	disabled: boolean
 	created: string | null
 	updated: string | null
+	tosAccepted?: boolean
+	deletedAt?: string | null
+	pendingEmail?: string | null
+}
+
+export type UserDeviceSession = {
+	id: number
+	valid: boolean
+	expires: string | null
+	created: string | null
+}
+
+export type UserDevice = {
+	id: number
+	name: string | null
+	customName: string | null
+	fingerprint: string | null
+	userAgent: string | null
+	ip: string | null
+	lastLogin: string | null
+	created: string | null
+	current?: boolean
+	sessions: UserDeviceSession[]
 }
 
 export type UserFull = {
@@ -36,7 +59,8 @@ export type UserFull = {
 	info: UserDBRow
 	permissions: string[]
 	settings: { key: string; value: string | null }[]
-	devices: any[]
+	devices: UserDevice[]
+	lastLogin: string | null
 }
 
 export type AuthPayload = {

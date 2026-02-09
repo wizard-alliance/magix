@@ -5,24 +5,127 @@
 	import Button from "$components/fields/button.svelte"
 	import Spinner from "$components/modules/spinner.svelte"
 	import Badge from "$components/modules/badge.svelte"
+	import Tooltip from "$components/modules/tooltip.svelte"
+	import type { UserDevice, UserFull } from "$lib/types/types"
+
+	const STALE_DAYS = 90
+	const STALE_MS = STALE_DAYS * 24 * 60 * 60 * 1000
 
 	let loading = true
-	let devices: any[] = []
+	let devices: UserDevice[] = []
+	let user: UserFull | null = null
+
+	$: healthIssues = getHealthIssues(user, devices)
+	$: sortedDevices = [...devices].sort((a, b) => {
+		if (a.current && !b.current) return -1
+		if (!a.current && b.current) return 1
+		return new Date(b.lastLogin ?? 0).getTime() - new Date(a.lastLogin ?? 0).getTime()
+	})
 
 	onMount(async () => {
+		await loadDevices()
+	})
+
+	async function loadDevices() {
+		loading = true
 		const data = await app.Auth.me(true).catch(() => null)
+		user = data
 		devices = data?.devices ?? []
 		loading = false
-	})
+	}
+
+	function getHealthIssues(u: UserFull | null, devs: UserDevice[]) {
+		if (!u) return []
+		const issues: { text: string; variant: "danger" | "warning" | "default" }[] = []
+
+		if (u.info.disabled) issues.push({ text: "Account Disabled", variant: "danger" })
+		if (!u.info.activated) issues.push({ text: "Email Not Verified", variant: "warning" })
+		if (!u.info.tosAccepted) issues.push({ text: "TOS Not Accepted", variant: "warning" })
+		if (u.info.pendingEmail) issues.push({ text: "Email Change Pending", variant: "default" })
+
+		const hasStale = devs.some((d) => d.lastLogin && Date.now() - new Date(d.lastLogin).getTime() > STALE_MS)
+		if (hasStale) issues.push({ text: "Stale Device Sessions", variant: "warning" })
+
+		return issues
+	}
+
+	function isStale(device: UserDevice) {
+		return device.lastLogin && Date.now() - new Date(device.lastLogin).getTime() > STALE_MS
+	}
+
+	function deviceIcon(device: UserDevice) {
+		const ua = (device.userAgent ?? "").toLowerCase()
+		if (ua.includes("mobile") || ua.includes("android") || ua.includes("iphone")) return "mobile"
+		return "desktop"
+	}
+
+	function deviceDisplayName(device: UserDevice) {
+		return device.customName || device.name || device.userAgent || "Unknown device"
+	}
 
 	const logoutAllDevices = async () => {
 		const confirmed = await app.UI.Modal.confirm("Log out all devices?", "This will end all active sessions including this one. You will need to log in again.")
 		if (!confirmed) return
-
 		try {
 			await app.Auth.logoutAllDevices()
 			app.UI.Notify.success("All sessions ended")
 			goto("/auth/login")
+		} catch (error) {
+			app.UI.Notify.error(`Error: ${(error as Error).message}`)
+		}
+	}
+
+	const logoutDevice = async (device: UserDevice) => {
+		const label = device.current ? "Log out this device?" : `Log out "${deviceDisplayName(device)}"?`
+		const message = device.current ? "This will end your current session. You will need to log in again." : "This will revoke all sessions on that device."
+		const confirmed = await app.UI.Modal.confirm(label, message)
+		if (!confirmed) return
+		try {
+			await app.Auth.logoutDevice(device.id)
+			if (device.current) {
+				app.Auth.logoutAllDevices()
+				app.UI.Notify.success("Session ended")
+				goto("/auth/login")
+			} else {
+				app.UI.Notify.success("Device logged out")
+				await loadDevices()
+			}
+		} catch (error) {
+			app.UI.Notify.error(`Error: ${(error as Error).message}`)
+		}
+	}
+
+	const renameDevice = async (device: UserDevice) => {
+		const name = await app.UI.Modal.prompt("Name this device", "Enter a custom name for this device", {
+			inputPlaceholder: deviceDisplayName(device),
+		})
+		if (!name) return
+		try {
+			await app.Auth.renameDevice(device.id, name)
+			app.UI.Notify.success("Device renamed")
+			await loadDevices()
+		} catch (error) {
+			app.UI.Notify.error(`Error: ${(error as Error).message}`)
+		}
+	}
+
+	const deleteDevice = async (device: UserDevice) => {
+		const label = device.current ? "Delete this device?" : `Delete "${deviceDisplayName(device)}"?`
+		const message = device.current
+			? "This will revoke all sessions and remove this device. You will need to log in again."
+			: "This will revoke all sessions and permanently remove the device record."
+		const confirmed = await app.UI.Modal.confirm(label, message)
+		if (!confirmed) return
+		try {
+			await app.Auth.deleteDevice(device.id)
+			if (device.current) {
+				app.Auth.logoutAllDevices()
+				app.UI.Notify.success("Device deleted")
+				goto("/auth/login")
+			} else {
+				app.UI.Notify.success("Device deleted")
+				await loadDevices()
+			}
 		} catch (error) {
 			app.UI.Notify.error(`Error: ${(error as Error).message}`)
 		}
@@ -35,6 +138,25 @@
 		<p class="muted-color text-small">Manage your active sessions and account security</p>
 	</div>
 
+	<!-- Account Health -->
+	<div class="section margin-bottom-4">
+		<h2 class="title"><i class="fa-light fa-heart-pulse"></i> Account Health</h2>
+		<div class="health-badges">
+			{#if !loading && user}
+				{#if healthIssues.length === 0}
+					<Badge text="Account Healthy" variant="success" />
+				{:else}
+					{#each healthIssues as issue}
+						<Badge text={issue.text} variant={issue.variant} />
+					{/each}
+				{/if}
+			{:else}
+				<span class="muted-color text-small">Loading…</span>
+			{/if}
+		</div>
+	</div>
+
+	<!-- Active Sessions -->
 	<div class="section margin-bottom-4">
 		<div class="row middle-xs between-xs margin-bottom-2">
 			<div class="col-xxs col-md">
@@ -42,9 +164,11 @@
 				<p class="muted-color text-small">Devices currently signed in to your account</p>
 			</div>
 			<div class="col">
-				<Button variant="danger" size="sm" on:click={logoutAllDevices}>
-					<i class="fa-light fa-right-from-bracket"></i> Log out all
-				</Button>
+				<Tooltip text="End all active sessions" position="left">
+					<Button variant="danger" size="sm" on:click={logoutAllDevices}>
+						<i class="fa-light fa-right-from-bracket"></i> Log out all
+					</Button>
+				</Tooltip>
 			</div>
 		</div>
 
@@ -53,19 +177,19 @@
 				<div class="row center-xxs">
 					<Spinner />
 				</div>
-			{:else if devices.length === 0}
+			{:else if sortedDevices.length === 0}
 				<div class="empty-state">
 					<i class="fa-light fa-shield-check"></i>
 					<p>No session data available</p>
 					<span class="muted-color text-small">Device tracking information will appear here</span>
 				</div>
 			{:else}
-				{#each devices as device, i}
-					<div class="detail-row">
+				{#each sortedDevices as device, i}
+					<div class="detail-row" class:stale={isStale(device)}>
 						<div class="detail-label">
 							<span class="detail-title">
-								<i class="fa-light fa-{device.userAgent?.toLowerCase().includes('mobile') ? 'mobile' : 'desktop'}"></i>
-								{device.name || device.userAgent || "Unknown device"}
+								<i class="fa-light fa-{deviceIcon(device)}"></i>
+								{deviceDisplayName(device)}
 							</span>
 							<span class="muted-color text-small">
 								{device.ip || "Unknown IP"}
@@ -74,18 +198,37 @@
 								{/if}
 							</span>
 						</div>
-						<div class="detail-value">
+						<div class="detail-actions">
 							{#if device.current}
 								<Badge text="Current" variant="success" />
 							{/if}
+							{#if isStale(device)}
+								<Badge text="Stale" variant="warning" />
+							{/if}
+							<Tooltip text="Rename device" position="top">
+								<button class="icon-btn" aria-label="Rename device" on:click={() => renameDevice(device)}>
+									<i class="fa-light fa-pen"></i>
+								</button>
+							</Tooltip>
+							<Tooltip text="Log out device" position="top">
+								<button class="icon-btn" aria-label="Log out device" on:click={() => logoutDevice(device)}>
+									<i class="fa-light fa-right-from-bracket"></i>
+								</button>
+							</Tooltip>
+							<Tooltip text="Delete device" position="top">
+								<button class="icon-btn icon-btn-danger" aria-label="Delete device" on:click={() => deleteDevice(device)}>
+									<i class="fa-light fa-trash"></i>
+								</button>
+							</Tooltip>
 						</div>
 					</div>
-					{#if i < devices.length - 1}<hr />{/if}
+					{#if i < sortedDevices.length - 1}<hr />{/if}
 				{/each}
 			{/if}
 		</div>
 	</div>
 
+	<!-- Password -->
 	<div class="section margin-bottom-4">
 		<div class="row middle-xs margin-bottom-2">
 			<div class="col-xxs">
@@ -100,7 +243,7 @@
 					<span class="detail-title">Password</span>
 					<span class="muted-color text-small">Last changed — unknown</span>
 				</div>
-				<div class="detail-value">
+				<div class="detail-actions">
 					<Button variant="secondary" size="sm" href="/account/settings/password">Change</Button>
 				</div>
 			</div>
@@ -117,6 +260,13 @@
 			margin-right: calc(var(--gutter) * 0.75);
 			opacity: 0.6;
 		}
+	}
+
+	.health-badges {
+		display: flex;
+		flex-wrap: wrap;
+		gap: calc(var(--gutter) * 0.75);
+		margin-top: calc(var(--gutter) * 0.5);
 	}
 
 	.details {
@@ -137,12 +287,22 @@
 		align-items: center;
 		justify-content: space-between;
 		gap: calc(var(--gutter) * 2);
+
+		&.stale {
+			opacity: 0.55;
+		}
 	}
 
 	.detail-label {
+		min-width: 0;
+		overflow: hidden;
+
 		.detail-title {
 			display: block;
 			font-weight: 500;
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
 
 			i {
 				margin-right: calc(var(--gutter) * 0.5);
@@ -151,8 +311,34 @@
 		}
 	}
 
-	.detail-value {
+	.detail-actions {
 		flex-shrink: 0;
+		display: flex;
+		align-items: center;
+		gap: calc(var(--gutter) * 0.75);
+	}
+
+	.icon-btn {
+		background: none;
+		border: none;
+		color: inherit;
+		opacity: 0.4;
+		cursor: pointer;
+		padding: calc(var(--gutter) * 0.5);
+		border-radius: var(--border-radius);
+		transition:
+			opacity 0.15s,
+			background-color 0.15s;
+		font-size: var(--font-size);
+
+		&:hover {
+			opacity: 1;
+			background-color: rgba(255, 255, 255, 0.06);
+		}
+
+		&.icon-btn-danger:hover {
+			color: var(--danger-color);
+		}
 	}
 
 	.empty-state {

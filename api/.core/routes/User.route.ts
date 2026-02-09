@@ -30,6 +30,7 @@ export class AuthRoute {
 		api.Router.set(["POST"], `${this.authRoute}/logout`, this.logout, this.userOptions)
 		api.Router.set(["POST"], `${this.authRoute}/logout/all-devices`, this.logoutAllDevices, this.userOptions)
 		api.Router.set(["POST"], `${this.authRoute}/logout/all-users`, this.logoutAllUsers, this.adminOptions)
+		api.Router.set(["POST"], `${this.authRoute}/logout/device/:id`, this.logoutDevice, this.userOptions)
 
 		// Vendor link management
 		api.Router.set(["POST"], `${this.userRoute}/vendors`, this.listVendors, this.userOptions)
@@ -51,6 +52,11 @@ export class AuthRoute {
 		api.Router.set(["POST"], `${this.userRoute}/settings`, this.saveSettings, this.userOptions)
 		api.Router.set(["POST"], `${this.userRoute}/avatar`, this.uploadAvatar, this.userOptions)
 		api.Router.set(["DELETE"], `${this.userRoute}/avatar`, this.deleteAvatar, this.userOptions)
+
+		// Device management
+		api.Router.set(["POST"], `${this.userRoute}/device`, this.updateCurrentDevice, this.userOptions)
+		api.Router.set(["POST"], `${this.userRoute}/device/:id/name`, this.renameDevice, this.userOptions)
+		api.Router.set(["POST"], `${this.userRoute}/device/:id/delete`, this.deleteDevice, this.userOptions)
 
 		// CRUD routes
 		api.Router.set("GET", `${this.userRoute}/user`, this.get, this.adminOptions)
@@ -325,6 +331,46 @@ export class AuthRoute {
 		return { success: true }
 	}
 
+	renameDevice = async ($: $, req: Request, res: Response) => {
+		$ = api.Router.getParams(req)
+		const token = this.parseAccessToken($.headers as Record<string, any>)
+		const me = token ? await api.User.Repo.me(token) : null
+		if (!me || "error" in me) return me ?? { error: "Unauthorized", code: 401 }
+		const deviceId = Number($.params?.id)
+		if (!deviceId) return { error: "Device ID required", code: 422 }
+		const customName = $.body?.custom_name ?? $.body?.customName
+		if (!customName || typeof customName !== "string") return { error: "Device name required", code: 422 }
+		return await api.User.Devices.renameDevice(me.id, deviceId, customName.trim())
+	}
+
+	deleteDevice = async ($: $, req: Request, res: Response) => {
+		$ = api.Router.getParams(req)
+		const token = this.parseAccessToken($.headers as Record<string, any>)
+		const me = token ? await api.User.Repo.me(token) : null
+		if (!me || "error" in me) return me ?? { error: "Unauthorized", code: 401 }
+		const deviceId = Number($.params?.id)
+		if (!deviceId) return { error: "Device ID required", code: 422 }
+		await api.User.TokenStore.revokeByDeviceId(me.id, deviceId)
+		await api.User.Devices.deleteDevice(me.id, deviceId)
+		return { success: true }
+	}
+
+	updateCurrentDevice = async ($: $, req: Request, res: Response) => {
+		$ = api.Router.getParams(req)
+		const token = this.parseAccessToken($.headers as Record<string, any>)
+		if (!token) return { error: "Unauthorized", code: 401 }
+		const validation = await api.User.Auth.validateAccessToken(token)
+		if (!validation.valid || !validation.user) return { error: validation.reason ?? "Unauthorized", code: validation.code ?? 401 }
+		const deviceId = validation.deviceId
+		if (!deviceId) return { error: "No device associated with this session", code: 400 }
+		return await api.User.Devices.updateDevice(validation.user.id, deviceId, {
+			fingerprint: $.body.fingerprint ?? undefined,
+			name: $.body.device_name ?? $.body.name ?? undefined,
+			userAgent: req.headers["user-agent"] as string | undefined,
+			ip: req.ip,
+		})
+	}
+
 	refresh = async ($: $, req: Request, res: Response) => {
 		$ = api.Router.getParams(req)
 		const refreshToken = $.body.refresh_token ?? $.body.refreshToken ?? ""
@@ -344,6 +390,16 @@ export class AuthRoute {
 		const me = token ? await api.User.Repo.me(token) : null
 		const userId = me && "id" in me ? me.id : undefined
 		return userId ? await api.User.Auth.logoutAllDevices(userId) : { error: "User not resolved", code: 400 }
+	}
+
+	logoutDevice = async ($: $, req: Request, res: Response) => {
+		$ = api.Router.getParams(req)
+		const token = this.parseAccessToken($.headers as Record<string, any>)
+		const me = token ? await api.User.Repo.me(token) : null
+		if (!me || "error" in me) return me ?? { error: "Unauthorized", code: 401 }
+		const deviceId = Number($.params?.id)
+		if (!deviceId) return { error: "Device ID required", code: 422 }
+		return await api.User.Auth.logoutDevice(me.id, deviceId)
 	}
 
 	logoutAllUsers = async ($: $, req: Request, res: Response) => {
@@ -386,11 +442,16 @@ export class AuthRoute {
 			return { error: "Vendor not enabled", code: 400 }
 		}
 
+		const fingerprint = (req.query.fingerprint as string) || null
+		const deviceName = (req.query.device_name as string) || null
+
 		const state = api.User.Vendors.encodeState({
 			returnUrl,
 			csrf: crypto.randomUUID(),
 			vendor: vendorName,
 			mode,
+			fingerprint,
+			deviceName,
 		})
 
 		const authorizeUrl = vendor.buildAuthorizeUrl(state)
@@ -452,7 +513,11 @@ export class AuthRoute {
 			return null
 		}
 
-		const authResult = await api.User.Auth.vendorLogin({ vendor: vendorName, payload: profile })
+		const authResult = await api.User.Auth.vendorLogin({
+			vendor: vendorName,
+			payload: profile,
+			device: this.buildDevice({ fingerprint: state.fingerprint, device_name: state.deviceName }, req),
+		})
 		if ("error" in authResult) {
 			return redirectError(authResult.error)
 		}
@@ -474,6 +539,7 @@ export class AuthRoute {
 		return await api.User.Auth.vendorLogin({
 			vendor,
 			payload: $.body ?? {},
+			device: this.buildDevice($.body, req),
 		})
 	}
 

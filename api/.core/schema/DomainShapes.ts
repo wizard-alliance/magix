@@ -29,6 +29,7 @@ export type User = {
 	updated: string | null
 	tosAccepted?: boolean
 	deletedAt?: string | null
+	pendingEmail?: string | null
 }
 
 export type UserDeviceSession = {
@@ -47,6 +48,7 @@ export type UserDevice = {
 	ip: string | null
 	lastLogin: string | null
 	created: string | null
+	current?: boolean
 	sessions: UserDeviceSession[]
 }
 
@@ -70,6 +72,7 @@ export type UserFull = {
 	permissions: string[]
 	devices: UserDevice[]
 	settings: UserSetting[]
+	lastLogin: string | null
 }
 
 // Billing domain shapes

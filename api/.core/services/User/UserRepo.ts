@@ -1,6 +1,6 @@
 import { randomUUID } from "crypto"
 import type { UserDBRow } from "../../schema/Database.js"
-import { nowUtcDateTime, futureUtcDateTime } from "./UserDbUtils.js"
+import { nowUtcDateTime, futureUtcDateTime, parseUtcDateTimeMs } from "./UserDbUtils.js"
 import type { UserFull } from "../../schema/DomainShapes.js"
 
 export const normalizeEmail = (value?: string | number | null) => `${value ?? ""}`.trim().toLowerCase()
@@ -24,13 +24,13 @@ export class UserRepo {
 		if (!validation.valid || !validation.user) {
 			return { error: validation.reason ?? "Invalid token", code: validation.code ?? 401 }
 		}
-		return await this.get(validation.user.id!) ?? { error: "User not found", code: 404 }
+		return await this.get(validation.user.id!, validation.deviceId ?? undefined) ?? { error: "User not found", code: 404 }
 	}
 
 	/** 
 	 * Get user by ID or identifier (email/username)
 	 */
-	async get(idOrIdentifier: number | string): Promise<UserFull | null> {
+	async get(idOrIdentifier: number | string, currentDeviceId?: number): Promise<UserFull | null> {
 		const normalized = normalizeEmail(idOrIdentifier) || normalizeUsername(idOrIdentifier)
 		const user = await this.db.selectFrom("users")
 			.selectAll()
@@ -67,6 +67,7 @@ export class UserRepo {
 			ip: d.ip ?? null,
 			lastLogin: d.last_login ?? null,
 			created: d.created ?? null,
+			current: currentDeviceId ? d.id === currentDeviceId : false,
 			sessions: (sessionsByDevice.get(d.id!) ?? []).map((s) => ({
 				id: s.id!,
 				valid: s.valid === 1,
@@ -74,6 +75,16 @@ export class UserRepo {
 				created: s.created ?? null,
 			})),
 		}))
+
+		// Compute lastLogin from the most recent device activity
+		let lastLogin: string | null = null
+		let latestMs = 0
+		for (const d of devices) {
+			if (d.lastLogin) {
+				const ms = parseUtcDateTimeMs(d.lastLogin)
+				if (ms > latestMs) { latestMs = ms; lastLogin = d.lastLogin }
+			}
+		}
 
 		// Resolve avatar file record if avatar exists
 		let avatar = null
@@ -104,12 +115,15 @@ export class UserRepo {
 				disabled: Boolean(user.disabled),
 				deletedAt: user.deleted_at ?? null,
 				tosAccepted: Boolean(user.tos_accepted),
+				deletedAt: user.deleted_at ?? null,
+				pendingEmail: user.pending_email ?? null,
 				created: user.created,
 				updated: user.updated,
 			},
 			permissions: perms,
 			settings: settingRows.map((s) => ({ key: s.key, value: s.value ?? null })),
 			devices,
+			lastLogin,
 		}
 	}
 	

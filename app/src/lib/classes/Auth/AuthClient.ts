@@ -116,8 +116,9 @@ export class AuthClient {
 	 */
 	async login(payload: LoginInput) {
 		const { remember, ...body } = payload
+		const fp = await app.System.Fingerprint.get()
 		const data = await app.System.Request.post<AuthPayload>('/account/auth/login', {
-			body,
+			body: { ...body, fingerprint: fp.fingerprint, device_name: fp.deviceName },
 			useAuth: false,
 		})
 		if (data) this.persistSession(data, remember)
@@ -205,6 +206,40 @@ export class AuthClient {
 	}
 
 	/**
+	 * Logout a specific device by ID
+	 */
+	async logoutDevice(deviceId: number) {
+		await app.System.Request.post(`/account/auth/logout/device/${deviceId}`)
+	}
+
+	/**
+	 * Delete a device (revokes tokens and removes the device row)
+	 */
+	async deleteDevice(deviceId: number) {
+		await app.System.Request.post(`/account/device/${deviceId}/delete`)
+	}
+
+	/**
+	 * Rename a device (set custom_name)
+	 */
+	async renameDevice(deviceId: number, customName: string) {
+		return app.System.Request.post(`/account/device/${deviceId}/name`, {
+			body: { custom_name: customName },
+		})
+	}
+
+	/**
+	 * Update the current device with fingerprint info (used after OAuth callback)
+	 */
+	async updateCurrentDevice() {
+		const fp = await app.System.Fingerprint.get()
+		if (!fp.fingerprint) return
+		return app.System.Request.post('/account/device', {
+			body: { fingerprint: fp.fingerprint, device_name: fp.deviceName },
+		})
+	}
+
+	/**
 	 * Change account password
 	 */
 	async changePassword(currentPassword: string, newPassword: string, logoutAll = true) {
@@ -225,8 +260,9 @@ export class AuthClient {
 	 * Login via third-party vendor (OAuth)
 	 */
 	async vendorLogin(vendor: string, payload: Record<string, any>, remember = true) {
+		const fp = await app.System.Fingerprint.get()
 		const data = await app.System.Request.post<AuthPayload>(`/account/auth/vendor/${vendor}`, {
-			body: payload,
+			body: { ...payload, fingerprint: fp.fingerprint, device_name: fp.deviceName },
 			useAuth: false,
 		})
 		if (data) this.persistSession(data, remember)
@@ -236,11 +272,14 @@ export class AuthClient {
 	/**
 	 * Get vendor OAuth redirect URL
 	 */
-	getVendorRedirectUrl(vendor: string, returnUrl?: string, mode?: string) {
+	async getVendorRedirectUrl(vendor: string, returnUrl?: string, mode?: string) {
 		const base = `${app.Meta.app.apiBaseUrl}/account/auth/vendor/${vendor}/redirect`
 		const params = new URLSearchParams()
 		if (returnUrl) params.set('returnUrl', returnUrl)
 		if (mode) params.set('mode', mode)
+		const fp = await app.System.Fingerprint.get()
+		if (fp.fingerprint) params.set('fingerprint', fp.fingerprint)
+		if (fp.deviceName) params.set('device_name', fp.deviceName)
 		const qs = params.toString()
 		return qs ? `${base}?${qs}` : base
 	}
@@ -269,6 +308,8 @@ export class AuthClient {
 			this.setCookie(this.keys.access, tokens.access)
 			this.setCookie(this.keys.refresh, tokens.refresh)
 		}
+		// Backfill fingerprint on the device created by the OAuth flow
+		await this.updateCurrentDevice().catch(() => null)
 		const user = await this.me(true)
 		return !!user
 	}

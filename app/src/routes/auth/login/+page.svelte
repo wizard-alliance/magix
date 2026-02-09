@@ -72,9 +72,9 @@
 		app.UI.Notify.info(`Connecting to ${vendor} ...`, "Please wait")
 		loading = true
 		if (vendor.toLowerCase() === "discord") {
-			setTimeout(() => {
+			setTimeout(async () => {
 				const returnUrl = window.location.origin + window.location.pathname
-				window.location.href = app.Auth.getVendorRedirectUrl("discord", returnUrl)
+				window.location.href = await app.Auth.getVendorRedirectUrl("discord", returnUrl)
 			}, 600)
 		}
 	}

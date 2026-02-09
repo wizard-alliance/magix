@@ -5,6 +5,8 @@ type OAuthState = {
 	csrf: string
 	vendor: string
 	mode?: "login" | "connect"
+	fingerprint?: string | null
+	deviceName?: string | null
 }
 
 export class VendorRegistry {

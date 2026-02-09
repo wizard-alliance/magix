@@ -52,9 +52,9 @@
 		}
 	}
 
-	const connect = (vendor: string) => {
+	const connect = async (vendor: string) => {
 		const returnUrl = window.location.href.split("?")[0]
-		window.location.href = app.Auth.getVendorRedirectUrl(vendor, returnUrl, "connect")
+		window.location.href = await app.Auth.getVendorRedirectUrl(vendor, returnUrl, "connect")
 	}
 
 	const disconnect = async (vendor: string) => {

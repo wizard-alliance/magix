@@ -5,6 +5,7 @@ import { MetaClient } from "./classes/Meta/MetaClient"
 import { WebSocketClient } from "./classes/System/WebSocket"
 import { RequestClient } from "./classes/System/Request"
 import { AppLogger } from "./classes/System/AppLogger"
+import { FingerprintClient } from "./classes/System/Fingerprint"
 import { AuthClient } from "./classes/Auth/AuthClient"
 import { CacheClient } from "./classes/Data/CacheClient"
 
@@ -40,6 +41,7 @@ export const createAppClient = () => ({
 		Request: {} as RequestClient,
 		WS: new WebSocketClient(),
 		Logger: {} as AppLogger,
+		Fingerprint: {} as FingerprintClient,
 	},
 
 	Cache: {} as CacheClient,
@@ -111,6 +113,8 @@ app.State.UI = {
 
 // Phase 2 — deferred instances (depend on app existing at runtime via globalThis)
 app.System.Request = new RequestClient()
+app.System.Fingerprint = new FingerprintClient()
+app.System.Fingerprint.init()
 app.Cache = new CacheClient()
 app.Cache.checkVersion()
 app.Meta.init()

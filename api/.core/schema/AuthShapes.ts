@@ -39,6 +39,7 @@ export type AuthPayload = {
 export type VendorLoginInput = {
 	vendor: string
 	payload: Record<string, any>
+	device?: UserDeviceContext
 }
 
 export type RegisterInput = {

@@ -160,6 +160,7 @@ export class AuthService {
 		}
 
 		const profile = vendor.parseProfile(input.payload ?? {})
+		const device: UserDeviceContext = { ...input.device, name: input.device?.name || profile.displayName }
 
 		// 1. Check link table — stable identity across email changes
 		const linked = await api.User.VendorLinks.findByVendor(input.vendor, profile.id)
@@ -167,7 +168,7 @@ export class AuthService {
 			const user = await api.User.Repo.get(linked.user_id)
 			if (user) {
 				await api.User.VendorLinks.link(user.id!, input.vendor, profile) // refresh email/username
-				return this.issueSession(user, { name: profile.displayName })
+				return this.issueSession(user, device)
 			}
 		}
 
@@ -175,7 +176,7 @@ export class AuthService {
 		const existing = await api.User.Repo.exists(profile.email, profile.username)
 		if (existing) {
 			await api.User.VendorLinks.link(existing.id!, input.vendor, profile)
-			return this.issueSession(existing, { name: profile.displayName })
+			return this.issueSession(existing, device)
 		}
 
 		// 3. Create new user + auto-activate + link
@@ -197,7 +198,7 @@ export class AuthService {
 		if (!user) return { error: "User not found after creation", code: 404 }
 
 		await api.User.VendorLinks.link(user.id!, input.vendor, profile)
-		return this.issueSession(user, { name: profile.displayName })
+		return this.issueSession(user, device)
 	}
 
 	async refresh(refreshToken: string): Promise<AuthPayload | { error: string; code?: number }> {
@@ -263,6 +264,14 @@ export class AuthService {
 			return { error: "User identifier required", code: 400 }
 		}
 		await api.User.TokenStore.revokeAllDevices(userId)
+		return { success: true }
+	}
+
+	async logoutDevice(userId: number, deviceId: number) {
+		if (!userId || !deviceId) {
+			return { error: "User and device identifiers required", code: 400 }
+		}
+		await api.User.TokenStore.revokeByDeviceId(userId, deviceId)
 		return { success: true }
 	}
 
@@ -443,7 +452,7 @@ export class AuthService {
 	}
 
 	public async validateAccessToken(token: string): Promise<
-	{ valid: boolean, user?: UserFull, reason?: string, code?: number }> {
+	{ valid: boolean, user?: UserFull, reason?: string, code?: number, deviceId?: number | null }> {
 		const fromSig = await this.validateAccessFromSignature(token)
 
 		// Fallback: if signature check fails but token exists 
@@ -457,7 +466,7 @@ export class AuthService {
 				const expired = dbExpiry <= nowMs
 				const revoked = !refresh || refresh.valid !== 1
 				if (!expired && !revoked) {
-					return { valid: true, user: refresh ? await api.User.Repo.get(refresh.user_id) ?? undefined : undefined }
+					return { valid: true, user: refresh ? await api.User.Repo.get(refresh.user_id) ?? undefined : undefined, deviceId: refresh?.device_id ?? null }
 				}
 			}
 			return { valid: false, reason: fromSig.reason, code: fromSig.code }
@@ -481,7 +490,7 @@ export class AuthService {
 			}
 		}
 
-		return { valid: true, user: fromSig.user ?? undefined }
+		return { valid: true, user: fromSig.user ?? undefined, deviceId: fromSig.payload?.deviceId ?? null }
 	}
 
 	/** Request email change - sends verification to new email */

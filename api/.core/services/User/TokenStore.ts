@@ -147,6 +147,28 @@ export class TokenStore {
 		await this.db.deleteFrom("user_tokens_access").where("user_id", "=", userId).execute()
 	}
 
+	revokeByDeviceId = async (userId: number, deviceId: number) => {
+		await this.db
+			.updateTable("user_tokens_refresh")
+			.set({ valid: 0 })
+			.where("user_id", "=", userId)
+			.where("device_id", "=", deviceId)
+			.execute()
+
+		// Access tokens are CASCADE-deleted when device row is removed,
+		// but clean up any that reference invalidated refresh tokens
+		const refreshIds = await this.db
+			.selectFrom("user_tokens_refresh")
+			.select("id")
+			.where("user_id", "=", userId)
+			.where("device_id", "=", deviceId)
+			.execute()
+
+		for (const r of refreshIds) {
+			await this.db.deleteFrom("user_tokens_access").where("refresh_token_id", "=", r.id!).execute()
+		}
+	}
+
 	revokeAllUsers = async () => {
 		await this.db.updateTable("user_tokens_refresh").set({ valid: 0 }).execute()
 		await this.db.deleteFrom("user_tokens_access").execute()
