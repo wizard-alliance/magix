@@ -86,3 +86,39 @@ export type AppMeta = {
 	[key: string]: string | number | boolean
 }
 
+// Global config response from GET /config
+export type ConfigPermission = { key: string, value: string | null }
+
+export type ConfigProductFeature = {
+	id: number
+	productId: number
+	featureName: string
+	description: string | null
+}
+
+export type ConfigProduct = {
+	id: number
+	name: string
+	type: string
+	providerId: string | null
+	providerVariantId: string | null
+	price: number
+	currency: string
+	interval: string
+	intervalCount: number
+	trialDays: number
+	sortOrder: number
+	description: string | null
+	isActive: boolean
+	features: ConfigProductFeature[]
+}
+
+export type ConfigPaymentProvider = { id: number, name: string }
+
+export type ConfigResponse = {
+	settings: { key: string, value: string | null }[]
+	permissions: ConfigPermission[]
+	products: ConfigProduct[]
+	paymentProviders: ConfigPaymentProvider[]
+}
+

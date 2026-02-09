@@ -14,7 +14,7 @@ import {
 import { Navigations } from './Navigations'
 
 import type { Writable } from 'svelte/store'
-import type { AppMeta, PageMeta, PageLoadData } from '$lib/types/meta'
+import type { AppMeta, PageMeta, PageLoadData, ConfigResponse, ConfigPermission, ConfigProduct, ConfigPaymentProvider } from '$lib/types/meta'
 
 const defaultPage: PageMeta = {
 	slug: ``,
@@ -57,6 +57,11 @@ export class MetaClient {
 			: `/api/v1`,
 	}
 
+	// Global config data — populated from GET /config
+	permissions: ConfigPermission[] = []
+	products: ConfigProduct[] = []
+	paymentProviders: ConfigPaymentProvider[] = []
+
 	// Per-page meta — writable store, always up to date
 	page: Writable<PageMeta> = writable({ ...defaultPage })
 
@@ -92,30 +97,35 @@ export class MetaClient {
 		}
 	}
 
-	// Fetch all settings from DB → merge into app
-	// _ prefix = boolean, numeric strings = number, rest = string
+	// Fetch global config (settings, permissions, products, providers)
+	// Settings: _ prefix = boolean, numeric strings = number, rest = string
 	async loadFromDB() {
 		if (this.dbLoaded === true) return
 
 		try {
-			const rows = await app.System.Request.get<{ key: string, value: string | null }[]>(`/settings`, { useAuth: false })
+			const cached = app.Cache.get<ConfigResponse>(`config`)
+			const data = cached ?? await app.System.Request.get<ConfigResponse>(`/config`, { useAuth: false })
 
-			if (rows.length === 0) return
-			for (const { key: rawKey, value: rawValue } of rows) {
+			if (!data) return
+
+			// Settings → merge into app branding object
+			for (const { key: rawKey, value: rawValue } of data.settings || []) {
 				if (!rawKey) continue
-
-				// _ prefix → boolean, strip underscore
 				if (rawKey.startsWith(`_`)) {
 					this.app[rawKey.slice(1)] = rawValue === `1` || rawValue?.toLowerCase() === `true`
 					continue
 				}
-
 				this.app[rawKey] = this.coerceValue(rawValue)
 			}
 
+			this.permissions = data.permissions || []
+			this.products = data.products || []
+			this.paymentProviders = data.paymentProviders || []
+
+			if (!cached) app.Cache.set(`config`, data)
 			this.dbLoaded = true
 		} catch (error) {
-			console.warn(`${this.prefix}: failed to load settings from DB`, error)
+			console.warn(`${this.prefix}: failed to load config`, error)
 		}
 	}
 
@@ -128,9 +138,10 @@ export class MetaClient {
 
 	isDBLoaded = () => this.dbLoaded
 
-	// Force re-fetch settings from DB
+	// Force re-fetch config from API
 	async reload() {
 		this.dbLoaded = false
+		app.Cache.clear(`config`)
 		await this.loadFromDB()
 	}
 
@@ -140,6 +151,9 @@ export class MetaClient {
 	}
 
 	getPage = () => get(this.page)
+	getPermissions = () => this.permissions
+	getProducts = () => this.products
+	getPaymentProviders = () => this.paymentProviders
 
 	// Build the full page title: [appName] [sep] [parent] / [title]
 	buildTitle = (title: string, parent?: string): string => {
