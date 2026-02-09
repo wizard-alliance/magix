@@ -117,6 +117,16 @@ export const navigationData: NavItem[] = [
 				align: null,
 				children: [
 					{
+						slug: "general",
+						label: "General", 
+						href: "/account/settings",
+						target: "_self", 
+						icon: "fa-light fa-sliders", 
+						permissions: [],
+						classes: "",
+						align: null,
+					},
+					{
 						slug: "avatar",
 						label: "Avatar", 
 						href: "/account/settings/avatar",
@@ -152,6 +162,16 @@ export const navigationData: NavItem[] = [
 						href: "/account/settings/password",
 						target: "_self", 
 						icon: "fa-light fa-lock", 
+						permissions: [],
+						classes: "",
+						align: null,
+					},
+					{
+						slug: "email",
+						label: "Email", 
+						href: "/account/settings/email",
+						target: "_self", 
+						icon: "fa-light fa-envelope", 
 						permissions: [],
 						classes: "",
 						align: null,

@@ -15,8 +15,18 @@
 	let files: FileList | null = null
 	let input: HTMLInputElement
 
-	$: fileNames = files ? Array.from(files).map((f) => f.name) : []
+	$: fileNames = files ? Array.from(files).map((f) => truncateName(f.name)) : []
 	$: if (files?.length) dispatch("change", { files })
+
+	const truncateName = (name: string, max = 28) => {
+		if (name.length <= max) return name
+		const dot = name.lastIndexOf(".")
+		if (dot === -1) return name.slice(0, max - 3) + "..."
+		const ext = name.slice(dot)
+		const keep = max - ext.length - 3
+		if (keep < 4) return name.slice(0, max - 3) + "..."
+		return name.slice(0, keep) + "..." + ext
+	}
 </script>
 
 <div class="field">
