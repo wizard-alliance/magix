@@ -4,6 +4,7 @@ type OAuthState = {
 	returnUrl: string
 	csrf: string
 	vendor: string
+	mode?: "login" | "connect"
 }
 
 export class VendorRegistry {

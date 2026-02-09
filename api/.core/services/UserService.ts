@@ -5,6 +5,7 @@ import { PermissionService } from "./User/PermissionService.js"
 import { TokenStore } from "./User/TokenStore.js"
 import { UserRepo } from "./User/UserRepo.js"
 import { VendorRegistry } from "./User/VendorRegistry.js"
+import { VendorLinkService } from "./User/VendorLinkService.js"
 
 export class UserService {
 	private readonly db = api.DB.connection
@@ -16,5 +17,6 @@ export class UserService {
 	public readonly TokenStore = new TokenStore()
 	public readonly Repo = new UserRepo()
 	public readonly Vendors = new VendorRegistry()
+	public readonly VendorLinks = new VendorLinkService()
 	public readonly Permissions = new PermissionService()
 }

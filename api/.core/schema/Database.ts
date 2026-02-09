@@ -236,6 +236,16 @@ export type UserTokenSingleDBRow = {
 	created: string | null
 }
 
+export type UserVendorDBRow = {
+	id?: number
+	user_id: number
+	vendor: string
+	vendor_user_id: string
+	vendor_email: string | null
+	vendor_username: string | null
+	created: string | null
+}
+
 export type DatabaseSchema = {
 	// Billing tables
 	billing_customers: BillingCustomerDBRow
@@ -253,6 +263,7 @@ export type DatabaseSchema = {
 	// User tables
 	users: UserDBRow
 	user_devices: UserDeviceDBRow
+	user_vendors: UserVendorDBRow
 	user_notifications: UserNotificationDBRow
 	user_organization: UserOrganizationDBRow
 	user_permissions: UserPermissionDBRow
@@ -484,6 +495,16 @@ export const schemaColumns = {
 		updated: 'date'
 	},
 
+	user_vendors: {
+		id: 'number',
+		user_id: 'number',
+		vendor: 'string',
+		vendor_user_id: 'string',
+		vendor_email: 'string',
+		vendor_username: 'string',
+		created: 'date'
+	},
+
 	user_notifications: {
 		id: 'number',
 		user_id: 'number',
@@ -592,6 +613,7 @@ export const tableColumnSets: ColumnSetMap = {
 	// User tables
 	users: createColumnSet(schemaColumns.users),
 	user_devices: createColumnSet(schemaColumns.user_devices),
+	user_vendors: createColumnSet(schemaColumns.user_vendors),
 	user_notifications: createColumnSet(schemaColumns.user_notifications),
 	user_organization: createColumnSet(schemaColumns.user_organization),
 	user_permissions: createColumnSet(schemaColumns.user_permissions),
@@ -619,6 +641,7 @@ export type TableMap = {
 	// User tables
 	users: string
 	user_devices: string
+	user_vendors: string
 	user_notifications: string
 	user_organization: string
 	user_permissions: string
@@ -647,6 +670,7 @@ export const TableMap: TableMap = {
 	// User tables
 	users: "users",
 	user_devices: "user_devices",
+	user_vendors: "user_vendors",
 	user_notifications: "user_notifications",
 	user_organization: "user_organization",
 	user_permissions: "user_permissions",

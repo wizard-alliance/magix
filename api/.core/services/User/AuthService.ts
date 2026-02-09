@@ -160,11 +160,25 @@ export class AuthService {
 		}
 
 		const profile = vendor.parseProfile(input.payload ?? {})
+
+		// 1. Check link table — stable identity across email changes
+		const linked = await api.User.VendorLinks.findByVendor(input.vendor, profile.id)
+		if (linked) {
+			const user = await api.User.Repo.get(linked.user_id)
+			if (user) {
+				await api.User.VendorLinks.link(user.id!, input.vendor, profile) // refresh email/username
+				return this.issueSession(user, { name: profile.displayName })
+			}
+		}
+
+		// 2. Fall back to email match — auto-link existing account
 		const existing = await api.User.Repo.exists(profile.email, profile.username)
 		if (existing) {
+			await api.User.VendorLinks.link(existing.id!, input.vendor, profile)
 			return this.issueSession(existing, { name: profile.displayName })
 		}
 
+		// 3. Create new user + auto-activate + link
 		const result = await api.User.Repo.create({
 			email: profile.email,
 			username: profile.username,
@@ -173,8 +187,16 @@ export class AuthService {
 		})
 		if ("error" in result) return result
 
+		// Auto-activate vendor-created users so they can later use password-reset
+		await this.db.updateTable("users")
+			.set({ activated: 1, activation_token: null, activation_token_expiration: null })
+			.where("id", "=", result.id)
+			.execute()
+
 		const user = await api.User.Repo.get(result.id)
 		if (!user) return { error: "User not found after creation", code: 404 }
+
+		await api.User.VendorLinks.link(user.id!, input.vendor, profile)
 		return this.issueSession(user, { name: profile.displayName })
 	}
 

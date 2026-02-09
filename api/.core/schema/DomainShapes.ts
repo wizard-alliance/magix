@@ -50,6 +50,15 @@ export type UserDevice = {
 	sessions: UserDeviceSession[]
 }
 
+export type UserVendorLink = {
+	id: number
+	vendor: string
+	vendorUserId: string
+	vendorEmail: string | null
+	vendorUsername: string | null
+	created: string | null
+}
+
 export type UserSetting = {
 	key: string
 	value: string | null

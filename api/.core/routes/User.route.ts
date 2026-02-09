@@ -31,6 +31,11 @@ export class AuthRoute {
 		api.Router.set(["POST"], `${this.authRoute}/logout/all-devices`, this.logoutAllDevices, this.userOptions)
 		api.Router.set(["POST"], `${this.authRoute}/logout/all-users`, this.logoutAllUsers, this.adminOptions)
 
+		// Vendor link management
+		api.Router.set(["POST"], `${this.userRoute}/vendors`, this.listVendors, this.userOptions)
+		api.Router.set(["POST"], `${this.userRoute}/vendor/:vendor/connect`, this.connectVendor, this.userOptions)
+		api.Router.set(["DELETE"], `${this.userRoute}/vendor/:vendor`, this.disconnectVendor, this.userOptions)
+
 		// Password reset & account activation
 		api.Router.set(["POST"], `${this.userRoute}/reset`, this.requestReset)
 		api.Router.set(["POST"], `${this.userRoute}/reset/confirm`, this.confirmReset)
@@ -370,6 +375,7 @@ export class AuthRoute {
 		$ = api.Router.getParams(req)
 		const vendorName = $.params?.vendor as string | null
 		const returnUrl = (req.query.returnUrl as string) || (req.query.return_url as string) || "/"
+		const mode = (req.query.mode as string) === "connect" ? "connect" : "login"
 
 		if (!vendorName) {
 			return { error: "Unknown vendor", code: 404 }
@@ -384,6 +390,7 @@ export class AuthRoute {
 			returnUrl,
 			csrf: crypto.randomUUID(),
 			vendor: vendorName,
+			mode,
 		})
 
 		const authorizeUrl = vendor.buildAuthorizeUrl(state)
@@ -438,6 +445,13 @@ export class AuthRoute {
 		}
 
 		// Login/register user
+		if (state.mode === "connect") {
+			// Connect mode — store pending profile for the logged-in user to claim
+			const connectToken = api.User.VendorLinks.storePending(vendorName, vendor.parseProfile(profile))
+			res.redirect(buildRedirect(returnUrl, { connect_token: connectToken, vendor: vendorName }))
+			return null
+		}
+
 		const authResult = await api.User.Auth.vendorLogin({ vendor: vendorName, payload: profile })
 		if ("error" in authResult) {
 			return redirectError(authResult.error)
@@ -461,6 +475,57 @@ export class AuthRoute {
 			vendor,
 			payload: $.body ?? {},
 		})
+	}
+
+	listVendors = async ($: $, req: Request) => {
+		const authUser = (req as any).authUser
+		if (!authUser?.id) return { error: "Unauthorized", code: 401 }
+		return { vendors: await api.User.VendorLinks.getLinked(authUser.id) }
+	}
+
+	connectVendor = async ($: $, req: Request) => {
+		$ = api.Router.getParams(req)
+		const authUser = (req as any).authUser
+		if (!authUser?.id) return { error: "Unauthorized", code: 401 }
+
+		const vendorName = $.params?.vendor as string
+		const connectToken = $.body?.connect_token ?? $.body?.connectToken
+		if (!connectToken) return { error: "Missing connect token", code: 400 }
+
+		const pending = api.User.VendorLinks.consumePending(connectToken)
+		if (!pending) return { error: "Invalid or expired connect token", code: 400 }
+		if (pending.vendor !== vendorName) return { error: "Vendor mismatch", code: 400 }
+
+		await api.User.VendorLinks.link(authUser.id, vendorName, pending.profile)
+		return { success: true, message: `${vendorName} connected` }
+	}
+
+	disconnectVendor = async ($: $, req: Request) => {
+		$ = api.Router.getParams(req)
+		const authUser = (req as any).authUser
+		if (!authUser?.id) return { error: "Unauthorized", code: 401 }
+
+		const vendorName = $.params?.vendor as string
+		const linked = await api.User.VendorLinks.getLinked(authUser.id)
+		if (!linked.find(l => l.vendor === vendorName)) {
+			return { error: "Vendor not connected", code: 404 }
+		}
+
+		// If last vendor link, require password to prevent lockout
+		if (linked.length <= 1) {
+			const password = $.body?.password
+			if (!password) return { error: "Password required to disconnect last vendor", code: 400 }
+
+			const dbRow = await api.DB.connection
+				.selectFrom("users").select(["password"])
+				.where("id", "=", authUser.id)
+				.executeTakeFirst()
+			const valid = dbRow?.password ? await api.Utils.verifyPassword(password, dbRow.password) : false
+			if (!valid) return { error: "Invalid password", code: 401 }
+		}
+
+		await api.User.VendorLinks.unlink(authUser.id, vendorName)
+		return { success: true, message: `${vendorName} disconnected` }
 	}
 
 	requestReset = async ($: $, req: Request, res: Response) => {
