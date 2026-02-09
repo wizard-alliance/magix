@@ -8,10 +8,17 @@
 	import Spinner from "$components/modules/spinner.svelte"
 	import loginSplash from "$images/login-splash.png"
 
+	const currentUserStore = app.State.currentUser
+	$: currentUser = $currentUserStore
+	$: userInfo = currentUser && "info" in currentUser ? currentUser.info : currentUser
+
+	let wasLoggedInOnLoad = false
+
 	let form = { identifier: "", password: "", remember: false }
 	let loading = false
 
 	onMount(() => {
+		wasLoggedInOnLoad = app.Auth.isLoggedIn()
 		verifyVendorLogin()
 
 		handleErrors()
@@ -100,6 +107,15 @@
 
 <div class="col-xxs-12 col-sm-12 col-md-6 col-lg-5 center-xxs auth-form-col scrollable">
 	<div class="row center-xxs auth-form">
+		{#if wasLoggedInOnLoad && userInfo}
+			<div class="col-xxs-12 logged-in-banner margin-bottom-2">
+				<p>You are already logged in as <strong>{userInfo.username || userInfo.email}</strong></p>
+				<Button variant="primary" size="sm" on:click={() => goto("/account/profile")}>
+					Continue <i class="fa-light fa-arrow-right"></i>
+				</Button>
+			</div>
+		{/if}
+
 		<div class="col-xxs-12 margin-bottom-2">
 			<h2>Welcome!</h2>
 		</div>
@@ -210,6 +226,26 @@
 	.link-muted {
 		color: var(--gray);
 		font-size: var(--font-size-small);
+	}
+
+	.logged-in-banner {
+		background: rgba(255, 255, 255, 0.04);
+		border: 1px solid var(--border-color);
+		border-radius: var(--border-radius);
+		padding: calc(var(--gutter) * 2);
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--gutter);
+
+		p {
+			font-size: var(--font-size-small);
+			color: var(--muted-color);
+
+			strong {
+				color: var(--text-color);
+			}
+		}
 	}
 
 	.hint {

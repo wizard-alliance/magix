@@ -157,6 +157,16 @@ export const navigationData: NavItem[] = [
 						align: null,
 					},
 					{
+						slug: "vendor",
+						label: "Connections",
+						href: "/account/vendor",
+						target: "_self",
+						icon: "fa-light fa-link",
+						permissions: [],
+						classes: "",
+						align: null,
+					},
+					{
 						slug: "password",
 						label: "Password", 
 						href: "/account/settings/password",
@@ -258,7 +268,7 @@ export const navigationData: NavItem[] = [
 			{
 				slug: "admin-commerce",
 				label: "Commerce", 
-				href: "/admin/commerce",
+				href: "/admin/commerce/orders",
 				target: "_self", 
 				icon: "fa-light fa-store", 
 				permissions: [],

@@ -45,7 +45,7 @@
 					<Button type="submit" disabled={loading} {loading}>
 						{loading ? "Updating..." : "Update password"}
 					</Button>
-					<a href="/account/settings" class="muted-color text-small">Back to preferences</a>
+					<a href="/account/settings" class="muted-color text-small">Back to general settings</a>
 				</div>
 			</form>
 		</div>

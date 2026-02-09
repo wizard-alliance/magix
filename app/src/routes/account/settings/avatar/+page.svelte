@@ -139,7 +139,7 @@
 					{#if avatarUrl}
 						<Button variant="danger" size="sm" on:click={removeAvatar}>Remove</Button>
 					{/if}
-					<a href="/account/settings" class="muted-color text-small">Back to preferences</a>
+					<a href="/account/settings" class="muted-color text-small">Back to general settings</a>
 				</div>
 			</div>
 		</div>

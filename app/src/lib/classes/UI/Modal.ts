@@ -10,6 +10,8 @@ type ModalParams = {
 	content?: string
 	choices?: Choice[]
 	closable?: boolean
+	inputType?: string
+	inputPlaceholder?: string
 }
 
 export class Modal {
@@ -75,5 +77,19 @@ export class Modal {
 
 	close() {
 		this.dismiss()
+	}
+
+	prompt(title: string, content?: string, opts?: { inputType?: string; inputPlaceholder?: string; icon?: string; confirmLabel?: string; confirmVariant?: string }): Promise<string | null> {
+		return this.open({
+			icon: opts?.icon || 'fa-circle-question',
+			title,
+			content,
+			inputType: opts?.inputType || 'text',
+			inputPlaceholder: opts?.inputPlaceholder,
+			choices: [
+				{ label: 'Cancel', value: '' },
+				{ label: opts?.confirmLabel || 'Submit', value: '__submit__', variant: opts?.confirmVariant || 'primary' },
+			],
+		}).then(v => (v && v !== '' ? v : null))
 	}
 }

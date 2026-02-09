@@ -90,6 +90,15 @@ export type AppLogEntry = {
 // ADDITIONAL TYPES
 // // // // // // // 
 
+export type UserVendorLink = {
+	id: string
+	vendor: string
+	vendorUserId: string
+	vendorEmail: string
+	vendorUsername: string
+	created: string
+}
+
 export type Timestamp = string | Date | null
 
 export type HealthResponse = {

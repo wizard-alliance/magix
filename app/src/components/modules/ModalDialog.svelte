@@ -8,22 +8,45 @@
 		content?: string
 		choices?: Choice[]
 		closable?: boolean
+		inputType?: string
+		inputPlaceholder?: string
 		onresult?: (value: string | null) => void
 	}
 
-	let { icon, title, subtitle, content, choices = [], closable = true, onresult }: Props = $props()
+	let { icon, title, subtitle, content, choices = [], closable = true, inputType, inputPlaceholder, onresult }: Props = $props()
+
+	let inputValue = $state("")
+	let inputRef: HTMLInputElement | undefined = $state()
+
+	$effect(() => {
+		if (inputRef) inputRef.focus()
+	})
 
 	const close = (value: string | null = null) => {
 		onresult?.(value)
+	}
+
+	const handleKeydown = (e: KeyboardEvent) => {
+		if (e.key === "Escape" && closable) {
+			e.preventDefault()
+			close()
+		}
+	}
+
+	const handleSubmit = (e: Event) => {
+		e.preventDefault()
+		const primary = choices.find((c) => c.variant === "primary" || c.variant === "danger")
+		if (primary) close(inputType ? inputValue : primary.value)
 	}
 </script>
 
 <!-- svelte-ignore a11y_click_events_have_key_events -->
 <!-- svelte-ignore a11y_no_static_element_interactions -->
-<div class="modal-backdrop" onclick={() => closable && close()}>
-	<div class="modal" onclick={(e) => e.stopPropagation()}>
+<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+<div class="modal-backdrop" onclick={() => closable && close()} onkeydown={handleKeydown}>
+	<form class="modal" onclick={(e) => e.stopPropagation()} onsubmit={handleSubmit}>
 		{#if closable}
-			<button class="modal-close" onclick={() => close()} aria-label="Close">
+			<button type="button" class="modal-close" onclick={() => close()} aria-label="Close">
 				<i class="fa-light fa-xmark"></i>
 			</button>
 		{/if}
@@ -44,16 +67,20 @@
 			<p class="modal-content">{content}</p>
 		{/if}
 
+		{#if inputType}
+			<input class="modal-input" type={inputType} placeholder={inputPlaceholder || ""} bind:value={inputValue} bind:this={inputRef} />
+		{/if}
+
 		{#if choices.length}
 			<div class="modal-choices">
 				{#each choices as choice}
-					<button class="modal-btn {choice.variant || ''}" onclick={() => close(choice.value)}>
+					<button type="button" class="modal-btn {choice.variant || ''}" onclick={() => close(inputType ? inputValue : choice.value)}>
 						{choice.label}
 					</button>
 				{/each}
 			</div>
 		{/if}
-	</div>
+	</form>
 </div>
 
 <style lang="scss">
@@ -127,6 +154,26 @@
 		color: var(--muted-color-2);
 		margin: 0;
 		line-height: 1.5;
+	}
+
+	.modal-input {
+		width: 100%;
+		padding: calc(var(--gutter) * 1.25) calc(var(--gutter) * 1.5);
+		border-radius: 8px;
+		border: var(--border);
+		background: var(--secondary-color);
+		color: var(--text-color);
+		font-size: var(--font-size);
+		outline: none;
+		transition: border-color 150ms ease;
+
+		&::placeholder {
+			color: var(--muted-color);
+		}
+
+		&:focus {
+			border-color: var(--accent-color);
+		}
 	}
 
 	.modal-choices {

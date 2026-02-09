@@ -1,4 +1,4 @@
-import type { AuthPayload, UserDBRow, UserFull } from '../../types/types'
+import type { AuthPayload, UserDBRow, UserFull, UserVendorLink } from '../../types/types'
 
 type LoginInput = { identifier: string; password: string; remember?: boolean }
 type RegisterInput = { email: string; username: string; password: string; tos_accepted?: boolean }
@@ -236,9 +236,13 @@ export class AuthClient {
 	/**
 	 * Get vendor OAuth redirect URL
 	 */
-	getVendorRedirectUrl(vendor: string, returnUrl?: string) {
+	getVendorRedirectUrl(vendor: string, returnUrl?: string, mode?: string) {
 		const base = `${app.Meta.app.apiBaseUrl}/account/auth/vendor/${vendor}/redirect`
-		return returnUrl ? `${base}?returnUrl=${encodeURIComponent(returnUrl)}` : base
+		const params = new URLSearchParams()
+		if (returnUrl) params.set('returnUrl', returnUrl)
+		if (mode) params.set('mode', mode)
+		const qs = params.toString()
+		return qs ? `${base}?${qs}` : base
 	}
 
 	/**
@@ -267,6 +271,32 @@ export class AuthClient {
 		}
 		const user = await this.me(true)
 		return !!user
+	}
+
+	/**
+	 * List all connected vendor accounts for the current user
+	 */
+	async listVendors() {
+		const data = await app.System.Request.post<{ vendors: UserVendorLink[] }>('/account/vendors')
+		return data?.vendors ?? []
+	}
+
+	/**
+	 * Connect a vendor account using a connect token from the OAuth callback
+	 */
+	async connectVendor(vendor: string, connectToken: string) {
+		return app.System.Request.post<{ success: boolean; message: string }>(`/account/vendor/${vendor}/connect`, {
+			body: { connect_token: connectToken },
+		})
+	}
+
+	/**
+	 * Disconnect a vendor account. Password required if it's the last linked vendor.
+	 */
+	async disconnectVendor(vendor: string, password?: string) {
+		return app.System.Request.delete<{ success: boolean; message: string }>(`/account/vendor/${vendor}`, {
+			body: password ? { password } : undefined,
+		})
 	}
 
 	/**

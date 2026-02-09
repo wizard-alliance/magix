@@ -1,10 +1,16 @@
 <script lang="ts">
 	import { app } from "$lib/app"
+	import { goto } from "$app/navigation"
+	import { onMount } from "svelte"
 	import Input from "$components/fields/input.svelte"
 	import Checkbox from "$components/fields/checkbox.svelte"
 	import Button from "$components/fields/button.svelte"
 	import Spinner from "$components/modules/spinner.svelte"
 	import loginSplash from "$images/login-splash.png"
+
+	onMount(() => {
+		if (app.Auth.isLoggedIn()) goto("/account/profile")
+	})
 
 	let form = {
 		email: "",

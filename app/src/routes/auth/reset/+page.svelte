@@ -17,6 +17,11 @@
 	let token = ""
 
 	onMount(() => {
+		if (app.Auth.isLoggedIn()) {
+			goto("/account/settings/password")
+			return
+		}
+
 		// Check for reset token in URL (step 2)
 		const params = new URLSearchParams(window.location.search)
 		const urlToken = params.get("token")

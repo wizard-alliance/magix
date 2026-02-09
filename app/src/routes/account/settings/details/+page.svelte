@@ -68,7 +68,7 @@
 						<Button type="submit" disabled={saving} loading={saving}>
 							{saving ? "Saving..." : "Save changes"}
 						</Button>
-						<a href="/account/settings" class="muted-color text-small">Back to preferences</a>
+						<a href="/account/settings" class="muted-color text-small">Back to general settings</a>
 					</div>
 				</form>
 			</div>
