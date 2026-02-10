@@ -93,7 +93,7 @@
 							<Button type="submit" disabled={sending || !newEmail} loading={sending}>
 								{sending ? "Sending..." : "Send verification email"}
 							</Button>
-							<a href="/account/settings" class="muted-color text-small">Back to general settings</a>
+							<a href="/account/settings" class="muted-color text-small">Back to settings</a>
 						</div>
 					{/if}
 				</form>

@@ -49,6 +49,10 @@
 		return issues
 	}
 
+	function isActive(device: UserDevice) {
+		return device.sessions?.some((s) => s.valid) ?? false
+	}
+
 	function isStale(device: UserDevice) {
 		return device.lastLogin && Date.now() - new Date(device.lastLogin).getTime() > STALE_MS
 	}
@@ -140,7 +144,10 @@
 
 	<!-- Account Health -->
 	<div class="section margin-bottom-4">
-		<h2 class="title"><i class="fa-light fa-heart-pulse"></i> Account Health</h2>
+		<h2 class="title margin-bottom-2">
+			<i class="fa-light fa-heart-pulse"></i>
+			<span>Account Health</span>
+		</h2>
 		<div class="health-badges">
 			{#if !loading && user}
 				{#if healthIssues.length === 0}
@@ -151,7 +158,7 @@
 					{/each}
 				{/if}
 			{:else}
-				<span class="muted-color text-small">Loading…</span>
+				<Spinner />
 			{/if}
 		</div>
 	</div>
@@ -159,14 +166,17 @@
 	<!-- Active Sessions -->
 	<div class="section margin-bottom-4">
 		<div class="row middle-xs between-xs margin-bottom-2">
-			<div class="col-xxs col-md">
-				<h2 class="title"><i class="fa-light fa-devices"></i> Active Sessions</h2>
+			<div class="col-xxs col-md-5">
+				<h2 class="title">
+					<i class="fa-light fa-computer"></i>
+					<span>My devices</span>
+				</h2>
 				<p class="muted-color text-small">Devices currently signed in to your account</p>
 			</div>
-			<div class="col">
+			<div class="col end-xs">
 				<Tooltip text="End all active sessions" position="left">
 					<Button variant="danger" size="sm" on:click={logoutAllDevices}>
-						<i class="fa-light fa-right-from-bracket"></i> Log out all
+						<i class="fa-light fa-right-from-bracket"></i>
 					</Button>
 				</Tooltip>
 			</div>
@@ -185,7 +195,7 @@
 				</div>
 			{:else}
 				{#each sortedDevices as device, i}
-					<div class="detail-row" class:stale={isStale(device)}>
+					<div class="detail-row" class:stale={isStale(device)} class:logged-out={!isActive(device)}>
 						<div class="detail-label">
 							<span class="detail-title">
 								<i class="fa-light fa-{deviceIcon(device)}"></i>
@@ -201,6 +211,10 @@
 						<div class="detail-actions">
 							{#if device.current}
 								<Badge text="Current" variant="success" />
+							{:else if isActive(device)}
+								<Badge text="Active" variant="success" />
+							{:else}
+								<Badge text="Logged Out" variant="danger" />
 							{/if}
 							{#if isStale(device)}
 								<Badge text="Stale" variant="warning" />
@@ -210,11 +224,13 @@
 									<i class="fa-light fa-pen"></i>
 								</button>
 							</Tooltip>
-							<Tooltip text="Log out device" position="top">
-								<button class="icon-btn" aria-label="Log out device" on:click={() => logoutDevice(device)}>
-									<i class="fa-light fa-right-from-bracket"></i>
-								</button>
-							</Tooltip>
+							{#if isActive(device)}
+								<Tooltip text="Log out device" position="top">
+									<button class="icon-btn" aria-label="Log out device" on:click={() => logoutDevice(device)}>
+										<i class="fa-light fa-right-from-bracket"></i>
+									</button>
+								</Tooltip>
+							{/if}
 							<Tooltip text="Delete device" position="top">
 								<button class="icon-btn icon-btn-danger" aria-label="Delete device" on:click={() => deleteDevice(device)}>
 									<i class="fa-light fa-trash"></i>
@@ -290,6 +306,10 @@
 
 		&.stale {
 			opacity: 0.55;
+		}
+
+		&.logged-out {
+			opacity: 0.45;
 		}
 	}
 

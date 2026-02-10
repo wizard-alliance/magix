@@ -10,6 +10,9 @@
 	export let disabled = false
 	export let helperText = ""
 
+	let className = ""
+	export { className as class }
+
 	const dispatch = createEventDispatcher<{ change: { files: FileList } }>()
 
 	let files: FileList | null = null
@@ -29,7 +32,7 @@
 	}
 </script>
 
-<div class="field">
+<div class="field {className}">
 	{#if label}
 		<label for={id}
 			>{label}{#if required}<span class="req">*</span>{/if}</label

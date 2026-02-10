@@ -108,22 +108,22 @@
 	{:else}
 		<div class="section margin-bottom-4">
 			<div class="details">
-				<div class="row center-xxs margin-bottom-2">
-					<div class="col-xxs-12">
+				<div class="row center-xxs margin-bottom-2 center-xs middle-xs">
+					<div class="col-xxs-12 center-xs middle-xs">
 						{#if previewUrl}
-							<img src={previewUrl} alt="Preview" class="preview-img" />
+							<img class="avatar preview-img" src={previewUrl} alt="Preview" />
 						{:else if avatarUrl}
-							<img src={avatarUrl} srcset={avatarSrcset || undefined} sizes="128px" alt="Avatar" class="preview-img" />
+							<img class="avatar preview-img" src={avatarUrl} srcset={avatarSrcset || undefined} sizes="128px" alt="Avatar" />
 						{:else}
-							<Avatar name={fullName || username} size="lg" />
+							<Avatar class="avatar preview-img" name={fullName || username} size="128" />
 						{/if}
 					</div>
 				</div>
 
-				<div class="row center-xxs margin-bottom-2">
-					<div class="col-xxs-12 col-md-6">
+				<div class="row center-xxs middle-xxs margin-bottom-4">
+					<div class="col-xxs-12 col-md-6 center-xxs middle-xxs">
 						<FileUpload
-							label="Upload new avatar"
+							class="center-xxs middle-xxs"
 							buttonText="Choose image"
 							accept="image/png, image/jpeg, image/avif"
 							helperText="JPG, PNG, or AVIF. Max {maxFileSizeMB}MB."
@@ -132,14 +132,20 @@
 					</div>
 				</div>
 
-				<div class="row middle-xxs gap-2">
-					<Button on:click={upload} disabled={!selectedFile || uploading} loading={uploading}>
-						{uploading ? "Uploading..." : "Upload"}
-					</Button>
-					{#if avatarUrl}
-						<Button variant="danger" size="sm" on:click={removeAvatar}>Remove</Button>
-					{/if}
-					<a href="/account/settings" class="muted-color text-small">Back to general settings</a>
+				<div class="row center-xxs middle-xxs gap-2">
+					<div class="col-xxs-12 gap-2">
+						<Button on:click={upload} disabled={!selectedFile || uploading} loading={uploading}>
+							{#if uploading}
+								<Spinner />
+							{:else}
+								Upload
+							{/if}
+						</Button>
+						{#if avatarUrl}
+							<Button variant="danger" on:click={removeAvatar}>Remove</Button>
+						{/if}
+					</div>
+					<a href="/account/settings" class="muted-color text-small">Back to settings</a>
 				</div>
 			</div>
 		</div>
@@ -163,5 +169,6 @@
 		height: 128px;
 		border-radius: 50%;
 		object-fit: cover;
+		margin: 0 auto;
 	}
 </style>
