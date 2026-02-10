@@ -103,6 +103,19 @@
 	}
 }
 
+/* when any gap-* class is on a .row, disable the traditional gutter system
+   so CSS gap becomes the sole spacing mechanism */
+.row[class*="gap-"] {
+	margin-right: 0;
+	margin-left: 0;
+
+	> [class*="col-"],
+	> .col {
+		padding-right: 0;
+		padding-left: 0;
+	}
+}
+
 /* one loop, media-gated. no inner @each. mobile-first */
 @each $name, $size in $sizes {
 

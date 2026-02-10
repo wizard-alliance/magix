@@ -167,6 +167,7 @@ header {
 .page {
 	position: relative;
 	width: 100%;
+	max-width: 880px;
 	min-height: 100%;
 	padding: calc( var(--gutter) * 4 );
 	margin-left: auto;

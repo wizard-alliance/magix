@@ -165,7 +165,7 @@
 
 	<!-- Active Sessions -->
 	<div class="section margin-bottom-4">
-		<div class="row middle-xs between-xs margin-bottom-2">
+		<div class="row middle-xxs between-xxs margin-bottom-2">
 			<div class="col-xxs col-md-5">
 				<h2 class="title">
 					<i class="fa-light fa-computer"></i>
@@ -173,7 +173,7 @@
 				</h2>
 				<p class="muted-color text-small">Devices currently signed in to your account</p>
 			</div>
-			<div class="col end-xs">
+			<div class="col-xxs end">
 				<Tooltip text="End all active sessions" position="left">
 					<Button variant="danger" size="sm" on:click={logoutAllDevices}>
 						<i class="fa-light fa-right-from-bracket"></i>
@@ -246,7 +246,7 @@
 
 	<!-- Password -->
 	<div class="section margin-bottom-4">
-		<div class="row middle-xs margin-bottom-2">
+		<div class="row middle-xxs margin-bottom-2">
 			<div class="col-xxs">
 				<h2 class="title"><i class="fa-light fa-lock"></i> Password</h2>
 				<p class="muted-color text-small">Keep your account secure with a strong password</p>
