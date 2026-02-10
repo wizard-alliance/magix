@@ -92,3 +92,9 @@ window.api.request(...)
 - **Reference `app/src/routes/dev/components/+page.svelte`** for live examples and correct usage of every component—consult it before creating or modifying UI. Look up this file when using components, add to this file when creating new components, and follow its patterns for consistency.
 - For notifications and modals, look up their classes in `app/src/lib/classes/`.
 - Prefer composing existing components over creating new ones. When a new component is needed, follow the same patterns (props, events, slots) used by the existing set.
+
+### CSS Grid system
+- The 12-column responsive grid is defined in `app/src/styles/GRID/`. It provides columns, alignment, distribution, ordering, visibility, gap, margin, and padding utilities across 6 breakpoints (xxs/xs/sm/md/lg/xl).
+- **Reference `app/src/routes/dev/grid/+page.svelte`** for live examples of every grid feature—consult it before building layouts. Look up this file when using grid classes and follow its patterns.
+- CSS grid classes are **mobile-first** (min-width). SCSS mixins in component `<style>` blocks are **desktop-first** (max-width).
+- All `app/src/routes/dev/*` pages serve as living documentation—check them for available UI components, grid classes, and patterns before implementing new features.
