@@ -33,7 +33,9 @@
 	<!-- Getting Started -->
 	<section>
 		<h2>Getting Started</h2>
-		<p class="muted-color text-small margin-bottom-2">The grid is globally available. Wrap columns in a <code>.row</code> and size them with <code>.col-&#123;bp&#125;-&#123;span&#125;</code> classes.</p>
+		<p class="muted-color text-small margin-bottom-2">
+			The grid is globally available. Wrap columns in a <code>.row</code> and size them with <code>.col-&#123;bp&#125;-&#123;span&#125;</code> classes.
+		</p>
 		<pre class="code">&lt;div class="<span class="hl">row</span>"&gt;
   &lt;div class="<span class="hl">col-xxs-4</span>"&gt;Column 1&lt;/div&gt;
   &lt;div class="<span class="hl">col-xxs-4</span>"&gt;Column 2&lt;/div&gt;
@@ -597,7 +599,9 @@
 
 		<h3 class="pattern-label">Mobile-first navigation reorder</h3>
 		<div class="row">
-			<div class="col-xxs-12 col-md-9 last-xxs first-md"><div class="box" style="padding: calc(var(--gutter) * 3) calc(var(--gutter) * 1)">Main content — first on desktop</div></div>
+			<div class="col-xxs-12 col-md-9 last-xxs first-md">
+				<div class="box" style="padding: calc(var(--gutter) * 3) calc(var(--gutter) * 1)">Main content — first on desktop</div>
+			</div>
 			<div class="col-xxs-12 col-md-3 first-xxs last-md"><div class="box accent">Nav — first on mobile</div></div>
 		</div>
 		<pre class="code">&lt;div class="<span class="hl">row</span>"&gt;
