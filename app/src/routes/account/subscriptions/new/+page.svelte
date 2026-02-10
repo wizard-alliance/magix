@@ -31,7 +31,7 @@
 			if (res?.url) window.location.href = res.url
 			else app.UI.Notify.error(`Checkout unavailable`)
 		} catch (err) {
-			app.UI.Notify.error(`Checkout failed: ${(err as Error).message}`)
+			app.UI.Notify.error(`Checkout failed: ${app.Helpers.errMsg(err)}`)
 		}
 		subscribing = null
 	}

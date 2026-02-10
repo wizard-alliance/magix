@@ -1,0 +1,47 @@
+// Shared field component base styles
+// Imported by input, select, textarea for consistent field appearance
+
+.field {
+	display: flex;
+	flex-direction: column;
+	gap: calc(var(--gutter) * 0.75);
+}
+
+label {
+	font-size: var(--font-size-small);
+	font-weight: 500;
+	text-align: left;
+}
+
+.req {
+	color: var(--accent-color);
+	margin-left: 4px;
+}
+
+.helper {
+	font-size: var(--font-size-small);
+	color: var(--text-color-secondary);
+}
+
+// Mixin for actual input/select/textarea elements
+// Each component applies this + its own unique properties (e.g. cursor, resize)
+@mixin field-element {
+	background: var(--secondary-color);
+	border: var(--border);
+	border-radius: 8px;
+	color: var(--white);
+	padding: 10px 12px;
+	transition: border-color 0.15s, box-shadow 0.15s;
+	font-size: var(--font-size-small);
+
+	&:focus {
+		outline: none;
+		border-color: var(--accent-color);
+		box-shadow: 0 0 0 2px rgba(116, 231, 168, 0.15);
+	}
+
+	&:disabled {
+		opacity: 0.4;
+		cursor: not-allowed;
+	}
+}

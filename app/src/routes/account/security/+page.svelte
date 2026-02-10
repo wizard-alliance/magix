@@ -75,7 +75,7 @@
 			app.UI.Notify.success("All sessions ended")
 			goto("/auth/login")
 		} catch (error) {
-			app.UI.Notify.error(`Error: ${(error as Error).message}`)
+			app.UI.Notify.error(`Error: ${app.Helpers.errMsg(error)}`)
 		}
 	}
 
@@ -95,7 +95,7 @@
 				await loadDevices()
 			}
 		} catch (error) {
-			app.UI.Notify.error(`Error: ${(error as Error).message}`)
+			app.UI.Notify.error(`Error: ${app.Helpers.errMsg(error)}`)
 		}
 	}
 
@@ -109,7 +109,7 @@
 			app.UI.Notify.success("Device renamed")
 			await loadDevices()
 		} catch (error) {
-			app.UI.Notify.error(`Error: ${(error as Error).message}`)
+			app.UI.Notify.error(`Error: ${app.Helpers.errMsg(error)}`)
 		}
 	}
 
@@ -131,7 +131,7 @@
 				await loadDevices()
 			}
 		} catch (error) {
-			app.UI.Notify.error(`Error: ${(error as Error).message}`)
+			app.UI.Notify.error(`Error: ${app.Helpers.errMsg(error)}`)
 		}
 	}
 </script>

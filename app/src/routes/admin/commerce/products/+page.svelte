@@ -38,7 +38,7 @@
 			app.UI.Notify.success(`Products synced from LemonSqueezy`)
 			await loadProducts()
 		} catch (err) {
-			app.UI.Notify.error(`Sync failed: ${(err as Error).message}`)
+			app.UI.Notify.error(`Sync failed: ${app.Helpers.errMsg(err)}`)
 		}
 		syncing = false
 	}

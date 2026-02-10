@@ -38,7 +38,7 @@
 			await app.Auth.requestPasswordReset(email)
 			submitted = true
 		} catch (error) {
-			app.UI.Notify.error((error as Error).message)
+			app.UI.Notify.error(app.Helpers.errMsg(error))
 		} finally {
 			loading = false
 		}
@@ -53,7 +53,7 @@
 			await app.Auth.confirmPasswordReset(token, newPassword)
 			resetComplete = true
 		} catch (error) {
-			app.UI.Notify.error((error as Error).message)
+			app.UI.Notify.error(app.Helpers.errMsg(error))
 		} finally {
 			loading = false
 		}

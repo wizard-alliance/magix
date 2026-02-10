@@ -1,11 +1,10 @@
-import { app } from '$lib/app'
+import { pageMeta } from '$lib/pageMeta'
 
-export const load = () => ({
+export const load = () => pageMeta({
 	slug: `account-settings-email`,
 	title: `Email`,
 	parent: `Settings`,
 	parents: [`Account`, `Settings`],
 	icon: `fa-light fa-envelope`,
 	description: `Change your email address.`,
-	sidebars: { 0: true, 1: true, 2: false },
 })

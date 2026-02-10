@@ -62,7 +62,7 @@
 			await app.Auth.login(form)
 			goto("/account/profile")
 		} catch (error) {
-			app.UI.Notify.error((error as Error).message)
+			app.UI.Notify.error(app.Helpers.errMsg(error))
 		} finally {
 			loading = false
 		}
@@ -190,10 +190,6 @@
 		gap: var(--gutter);
 		color: var(--muted-color);
 		font-size: var(--font-size-small);
-
-		span {
-			// color: inherit;
-		}
 	}
 
 	.divider::before,

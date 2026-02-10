@@ -21,51 +21,11 @@
 	{/if}
 </div>
 
-<style>
-	.field {
-		display: flex;
-		flex-direction: column;
-		gap: calc(var(--gutter) * 0.75);
-	}
-
-	label {
-		font-size: var(--font-size-small);
-		font-weight: 500;
-		text-align: left;
-	}
-
+<style lang="scss">
+	@use "../../styles/field" as *;
 	textarea {
-		background: var(--secondary-color);
-		border: var(--border);
-		border-radius: 8px;
-		color: var(--white);
-		padding: 10px 12px;
+		@include field-element;
 		resize: vertical;
 		min-height: 80px;
-		transition:
-			border-color 0.15s,
-			box-shadow 0.15s;
-		font-size: var(--font-size-small);
-	}
-
-	textarea:focus {
-		outline: none;
-		border-color: var(--accent-color);
-		box-shadow: 0 0 0 2px rgba(116, 231, 168, 0.15);
-	}
-
-	textarea:disabled {
-		opacity: 0.4;
-		cursor: not-allowed;
-	}
-
-	.req {
-		color: var(--accent-color);
-		margin-left: 4px;
-	}
-
-	.helper {
-		font-size: var(--font-size-small);
-		color: var(--text-color-secondary);
 	}
 </style>

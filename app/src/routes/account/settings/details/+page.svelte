@@ -31,7 +31,7 @@
 			if (updated && app.State.currentUser?.set) app.State.currentUser.set(updated)
 			app.UI.Notify.success("Profile updated")
 		} catch (error) {
-			app.UI.Notify.error(`Unable to save: ${(error as Error).message}`)
+			app.UI.Notify.error(`Unable to save: ${app.Helpers.errMsg(error)}`)
 		} finally {
 			saving = false
 		}

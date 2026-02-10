@@ -22,7 +22,7 @@
 		try {
 			linked = await app.Auth.listVendors()
 		} catch (err) {
-			app.UI.Notify.error(`Failed to load connections: ${(err as Error).message}`)
+			app.UI.Notify.error(`Failed to load connections: ${app.Helpers.errMsg(err)}`)
 		}
 	}
 
@@ -46,7 +46,7 @@
 			await app.Auth.connectVendor(vendor, connectToken)
 			app.UI.Notify.success(`${vendor} connected successfully`)
 		} catch (err) {
-			app.UI.Notify.error(`Failed to connect ${vendor}: ${(err as Error).message}`)
+			app.UI.Notify.error(`Failed to connect ${vendor}: ${app.Helpers.errMsg(err)}`)
 		} finally {
 			connecting = false
 		}
@@ -82,7 +82,7 @@
 				app.UI.Notify.success(`${vendor} disconnected`)
 				await fetchVendors()
 			} catch (err) {
-				app.UI.Notify.error(`Failed to disconnect: ${(err as Error).message}`)
+				app.UI.Notify.error(`Failed to disconnect: ${app.Helpers.errMsg(err)}`)
 			} finally {
 				disconnecting = null
 			}
@@ -98,7 +98,7 @@
 			app.UI.Notify.success(`${vendor} disconnected`)
 			await fetchVendors()
 		} catch (err) {
-			app.UI.Notify.error(`Failed to disconnect: ${(err as Error).message}`)
+			app.UI.Notify.error(`Failed to disconnect: ${app.Helpers.errMsg(err)}`)
 		} finally {
 			disconnecting = null
 		}

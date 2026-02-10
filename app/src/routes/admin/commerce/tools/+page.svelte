@@ -83,7 +83,7 @@
 			})
 			app.UI.Notify.success(`Event fired: ${eventName}`)
 		} catch (err) {
-			app.UI.Notify.error(`Event failed: ${(err as Error).message}`)
+			app.UI.Notify.error(`Event failed: ${app.Helpers.errMsg(err)}`)
 		}
 		simLoading = false
 	}
@@ -99,71 +99,25 @@
 		lsLoading = false
 	}
 
-	const syncProducts = async () => {
+	// Generic sync runner — wraps any LS sync method with loading state + notifications
+	const runSync = async (fn: () => Promise<any>, label: string) => {
 		syncing = true
 		try {
-			await app.Commerce.Admin.LS.syncProducts()
-			app.UI.Notify.success(`Products synced`)
+			await fn()
+			app.UI.Notify.success(`${label} synced`)
 		} catch (err) {
-			app.UI.Notify.error(`Sync failed: ${(err as Error).message}`)
+			app.UI.Notify.error(`Sync failed: ${app.Helpers.errMsg(err)}`)
 		}
 		syncing = false
 	}
 
-	const syncCustomers = async () => {
-		syncing = true
-		try {
-			await app.Commerce.Admin.LS.syncCustomers()
-			app.UI.Notify.success(`Customers synced`)
-		} catch (err) {
-			app.UI.Notify.error(`Sync failed: ${(err as Error).message}`)
-		}
-		syncing = false
-	}
-
-	const syncOrders = async () => {
-		syncing = true
-		try {
-			await app.Commerce.Admin.LS.syncOrders()
-			app.UI.Notify.success(`Orders synced`)
-		} catch (err) {
-			app.UI.Notify.error(`Sync failed: ${(err as Error).message}`)
-		}
-		syncing = false
-	}
-
-	const syncSubscriptions = async () => {
-		syncing = true
-		try {
-			await app.Commerce.Admin.LS.syncSubscriptions()
-			app.UI.Notify.success(`Subscriptions synced`)
-		} catch (err) {
-			app.UI.Notify.error(`Sync failed: ${(err as Error).message}`)
-		}
-		syncing = false
-	}
-
-	const syncInvoices = async () => {
-		syncing = true
-		try {
-			await app.Commerce.Admin.LS.syncInvoices()
-			app.UI.Notify.success(`Invoices synced`)
-		} catch (err) {
-			app.UI.Notify.error(`Sync failed: ${(err as Error).message}`)
-		}
-		syncing = false
-	}
-
-	const syncAll = async () => {
-		syncing = true
-		try {
-			await app.Commerce.Admin.LS.sync()
-			app.UI.Notify.success(`Full sync complete`)
-		} catch (err) {
-			app.UI.Notify.error(`Sync failed: ${(err as Error).message}`)
-		}
-		syncing = false
-	}
+	// Each wrapper delegates to runSync — button handlers stay unchanged
+	const syncProducts = () => runSync(() => app.Commerce.Admin.LS.syncProducts(), `Products`)
+	const syncCustomers = () => runSync(() => app.Commerce.Admin.LS.syncCustomers(), `Customers`)
+	const syncOrders = () => runSync(() => app.Commerce.Admin.LS.syncOrders(), `Orders`)
+	const syncSubscriptions = () => runSync(() => app.Commerce.Admin.LS.syncSubscriptions(), `Subscriptions`)
+	const syncInvoices = () => runSync(() => app.Commerce.Admin.LS.syncInvoices(), `Invoices`)
+	const syncAll = () => runSync(() => app.Commerce.Admin.LS.sync(), `Full sync`)
 
 	const loadStore = async () => {
 		storeLoading = true

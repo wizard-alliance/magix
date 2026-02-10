@@ -32,7 +32,7 @@
 			app.UI.Notify.success(`Subscription cancelled`)
 			goto(`/account/subscriptions`)
 		} catch (err) {
-			app.UI.Notify.error(`Failed: ${(err as Error).message}`)
+			app.UI.Notify.error(`Failed: ${app.Helpers.errMsg(err)}`)
 			cancelling = false
 		}
 	}

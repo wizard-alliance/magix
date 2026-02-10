@@ -90,7 +90,7 @@
 			await app.Account.Settings.save(payload)
 			app.UI.Notify.success("Preferences saved")
 		} catch (err) {
-			app.UI.Notify.error(`Failed to save preferences: ${(err as Error).message}`)
+			app.UI.Notify.error(`Failed to save preferences: ${app.Helpers.errMsg(err)}`)
 		} finally {
 			saving = false
 		}

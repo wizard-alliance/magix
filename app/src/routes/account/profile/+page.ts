@@ -1,6 +1,7 @@
 import { app } from '$lib/app'
+import { pageMeta } from '$lib/pageMeta'
 
-export const load = () => ({
+export const load = () => pageMeta({
 	slug: `account-profile`,
 	ID: null,
 	title: `Your profile`,
@@ -8,10 +9,7 @@ export const load = () => ({
 	parents: [`Account`],
 	icon: `fa-light fa-id-badge`,
 	description: `View and edit your personal profile information.`,
-
-    sidebars: { 0: true, 1: true, 2: false },
 	nav: app.Meta.navigations.get(`account/settings`),
-
 	seo: {
         canonical: `/account/profile`,
         noindex: false,

@@ -41,7 +41,7 @@
 				successMessage = res.message || "Verification email sent. Check your new inbox."
 			}
 		} catch (err) {
-			errorMessage = (err as Error).message || "Failed to send verification email"
+			errorMessage = app.Helpers.errMsg(err) || "Failed to send verification email"
 		} finally {
 			sending = false
 		}

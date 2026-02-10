@@ -77,7 +77,7 @@
 			previewUrl = ""
 			app.UI.Notify.success("Avatar updated")
 		} catch (err) {
-			app.UI.Notify.error(`Upload failed: ${(err as Error).message}`)
+			app.UI.Notify.error(`Upload failed: ${app.Helpers.errMsg(err)}`)
 		} finally {
 			uploading = false
 		}
@@ -90,7 +90,7 @@
 			avatarSrcset = ""
 			app.UI.Notify.success("Avatar removed")
 		} catch (err) {
-			app.UI.Notify.error(`Failed to remove avatar: ${(err as Error).message}`)
+			app.UI.Notify.error(`Failed to remove avatar: ${app.Helpers.errMsg(err)}`)
 		}
 	}
 </script>

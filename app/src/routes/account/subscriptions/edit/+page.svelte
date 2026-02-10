@@ -40,7 +40,7 @@
 			app.UI.Notify.success(`Subscription paused`)
 			await loadData()
 		} catch (err) {
-			app.UI.Notify.error(`Failed: ${(err as Error).message}`)
+			app.UI.Notify.error(`Failed: ${app.Helpers.errMsg(err)}`)
 		}
 		acting = false
 	}
@@ -53,7 +53,7 @@
 			app.UI.Notify.success(`Subscription resumed`)
 			await loadData()
 		} catch (err) {
-			app.UI.Notify.error(`Failed: ${(err as Error).message}`)
+			app.UI.Notify.error(`Failed: ${app.Helpers.errMsg(err)}`)
 		}
 		acting = false
 	}

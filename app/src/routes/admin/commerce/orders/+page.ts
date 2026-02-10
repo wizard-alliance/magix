@@ -1,13 +1,13 @@
 import { app } from '$lib/app'
+import { pageMeta } from '$lib/pageMeta'
 
-export const load = () => ({
+export const load = () => pageMeta({
 	slug: `admin-commerce-orders`,
 	title: `Orders`,
 	parent: `Commerce`,
 	parents: [`Admin`, `Commerce`],
 	icon: `fa-light fa-shopping-cart`,
 	description: `Manage all orders.`,
-	sidebars: { 0: true, 1: true, 2: false },
 	nav: app.Meta.navigations.get(`admin`),
 	seo: {
 		canonical: `/admin/commerce/orders`,

@@ -1,13 +1,13 @@
 import { app } from '$lib/app'
+import { pageMeta } from '$lib/pageMeta'
 
-export const load = () => ({
+export const load = () => pageMeta({
 	slug: `account-security`,
 	title: `Security`,
 	parent: `Account`,
 	parents: [`Account`],
 	icon: `fa-light fa-shield`,
 	description: `Manage your account security and active sessions.`,
-	sidebars: { 0: true, 1: true, 2: false },
 	nav: app.Meta.navigations.get(`account/settings`),
 	seo: {
 		canonical: `/account/security`,

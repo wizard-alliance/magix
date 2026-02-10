@@ -1,13 +1,13 @@
 import { app } from '$lib/app'
+import { pageMeta } from '$lib/pageMeta'
 
-export const load = () => ({
+export const load = () => pageMeta({
 	slug: `account-settings`,
 	title: `Preferences`,
 	parent: `Account`,
 	parents: [`Account`],
 	icon: `fa-light fa-sliders`,
 	description: `Manage your account preferences.`,
-	sidebars: { 0: true, 1: true, 2: false },
 	nav: app.Meta.navigations.get(`account/settings`),
 	seo: {
 		canonical: `/account/settings`,

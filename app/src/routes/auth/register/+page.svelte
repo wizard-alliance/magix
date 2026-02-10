@@ -37,7 +37,7 @@
 			await app.Auth.register(payload)
 			submitted = true
 		} catch (error) {
-			app.UI.Notify.error((error as Error).message)
+			app.UI.Notify.error(app.Helpers.errMsg(error))
 		} finally {
 			loading = false
 		}

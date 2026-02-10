@@ -98,6 +98,8 @@ export const createAppClient = () => ({
 		Success: SuccessLog,
 		Reactive,
 		Store: { ...store },
+		// Safely extract a message string from any thrown value
+		errMsg: (err: unknown): string => err instanceof Error ? err.message : String(err),
 	},
 })
 

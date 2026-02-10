@@ -3,19 +3,10 @@
 	import { onMount } from "svelte"
 	import type { BillingOrder } from "$lib/types/commerce"
 	import Spinner from "$components/modules/spinner.svelte"
-	import Badge from "$components/modules/badge.svelte"
 	import AdvancedTable from "$components/modules/AdvancedTable.svelte"
 
 	let loading = true
 	let orders: any[] = []
-
-	const statusVariant = (status: BillingOrder["status"]) => {
-		if (status === `paid`) return `success`
-		if (status === `failed`) return `danger`
-		if (status === `refunded`) return `warning`
-		if (status === `canceled`) return `danger`
-		return `default`
-	}
 
 	const createTableData = (raw: BillingOrder[]) =>
 		raw.map((o) => ({

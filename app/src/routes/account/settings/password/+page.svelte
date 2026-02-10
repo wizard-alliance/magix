@@ -18,7 +18,7 @@
 			await app.Auth.logout()
 			goto("/auth/login")
 		} catch (error) {
-			app.UI.Notify.error(`Error: ${(error as Error).message}`)
+			app.UI.Notify.error(`Error: ${app.Helpers.errMsg(error)}`)
 		} finally {
 			loading = false
 		}
