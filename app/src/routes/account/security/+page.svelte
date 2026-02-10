@@ -194,7 +194,7 @@
 							<span class="muted-color text-small">
 								{device.ip || "Unknown IP"}
 								{#if device.lastLogin}
-									· Last active {new Date(device.lastLogin).toLocaleDateString()}
+									· Last active {app.Format.Date.format(device.lastLogin)}
 								{/if}
 							</span>
 						</div>

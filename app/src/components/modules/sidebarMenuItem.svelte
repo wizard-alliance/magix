@@ -11,7 +11,7 @@
 	$: isActiveSub = !isActive && $page.url.pathname.startsWith(`${href}/`)
 </script>
 
-<div class="sidebar-menu-item">
+<div class="sidebar-menu-item {children.length > 0 ? 'has-children' : ''} {isActive ? 'active' : ''} {isActiveSub ? 'active-sub' : ''}">
 	<a {href} data-unread={unread} class:active={isActive} class:active-sub={isActiveSub}>
 		<i class={`fa-light ${icon}`}></i>
 		<span>{label}</span>
@@ -91,6 +91,10 @@
 		position: relative;
 		margin-left: calc(var(--gutter) * 1);
 
+		transition:
+			opacity 600ms cubic-bezier(0, 0, 0, 1),
+			transform 600ms cubic-bezier(0, 0, 0, 1);
+
 		&:before {
 			content: "";
 			position: absolute;
@@ -109,6 +113,10 @@
 		font-weight: 400;
 		color: var(--red);
 
+		transition:
+			opacity 600ms cubic-bezier(0, 0, 0, 1),
+			transform 600ms cubic-bezier(0, 0, 0, 1);
+
 		&:before {
 			--x: 8px;
 			content: "";
@@ -126,6 +134,21 @@
 
 		span {
 			color: var(--muted-color);
+		}
+	}
+
+	.sidebar-menu-item.has-children {
+		&:not(.active):not(.active-sub) {
+			.sidebar-menu-children {
+				user-select: none;
+				pointer-events: none;
+
+				transform: translateY(-10px);
+				opacity: 0;
+
+				height: 0;
+				overflow: hidden;
+			}
 		}
 	}
 

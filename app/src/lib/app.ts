@@ -11,6 +11,10 @@ import { CacheClient } from "./classes/Data/CacheClient"
 
 import { UserSettingsClient } from "./classes/Account/UserSettingsClient"
 import { AvatarClient } from "./classes/Account/AvatarClient"
+import { PreferencesClient } from "./classes/Account/PreferencesClient"
+
+import { DateFormat } from "./classes/Format/DateFormat"
+import { CurrencyFormat } from "./classes/Format/CurrencyFormat"
 
 import { CustomerResource } from "./classes/Commerce/CustomerResource"
 import { OrdersResource } from "./classes/Commerce/OrdersResource"
@@ -56,6 +60,12 @@ export const createAppClient = () => ({
 	Account: {
 		Settings: new UserSettingsClient(),
 		Avatar: new AvatarClient(),
+		Preferences: new PreferencesClient(),
+	},
+
+	Format: {
+		Date: new DateFormat(),
+		Currency: new CurrencyFormat(),
 	},
 
 	Commerce: {

@@ -2,7 +2,7 @@
 	import { createEventDispatcher, tick, onMount, onDestroy } from "svelte"
 	import Avatar from "$components/modules/avatar.svelte"
 	import Badge from "$components/modules/badge.svelte"
-	import DateString from "$components/modules/DateString.svelte"
+	import DateString from "$components/Formats/DateString.svelte"
 	import Pagination from "$components/modules/pagination.svelte"
 	import DropdownMenu from "$components/modules/DropdownMenu.svelte"
 
@@ -99,7 +99,7 @@
 		if (isAvatar(key) || isUrl(value) || isBool(value)) return ``
 		if (isDate(key) && value) {
 			const date = new Date(value)
-			if (!isNaN(date.getTime())) return date.toLocaleDateString()
+			if (!isNaN(date.getTime())) return app.Format.Date.format(value)
 		}
 		if (Array.isArray(value)) return value.join(`, `)
 		if (typeof value === `object`) return JSON.stringify(value)

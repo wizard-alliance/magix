@@ -2,6 +2,9 @@
 	import { app } from "$lib/app"
 	import { page } from "$app/stores"
 	import { onMount } from "svelte"
+	import dayjs from "dayjs"
+	import utc from "dayjs/plugin/utc"
+	import timezone from "dayjs/plugin/timezone"
 	import type { UserFull } from "$lib/types/types"
 	import { userSettingsConfig, categoryLabels, getUserSetting, getSettingsByCategory, type UserSettingCategory } from "$configs/userSettings"
 	import Button from "$components/fields/button.svelte"
@@ -9,13 +12,18 @@
 	import Toggle from "$components/fields/toggle.svelte"
 	import Spinner from "$components/modules/spinner.svelte"
 
+	dayjs.extend(utc)
+	dayjs.extend(timezone)
+
 	let userData: UserFull | null = null
 	let values: Record<string, string> = {}
 	let toggles: Record<string, boolean> = {}
+	let ranges: Record<string, number> = {}
 	let loading = false
 	let saving = false
 
 	const categories: UserSettingCategory[] = ["regional", "notifications", "appearance", "advanced"]
+	const sampleDate = new Date().toISOString()
 
 	const quickLinks = [
 		{ href: "/account/settings/details", icon: "fa-light fa-file-signature", label: "Details" },
@@ -27,6 +35,36 @@
 
 	$: currentPath = $page.url.pathname
 
+	const previewDate = (fmt: string, tz: string) => {
+		try {
+			return dayjs.utc(sampleDate).tz(tz).format(fmt)
+		} catch {
+			return `—`
+		}
+	}
+
+	const previewTime = (tz: string) => {
+		try {
+			return dayjs.utc(sampleDate).tz(tz).format(`h:mm A`)
+		} catch {
+			return `—`
+		}
+	}
+
+	const previewCurrency = (code: string) => {
+		try {
+			return app.Format.Currency.format(149900, code)
+		} catch {
+			return `—`
+		}
+	}
+
+	$: regionalPreview = {
+		currency: previewCurrency(values.currency ?? `USD`),
+		timezone: previewTime(values.timezone ?? `UTC`),
+		datetime_format: previewDate(values.datetime_format ?? `YYYY-MM-DD`, values.timezone ?? `UTC`),
+	} as Record<string, string>
+
 	onMount(async () => {
 		loading = true
 		userData = await app.Auth.me().catch(() => null)
@@ -34,6 +72,7 @@
 			const val = getUserSetting(userData?.settings, def.key)
 			values[def.key] = val
 			if (def.type === "toggle") toggles[def.key] = val === "1"
+			if (def.type === "range") ranges[def.key] = Number(val) || 0
 		}
 		loading = false
 	})
@@ -41,11 +80,14 @@
 	const save = async () => {
 		saving = true
 		try {
-			// Sync toggles back to values
+			// Sync toggles back to values and ensure all values are strings
+			const payload: Record<string, string> = {}
 			for (const def of userSettingsConfig) {
 				if (def.type === "toggle") values[def.key] = toggles[def.key] ? "1" : "0"
+				if (def.type === "range") values[def.key] = String(ranges[def.key])
+				payload[def.key] = String(values[def.key])
 			}
-			await app.Account.Settings.save(values)
+			await app.Account.Settings.save(payload)
 			app.UI.Notify.success("Preferences saved")
 		} catch (err) {
 			app.UI.Notify.error(`Failed to save preferences: ${(err as Error).message}`)
@@ -93,12 +135,19 @@
 								<div class="col-xxs start-xxs">
 									<span class="detail-title">{def.label}</span>
 									<span class="muted-color text-small">{def.description}</span>
+									{#if cat === "regional" && regionalPreview[def.key]}
+										<span class="setting-preview">{regionalPreview[def.key]}</span>
+									{/if}
 								</div>
 								<div class="col end-xxs detail-value">
 									{#if def.type === "toggle"}
 										<Toggle bind:checked={toggles[def.key]} />
 									{:else if def.type === "select"}
 										<Select bind:value={values[def.key]} options={def.options ?? []} />
+									{:else if def.type === "range"}
+										<div class="range-control">
+											<input type="range" min={def.min ?? 0} max={def.max ?? 100} step={def.step ?? 1} bind:value={ranges[def.key]} />
+										</div>
 									{/if}
 								</div>
 							</div>
@@ -154,9 +203,66 @@
 		font-weight: 500;
 	}
 
+	.setting-preview {
+		display: inline-block;
+		margin-top: calc(var(--gutter) * 0.5);
+		padding: 2px 8px;
+		font-size: var(--font-size-small);
+		font-family: var(--font-mono, monospace);
+		color: var(--color-primary);
+		background: rgba(255, 255, 255, 0.06);
+		border-radius: var(--border-radius);
+	}
+
 	.detail-value {
 		flex-shrink: 0;
 		min-width: 140px;
+	}
+
+	.range-control {
+		display: flex;
+		align-items: center;
+
+		input[type="range"] {
+			-webkit-appearance: none;
+			appearance: none;
+			width: 120px;
+			height: 4px;
+			background: var(--border-color);
+			border-radius: 2px;
+			outline: none;
+			cursor: pointer;
+
+			&::-webkit-slider-thumb {
+				-webkit-appearance: none;
+				width: 14px;
+				height: 14px;
+				border-radius: 50%;
+				background: var(--accent-color);
+				border: none;
+				cursor: pointer;
+				transition: box-shadow var(--animationDefaultSpeed) var(--animationEasing);
+			}
+
+			&::-moz-range-thumb {
+				width: 14px;
+				height: 14px;
+				border-radius: 50%;
+				background: var(--accent-color);
+				border: none;
+				cursor: pointer;
+			}
+
+			&::-webkit-slider-thumb:hover {
+				box-shadow: 0 0 0 4px rgba(116, 231, 168, 0.15);
+			}
+
+			&::-moz-range-track {
+				height: 4px;
+				background: var(--border-color);
+				border-radius: 2px;
+			}
+		}
 	}
 
 	.actions {

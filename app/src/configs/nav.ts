@@ -159,7 +159,7 @@ export const navigationData: NavItem[] = [
 					{
 						slug: "vendor",
 						label: "Connections",
-						href: "/account/vendor",
+						href: "/account/settings/vendor",
 						target: "_self",
 						icon: "fa-light fa-link",
 						permissions: [],

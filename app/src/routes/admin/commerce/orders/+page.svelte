@@ -13,7 +13,7 @@
 			ID: o.id,
 			Customer: o.customerId,
 			Type: o.type,
-			Amount: `${(o.amount / 100).toFixed(2)} ${o.currency?.toUpperCase() ?? ``}`,
+			Amount: app.Format.Currency.format(o.amount, o.currency),
 			Status: o.status,
 			"Payment Method": o.paymentMethod ?? `—`,
 			"Paid At": o.paidAt ?? `—`,

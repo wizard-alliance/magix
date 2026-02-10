@@ -71,8 +71,7 @@
 				<div class="plan-card">
 					<h2 class="plan-name">{product.name}</h2>
 					<div class="plan-price">
-						<span class="amount">{(product.price / 100).toFixed(2)}</span>
-						<span class="currency">{product.currency?.toUpperCase() ?? `USD`}</span>
+						<span class="amount">{app.Format.Currency.format(product.price, product.currency)}</span>
 						{#if product.interval}
 							<span class="interval">/ {formatInterval(product.interval, product.intervalCount)}</span>
 						{/if}

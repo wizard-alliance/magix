@@ -1,4 +1,4 @@
-export type UserSettingType = "toggle" | "select"
+export type UserSettingType = "toggle" | "select" | "range"
 
 export type UserSettingCategory = "regional" | "notifications" | "appearance" | "advanced"
 
@@ -12,6 +12,9 @@ export type UserSettingDef = {
 	category: UserSettingCategory
 	defaultValue: string
 	options?: UserSettingOption[]
+	min?: number
+	max?: number
+	step?: number
 }
 
 export const categoryLabels: Record<UserSettingCategory, { title: string; description: string; icon: string }> = {
@@ -66,7 +69,7 @@ const timezoneOptions: UserSettingOption[] = (() => {
 export const userSettingsConfig: UserSettingDef[] = [
 	// Regional
 	{ key: "currency", label: "Currency", description: "Preferred display currency", type: "select", category: "regional", defaultValue: "USD", options: currencyOptions },
-	{ key: "timezone", label: "Timezone", description: "Your local timezone", type: "select", category: "regional", defaultValue: "UTC", options: timezoneOptions },
+	{ key: "timezone", label: "Timezone", description: "Your local timezone", type: "select", category: "regional", defaultValue: (() => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone } catch { return "UTC" } })(), options: timezoneOptions },
 	{ key: "first_day_of_week", label: "First day of week", description: "Start of the calendar week", type: "select", category: "regional", defaultValue: "monday", options: dayOfWeekOptions },
 	{ key: "datetime_format", label: "Date format", description: "How dates are displayed", type: "select", category: "regional", defaultValue: "YYYY-MM-DD", options: datetimeFormatOptions },
 
@@ -78,6 +81,8 @@ export const userSettingsConfig: UserSettingDef[] = [
 	// Appearance
 	{ key: "dark_mode", label: "Dark mode", description: "Use dark color scheme", type: "toggle", category: "appearance", defaultValue: "1" },
 	{ key: "text_size", label: "Text size", description: "Base font size for the interface", type: "select", category: "appearance", defaultValue: "100", options: textSizeOptions },
+	{ key: "ui_sfx_enabled", label: "UI sound effects", description: "Play sound effects for UI interactions", type: "toggle", category: "appearance", defaultValue: "1" },
+	{ key: "ui_sfx_volume", label: "SFX volume", description: "Volume level for UI sound effects", type: "range", category: "appearance", defaultValue: "80", min: 0, max: 100, step: 10 },
 
 	// Advanced
 	{ key: "subscribe_newsletter", label: "Newsletter", description: "Receive product updates via email", type: "toggle", category: "advanced", defaultValue: "0" },

@@ -24,7 +24,8 @@
 	import DropdownMenu from "$components/modules/DropdownMenu.svelte"
 	import RepeaterField from "$components/modules/repeaterField.svelte"
 	import Breadcrumbs from "$components/modules/breadcrumbs.svelte"
-	import DateString from "$components/modules/DateString.svelte"
+	import DateString from "$components/Formats/DateString.svelte"
+	import Currency from "$components/Formats/Currency.svelte"
 
 	let radioValue = "a"
 	let toggleChecked = false
@@ -394,6 +395,16 @@
 			<DateString value="2025-12-01" out="date" />
 			<DateString value="2026-02-08T14:00:00Z" out="datetime" />
 			<DateString value="2020-06-01" />
+		</div>
+	</section>
+
+	<section>
+		<h2>Currency</h2>
+		<div class="demo">
+			<Currency amount={9999} />
+			<Currency amount={150000} currency="EUR" />
+			<Currency amount={4999} currency="GBP" />
+			<Currency amount={0} />
 		</div>
 	</section>
 

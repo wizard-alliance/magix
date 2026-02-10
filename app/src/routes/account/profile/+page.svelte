@@ -139,7 +139,7 @@
 							<span class="text-ignore detail-subtitle muted-color text-small">Your registration date</span>
 						</div>
 						<div class="col-xxs end-xxs muted-color text-small">
-							{#if user}{new Date(info.created).toLocaleDateString()}{:else}<Spinner size="sm" />{/if}
+							{#if user}{app.Format.Date.format(info.created)}{:else}<Spinner size="sm" />{/if}
 						</div>
 					</div>
 				</div>

@@ -15,7 +15,7 @@
 			ID: p.id,
 			Name: p.name,
 			Type: p.type,
-			Price: `${(p.price / 100).toFixed(2)} ${p.currency?.toUpperCase() ?? ``}`,
+			Price: app.Format.Currency.format(p.price, p.currency),
 			Interval: p.interval ? `${p.intervalCount}x ${p.interval}` : `—`,
 			Active: p.isActive ? `Yes` : `No`,
 			Features: p.features?.length ?? 0,

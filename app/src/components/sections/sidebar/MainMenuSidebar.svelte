@@ -119,7 +119,15 @@
 		justify-content: flex-start;
 
 		&:hover {
-			background-color: var(--secondary-color);
+			background-color: var(--tertiary-color);
+		}
+
+		&:active {
+			opacity: 0.9;
+		}
+
+		&.open {
+			background-color: var(--tertiary-color);
 			.indicator {
 				color: white;
 			}
