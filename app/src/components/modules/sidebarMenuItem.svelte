@@ -8,7 +8,7 @@
 	export let children: any[] = []
 
 	$: isActive = $page.url.pathname === href
-	$: isActiveSub = !isActive && $page.url.pathname.startsWith(`${href}/`)
+	$: isActiveSub = !isActive && ($page.url.pathname.startsWith(`${href}/`) || children.some((c) => $page.url.pathname === c.href || $page.url.pathname.startsWith(`${c.href}/`)))
 </script>
 
 <div class="sidebar-menu-item {children.length > 0 ? 'has-children' : ''} {isActive ? 'active' : ''} {isActiveSub ? 'active-sub' : ''}">

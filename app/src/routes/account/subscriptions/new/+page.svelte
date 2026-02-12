@@ -10,10 +10,12 @@
 	let products: BillingProductFull[] = []
 	let subscribing: number | null = null
 
+	const showTypes = new Set([`subscription`, `lead_magnet`])
+
 	onMount(async () => {
 		try {
 			const all = await app.Commerce.Products.list()
-			products = all.filter((p) => p.type === `subscription` && p.isActive && p.providerVariantId).sort((a, b) => a.sortOrder - b.sortOrder)
+			products = all.filter((p) => showTypes.has(p.type) && p.isActive).sort((a, b) => a.sortOrder - b.sortOrder)
 		} catch {
 			app.UI.Notify.error(`Failed to load plans`)
 		}
@@ -36,9 +38,24 @@
 		subscribing = null
 	}
 
-	const formatInterval = (interval: string, count: number) => {
-		if (count === 1) return interval
-		return `${count} ${interval}s`
+	const isFree = (product: BillingProductFull) => product.type === `lead_magnet` || product.price === 0
+
+	const ctaLabel = (product: BillingProductFull) => {
+		if (isFree(product)) return `Get Free Access`
+		if (product.trialDays > 0) return `Start a free ${product.trialDays}-day trial`
+		return `Get Started`
+	}
+
+	const formatPrice = (price: number) => {
+		const str = price.toFixed(2)
+		const [whole, dec] = str.split(`.`)
+		return { whole, dec }
+	}
+
+	const boldFirstWord = (text: string) => {
+		const i = text.indexOf(` `)
+		if (i === -1) return `<strong>${text}</strong>`
+		return `<strong>${text.slice(0, i)}</strong>${text.slice(i)}`
 	}
 </script>
 
@@ -67,31 +84,52 @@
 		</div>
 	{:else}
 		<div class="plans-grid">
-			{#each products as product (product.id)}
-				<div class="plan-card">
-					<h2 class="plan-name">{product.name}</h2>
-					<div class="plan-price">
-						<span class="amount">{app.Format.Currency.format(product.price, product.currency)}</span>
-						{#if product.interval}
-							<span class="interval">/ {formatInterval(product.interval, product.intervalCount)}</span>
-						{/if}
-					</div>
-					{#if product.trialDays > 0}
-						<Badge text="{product.trialDays}-day free trial" variant="success" />
+			{#each products as product, idx (product.id)}
+				{@const popular = idx === 1 && products.length > 1}
+				<div class="plan-card" class:popular>
+					{#if popular}
+						<div class="popular-badge"><Badge text="POPULAR" variant="success" /></div>
 					{/if}
+
+					<h2 class="plan-name">{product.name}</h2>
 					{#if product.description}
 						<p class="plan-description">{product.description}</p>
 					{/if}
-					{#if product.features?.length}
-						<ul class="plan-features">
-							{#each product.features as feature}
-								<li><i class="fa-light fa-check"></i> {feature.featureName}</li>
-							{/each}
-						</ul>
-					{/if}
-					<div class="plan-action">
-						<Button on:click={() => subscribe(product)} loading={subscribing === product.id} disabled={subscribing !== null} size="sm">Subscribe</Button>
+
+					<div class="plan-divider"></div>
+
+					<div class="plan-price">
+						{#if isFree(product)}
+							<span class="amount">Free</span>
+						{:else}
+							<span class="currency">{product.currency?.toUpperCase() ?? `USD`}</span>
+							<span class="amount">${formatPrice(product.price).whole}<span class="dec">.{formatPrice(product.price).dec}</span></span>
+						{/if}
 					</div>
+					{#if !isFree(product) && product.interval}
+						<p class="plan-interval">billed {product.interval}ly</p>
+					{/if}
+
+					<div class="plan-action">
+						<Button
+							on:click={() => subscribe(product)}
+							loading={subscribing === product.id}
+							disabled={subscribing !== null}
+							variant={popular ? `primary` : `ghost`}
+							size="sm">{ctaLabel(product)}</Button
+						>
+					</div>
+
+					{#if product.features?.length}
+						<div class="plan-features-section">
+							<p class="features-heading">{product.name} features:</p>
+							<ul class="plan-features">
+								{#each product.features as feature}
+									<li><i class="fa-solid fa-check"></i> <span>{@html boldFirstWord(feature.featureName)}</span></li>
+								{/each}
+							</ul>
+						</div>
+					{/if}
 				</div>
 			{/each}
 		</div>
@@ -115,44 +153,91 @@
 	}
 
 	.plan-card {
+		position: relative;
 		background-color: rgba(255, 255, 255, 0.04);
+		border: 1px solid transparent;
 		border-radius: var(--border-radius);
 		padding: calc(var(--gutter) * 3);
 		display: flex;
 		flex-direction: column;
-		gap: calc(var(--gutter) * 1.5);
+
+		&.popular {
+			border-color: var(--accent-color);
+		}
+	}
+
+	.popular-badge {
+		position: absolute;
+		top: 0;
+		left: 50%;
+		transform: translate(-50%, -50%);
 	}
 
 	.plan-name {
 		font-size: var(--font-size-large);
-		font-weight: 600;
-	}
-
-	.plan-price {
-		display: flex;
-		align-items: baseline;
-		gap: calc(var(--gutter) * 0.5);
-
-		.amount {
-			font-size: 1.8rem;
-			font-weight: 700;
-		}
-
-		.currency {
-			font-size: var(--font-size-small);
-			opacity: 0.6;
-		}
-
-		.interval {
-			font-size: var(--font-size-small);
-			opacity: 0.5;
-		}
+		font-weight: 700;
+		margin-bottom: calc(var(--gutter) * 0.5);
 	}
 
 	.plan-description {
 		font-size: var(--font-size-small);
 		color: var(--muted-color);
 		line-height: 1.5;
+		margin-bottom: calc(var(--gutter) * 1.5);
+	}
+
+	.plan-divider {
+		width: 32px;
+		height: 2px;
+		background: var(--accent-color);
+		border-radius: 2px;
+		margin-bottom: calc(var(--gutter) * 2);
+	}
+
+	.plan-price {
+		display: flex;
+		align-items: baseline;
+		gap: calc(var(--gutter) * 0.75);
+
+		.currency {
+			font-size: var(--font-size-small);
+			opacity: 0.5;
+		}
+
+		.amount {
+			font-size: 2.2rem;
+			font-weight: 700;
+
+			.dec {
+				font-size: 1.2rem;
+			}
+		}
+	}
+
+	.plan-interval {
+		font-size: var(--font-size-small);
+		color: var(--muted-color);
+		margin-top: calc(var(--gutter) * 0.25);
+		margin-bottom: calc(var(--gutter) * 2);
+	}
+
+	.plan-action {
+		margin-bottom: calc(var(--gutter) * 3);
+
+		:global(button),
+		:global(a) {
+			width: 100%;
+		}
+	}
+
+	.plan-features-section {
+		margin-top: auto;
+
+		.features-heading {
+			font-size: var(--font-size-small);
+			font-weight: 600;
+			margin-bottom: calc(var(--gutter) * 1.5);
+		}
 	}
 
 	.plan-features {
@@ -171,13 +256,8 @@
 
 			i {
 				color: var(--accent-color);
-				font-size: 0.75rem;
+				font-size: 0.7rem;
 			}
 		}
-	}
-
-	.plan-action {
-		margin-top: auto;
-		padding-top: calc(var(--gutter) * 1);
 	}
 </style>

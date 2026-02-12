@@ -316,6 +316,16 @@ export const navigationData: NavItem[] = [
 						align: null,
 					},
 					{
+						slug: "admin-commerce-features",
+						label: "Features", 
+						href: "/admin/commerce/features",
+						target: "_self", 
+						icon: "fa-light fa-stars", 
+						permissions: [],
+						classes: "",
+						align: null,
+					},
+					{
 						slug: "admin-commerce-invoices",
 						label: "Invoices", 
 						href: "/admin/commerce/invoices",

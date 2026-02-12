@@ -40,12 +40,21 @@ export class BillingProducts {
 		return { ...product, features }
 	}
 
-	async getMany(params: Partial<BillingProductDBRow> = {}, options = {}): Promise<BillingProduct[]> {
+	async getMany(params: Partial<BillingProductDBRow> = {}, options = {}): Promise<BillingProductFull[]> {
 		let query = this.db.selectFrom("billing_products").selectAll()
 		query = api.Utils.applyWhere(query, params)
 		query = api.Utils.applyOptions(query, options)
 		const rows = await query.execute()
-		return rows.map(toShape)
+		const products = rows.map(toShape)
+		const ids = products.map(p => p.id)
+		const allFeatures = ids.length ? await this.getFeatures() : []
+		const featureMap = new Map<number, BillingProductFeature[]>()
+		for (const f of allFeatures) {
+			const list = featureMap.get(f.productId) || []
+			list.push(f)
+			featureMap.set(f.productId, list)
+		}
+		return products.map(p => ({ ...p, features: featureMap.get(p.id) || [] }))
 	}
 
 	async set(params: Partial<BillingProductDBRow>) {

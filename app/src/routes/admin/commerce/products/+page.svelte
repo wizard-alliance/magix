@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { app } from "$lib/app"
+	import { goto } from "$app/navigation"
 	import { onMount } from "svelte"
 	import type { BillingProductFull } from "$lib/types/commerce"
 	import Spinner from "$components/modules/spinner.svelte"
@@ -43,6 +44,11 @@
 		syncing = false
 	}
 
+	const handleAction = (e: CustomEvent<{ event: string; row: Record<string, any> }>) => {
+		const { event, row } = e.detail
+		if (event === `edit`) goto(`/admin/commerce/products/${row.ID}`)
+	}
+
 	onMount(async () => {
 		await loadProducts()
 		loading = false
@@ -74,7 +80,7 @@
 		</div>
 	{:else}
 		<div class="section">
-			<AdvancedTable rows={products} pagination={10} scrollable="x" />
+			<AdvancedTable rows={products} pagination={10} scrollable="x" colActions={[{ name: `Edit`, icon: `fa-light fa-pen`, event: `edit` }]} on:action={handleAction} />
 		</div>
 	{/if}
 </div>
