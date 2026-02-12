@@ -21,9 +21,7 @@
 	let filterDisabled = ``
 	let filterActive = ``
 
-	let permissionOptions = [
-		{ label: `All Permissions`, value: `` },
-	]
+	let permissionOptions = [{ label: `All Permissions`, value: `` }]
 	const disabledOptions = [
 		{ label: `All Statuses`, value: `` },
 		{ label: `Enabled`, value: `0` },
@@ -69,10 +67,7 @@
 		mounted = true
 		const perms = app.Meta.getPermissions()
 		if (perms.length) {
-			permissionOptions = [
-				{ label: `All Permissions`, value: `` },
-				...perms.map((p) => ({ label: p.value || p.key, value: p.key })),
-			]
+			permissionOptions = [{ label: `All Permissions`, value: `` }, ...perms.map((p) => ({ label: p.value || p.key, value: p.key }))]
 		}
 	})
 

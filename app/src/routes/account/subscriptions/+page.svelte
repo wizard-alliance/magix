@@ -36,13 +36,15 @@
 						try {
 							const product = await app.Commerce.Products.get(id)
 							if (product) planMap.set(id, product.name)
-						} catch { /* skip */ }
-					})
+						} catch {
+							/* skip */
+						}
+					}),
 				)
 
 				const enriched = customer.subscriptions.map((s) => ({
 					...s,
-					planName: s.planId ? planMap.get(s.planId) ?? `—` : `—`,
+					planName: s.planId ? (planMap.get(s.planId) ?? `—`) : `—`,
 				}))
 
 				const active = enriched.filter((s) => activeStatuses.has(s.status))
@@ -103,11 +105,7 @@
 			{#if historySubs.length === 0}
 				<p class="muted-color">No subscription history.</p>
 			{:else}
-				<AdvancedTable
-					rows={historySubs}
-					pagination={10}
-					scrollable="x"
-				/>
+				<AdvancedTable rows={historySubs} pagination={10} scrollable="x" />
 			{/if}
 		</div>
 	{/if}

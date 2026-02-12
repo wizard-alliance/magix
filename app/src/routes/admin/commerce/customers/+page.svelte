@@ -53,12 +53,19 @@
 		}
 	}
 
-	onMount(() => { mounted = true })
+	onMount(() => {
+		mounted = true
+	})
 	onDestroy(() => clearTimeout(debounceTimer))
 
-	$: if (mounted) { searchQuery; applyFilters(800) }
+	$: if (mounted) {
+		searchQuery
+		applyFilters(800)
+	}
 
-	const resetFilters = () => { searchQuery = `` }
+	const resetFilters = () => {
+		searchQuery = ``
+	}
 
 	$: activeFilters = searchQuery
 

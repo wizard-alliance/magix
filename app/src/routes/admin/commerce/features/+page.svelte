@@ -63,10 +63,7 @@
 		let filtered = allFeatures
 		if (searchQuery) {
 			const q = searchQuery.toLowerCase()
-			filtered = filtered.filter((f) =>
-				f.featureName.toLowerCase().includes(q) ||
-				(f.description ?? ``).toLowerCase().includes(q)
-			)
+			filtered = filtered.filter((f) => f.featureName.toLowerCase().includes(q) || (f.description ?? ``).toLowerCase().includes(q))
 		}
 		features = createTableData(filtered)
 	}
@@ -83,11 +80,19 @@
 		}
 	}
 
-	onMount(() => { mounted = true })
+	onMount(() => {
+		mounted = true
+	})
 	onDestroy(() => clearTimeout(debounceTimer))
 
-	$: if (mounted) { searchQuery; applyFilters(800) }
-	$: if (mounted) { filterProduct; applyFilters() }
+	$: if (mounted) {
+		searchQuery
+		applyFilters(800)
+	}
+	$: if (mounted) {
+		filterProduct
+		applyFilters()
+	}
 
 	const resetFilters = () => {
 		searchQuery = ``

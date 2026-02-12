@@ -28,7 +28,7 @@
 
 	let debounceTimer: ReturnType<typeof setTimeout>
 
-	const dateOnly = (v: string | null | undefined) => v ? v.split(`T`)[0].split(` `)[0] : `—`
+	const dateOnly = (v: string | null | undefined) => (v ? v.split(`T`)[0].split(` `)[0] : `—`)
 
 	const createTableData = (raw: BillingSubscription[]) =>
 		raw.map((s) => ({
@@ -66,11 +66,19 @@
 		}
 	}
 
-	onMount(() => { mounted = true })
+	onMount(() => {
+		mounted = true
+	})
 	onDestroy(() => clearTimeout(debounceTimer))
 
-	$: if (mounted) { searchQuery; applyFilters(800) }
-	$: if (mounted) { filterStatus; applyFilters() }
+	$: if (mounted) {
+		searchQuery
+		applyFilters(800)
+	}
+	$: if (mounted) {
+		filterStatus
+		applyFilters()
+	}
 
 	const resetFilters = () => {
 		searchQuery = ``
