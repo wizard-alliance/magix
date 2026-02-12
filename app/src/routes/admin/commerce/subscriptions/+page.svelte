@@ -22,7 +22,7 @@
 		{ label: `Active`, value: `active` },
 		{ label: `Paused`, value: `paused` },
 		{ label: `Past Due`, value: `past_due` },
-		{ label: `Canceled`, value: `canceled` },
+		{ label: `Canceled`, value: `cancelled` },
 		{ label: `Expired`, value: `expired` },
 	]
 

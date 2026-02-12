@@ -400,7 +400,11 @@ export class BillingRoute {
 		if (p.status) where.status = p.status
 		if (p.customer_id) where.customer_id = Number(p.customer_id)
 		if (p.type) where.type = p.type
-		return await api.Billing.Orders.getMany(where, { limit: Number(p.limit) || 100, offset: Number(p.offset) || 0 })
+		return await api.Billing.Orders.getMany(where, {
+			limit: Number(p.limit) || 100,
+			offset: Number(p.offset) || 0,
+			search: p.search || undefined,
+		})
 	}
 
 	// Invoices

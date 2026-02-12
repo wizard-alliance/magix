@@ -28,12 +28,34 @@ export class BillingOrders {
 		return row ? toShape(row) : null
 	}
 
-	async getMany(params: Partial<BillingOrderDBRow> = {}, options = {}): Promise<BillingOrder[]> {
-		let query = this.db.selectFrom("billing_orders").selectAll()
+	async getMany(params: Partial<BillingOrderDBRow> = {}, options: Record<string, any> = {}): Promise<(BillingOrder & { customerName?: string; customerEmail?: string })[]> {
+		let query = this.db
+			.selectFrom("billing_orders")
+			.selectAll("billing_orders")
+			.leftJoin("billing_customers", "billing_customers.id", "billing_orders.customer_id")
+			.select([
+				"billing_customers.billing_name as customer_name",
+				"billing_customers.billing_email as customer_email",
+			])
+
+		if (options.search) {
+			const term = `%${options.search}%`
+			query = query.where((eb) =>
+				eb.or([
+					eb("billing_customers.billing_name", "like", term),
+					eb("billing_customers.billing_email", "like", term),
+				])
+			)
+		}
+
 		query = api.Utils.applyWhere(query, params)
 		query = api.Utils.applyOptions(query, options)
 		const rows = await query.execute()
-		return rows.map(toShape)
+		return rows.map((row) => ({
+			...toShape(row),
+			customerName: (row as any).customer_name ?? undefined,
+			customerEmail: (row as any).customer_email ?? undefined,
+		}))
 	}
 
 	async set(params: Partial<BillingOrderDBRow>) {
