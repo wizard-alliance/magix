@@ -19,6 +19,18 @@
 	$: avatarSrc = avatarResolved?.src || (userInfo?.avatarUrl ? (app.Account.Avatar.url(userInfo.avatarUrl) ?? "") : "")
 	$: avatarSrcset = avatarResolved?.srcset || ""
 
+	const canView = (perms: string[]) => !perms.length || app.Auth.Ability.canAny(...perms)
+	$: visibleNav = (() => {
+		void $currentUser // reactive dependency on user changes
+		return navData
+			.filter((section) => canView(section.permissions))
+			.map((section) => ({
+				...section,
+				children: (section.children || []).filter((item: any) => canView(item.permissions)),
+			}))
+			.filter((section) => section.href || section.children.length)
+	})()
+
 	onMount(async () => {
 		await tick()
 		const active = scrollable?.querySelector(`.active`)
@@ -52,7 +64,7 @@
 	</div>
 
 	<div class="scrollable" bind:this={scrollable}>
-		{#each navData as section}
+		{#each visibleNav as section}
 			<nav>
 				{section.href}
 				{#if !section.href}
@@ -62,7 +74,7 @@
 					<SidebarMenuItem href={item.href ?? undefined} icon={item.icon} label={item.label} unread={0} children={item.children || []} />
 				{/each}
 			</nav>
-			{#if section !== navData[navData.length - 1]}
+			{#if section !== visibleNav[visibleNav.length - 1]}
 				<div class="spacer"></div>
 			{/if}
 		{/each}

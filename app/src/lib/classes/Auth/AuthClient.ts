@@ -1,4 +1,5 @@
 import type { AuthPayload, UserDBRow, UserFull, UserVendorLink } from '../../types/types'
+import { AbilityClient } from './AbilityClient'
 
 type LoginInput = { identifier: string; password: string; remember?: boolean }
 type RegisterInput = { email: string; username: string; password: string; tos_accepted?: boolean }
@@ -9,6 +10,7 @@ const isBrowser = typeof document !== 'undefined'
 
 export class AuthClient {
 	ready: Promise<void> = Promise.resolve()
+	Ability = new AbilityClient()
 
 	private keys = {
 		access: 'auth_access_token',
@@ -88,6 +90,7 @@ export class AuthClient {
 		this.deleteCookie(this.keys.refresh)
 		this.deleteCookie(this.keys.remember)
 		this.updateUser(null)
+		this.Ability.clear()
 	}
 
 	/**
@@ -121,7 +124,11 @@ export class AuthClient {
 			body: { ...body, fingerprint: fp.fingerprint, device_name: fp.deviceName },
 			useAuth: false,
 		})
-		if (data) this.persistSession(data, remember)
+		if (data) {
+			this.persistSession(data, remember)
+			await this.me(true)
+			this.Ability.loadSubscriptions()
+		}
 		return data
 	}
 
@@ -265,7 +272,11 @@ export class AuthClient {
 			body: { ...payload, fingerprint: fp.fingerprint, device_name: fp.deviceName },
 			useAuth: false,
 		})
-		if (data) this.persistSession(data, remember)
+		if (data) {
+			this.persistSession(data, remember)
+			await this.me(true)
+			this.Ability.loadSubscriptions()
+		}
 		return data
 	}
 
@@ -364,10 +375,15 @@ export class AuthClient {
 	 * Restore session from stored cookies on app init
 	 */
 	restore() {
+		this.Ability.init()
 		if (this.getAccessToken()) {
-			this.ready = this.me().then(() => {}).catch(() => {})
+			this.ready = this.me()
+				.then(() => this.Ability.loadSubscriptions())
+				.catch(() => {})
 		} else if (this.getRefreshToken()) {
-			this.ready = this.refresh().then(() => {}).catch(() => {})
+			this.ready = this.refresh()
+				.then(() => this.Ability.loadSubscriptions())
+				.catch(() => {})
 		}
 	}
 

@@ -348,12 +348,26 @@ export class BillingRoute {
 		const authUser = (req as any).authUser
 		const variantId = p.variant_id || p.variantId
 		if (!variantId) return { code: 422, error: "Variant ID required" }
+
+		// Prevent duplicate subscriptions for the same plan
+		const planId = p.plan_id
+		if (authUser?.id) {
+			const customer = await api.Billing.Customers.get({ user_id: authUser.id })
+			if (customer) {
+				const existing = await api.Billing.Subscriptions.getMany({ customer_id: customer.id })
+				const activeSub = (existing ?? []).find((s: any) =>
+					['active', 'paused'].includes(s.status) && (!planId || s.plan_id === planId)
+				)
+				if (activeSub) return { code: 409, error: `You already have an active subscription for this plan` }
+			}
+		}
+
 		try {
 			const result = await api.Billing.Providers.LS.createCheckout({
 				variantId,
 				email: p.email || authUser?.email,
 				name: p.name || [authUser?.first_name, authUser?.last_name].filter(Boolean).join(` `),
-				customData: { user_id: authUser?.id, plan_id: p.plan_id },
+				customData: { user_id: authUser?.id, plan_id: planId },
 				redirectUrl: p.redirectUrl || p.redirect_url,
 			})
 			return result
