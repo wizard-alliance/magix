@@ -1,6 +1,6 @@
 <script lang="ts">
 	export let type: "button" | "submit" | "reset" = "button"
-	export let variant: "primary" | "secondary" | "secondary" | "danger" = "primary"
+	export let variant: "primary" | "secondary" | "secondary" | "ghost" | "danger" = "primary"
 	export let size: "sm" | "md" | "lg" = "md"
 	export let disabled = false
 	export let active = false
