@@ -69,7 +69,7 @@
 				<p class="muted-color text-small">View details and manage your subscription</p>
 			</div>
 			<div class="col-xxs-auto">
-				<Button href="/account/subscriptions" variant="ghost" size="sm">
+				<Button href="/account/subscriptions" variant="secondary">
 					<i class="fa-light fa-arrow-left"></i> Back
 				</Button>
 			</div>
@@ -130,17 +130,17 @@
 
 				<div class="actions-row">
 					{#if sub.status === `active` && !sub.pausedAt}
-						<Button on:click={pause} loading={acting} disabled={acting} variant="ghost" size="sm">
+						<Button on:click={pause} loading={acting} disabled={acting} variant="secondary">
 							<i class="fa-light fa-pause"></i> Pause
 						</Button>
 					{/if}
 					{#if sub.pausedAt}
-						<Button on:click={resume} loading={acting} disabled={acting} variant="ghost" size="sm">
+						<Button on:click={resume} loading={acting} disabled={acting} variant="secondary">
 							<i class="fa-light fa-play"></i> Resume
 						</Button>
 					{/if}
 					{#if !sub.canceledAt}
-						<Button href="/account/subscriptions/cancel?id={sub.id}" variant="danger" size="sm">
+						<Button href="/account/subscriptions/cancel?id={sub.id}" variant="danger">
 							<i class="fa-light fa-xmark"></i> Cancel Subscription
 						</Button>
 					{/if}

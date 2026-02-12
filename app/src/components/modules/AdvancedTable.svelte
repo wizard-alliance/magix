@@ -205,7 +205,7 @@
 								data-label={col}
 							>
 								{#if isAvatar(col) && row[col]}
-									<Avatar name={row[col]?.name ?? ``} src={row[col]?.src ?? ``} size="sm" />
+									<Avatar name={row[col]?.name ?? ``} src={row[col]?.src ?? ``} />
 								{:else if isBool(row[col])}
 									<Badge text={row[col] ? `Yes` : `No`} variant={row[col] ? `success` : `danger`} />
 								{:else if isDate(col) && row[col]}

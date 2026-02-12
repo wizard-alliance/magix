@@ -75,10 +75,10 @@
 				</div>
 
 				<div class="actions-row">
-					<Button href="/account/subscriptions/edit?id={sub.id}" variant="ghost" size="sm">
+					<Button href="/account/subscriptions/edit?id={sub.id}" variant="secondary">
 						<i class="fa-light fa-arrow-left"></i> Go Back
 					</Button>
-					<Button on:click={confirmCancel} loading={cancelling} disabled={cancelling} variant="danger" size="sm">
+					<Button on:click={confirmCancel} loading={cancelling} disabled={cancelling} variant="danger">
 						<i class="fa-light fa-xmark"></i> Confirm Cancellation
 					</Button>
 				</div>

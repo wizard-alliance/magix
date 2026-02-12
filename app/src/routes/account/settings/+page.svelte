@@ -105,7 +105,7 @@
 
 	<div class="section quick-links margin-bottom-4">
 		{#each quickLinks as link}
-			<Button variant="secondary" size="sm" href={link.href} active={currentPath === link.href || currentPath.startsWith(link.href + "/")}>
+			<Button variant="secondary" href={link.href} active={currentPath === link.href || currentPath.startsWith(link.href + "/")}>
 				<i class={link.icon}></i>
 				<span>{link.label}</span>
 			</Button>

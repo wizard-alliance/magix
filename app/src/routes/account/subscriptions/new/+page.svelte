@@ -67,7 +67,7 @@
 				<p class="muted-color text-small">Choose a plan to get started</p>
 			</div>
 			<div class="col-xxs-auto">
-				<Button href="/account/subscriptions" variant="ghost" size="sm">
+				<Button href="/account/subscriptions" variant="secondary">
 					<i class="fa-light fa-arrow-left"></i> Back
 				</Button>
 			</div>

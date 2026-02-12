@@ -80,7 +80,7 @@
 				</div>
 
 				<Button type="submit" disabled={loading}>
-					{#if loading}<Spinner size="sm" mode="light" />{:else}Create Account{/if}
+					{#if loading}<Spinner mode="light" />{:else}Create Account{/if}
 				</Button>
 			</form>
 

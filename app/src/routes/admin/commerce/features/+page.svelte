@@ -178,13 +178,13 @@
 		</div>
 		<div class="row">
 			<div class="col-xxs-auto">
-				<Button on:click={save} loading={saving} disabled={saving} size="sm">
+				<Button on:click={save} loading={saving} disabled={saving}>
 					{editingId ? `Update` : `Add Feature`}
 				</Button>
 			</div>
 			{#if editingId}
 				<div class="col-xxs-auto">
-					<Button on:click={resetForm} variant="ghost" size="sm">Cancel</Button>
+					<Button on:click={resetForm} variant="secondary">Cancel</Button>
 				</div>
 			{/if}
 		</div>
@@ -199,7 +199,7 @@
 		</div>
 		{#if activeFilters}
 			<div class="filter-field filter-reset">
-				<Button variant="ghost" size="sm" on:click={resetFilters}>
+				<Button variant="secondary" on:click={resetFilters}>
 					<i class="fa-light fa-xmark"></i>
 					<span>Reset</span>
 				</Button>

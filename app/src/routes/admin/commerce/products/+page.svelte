@@ -63,7 +63,7 @@
 				<p class="muted-color text-small">Billing products synced from LemonSqueezy</p>
 			</div>
 			<div class="col-xxs-auto">
-				<Button on:click={syncProducts} loading={syncing} disabled={syncing} variant="ghost" size="sm">
+				<Button on:click={syncProducts} loading={syncing} disabled={syncing} variant="secondary">
 					<i class="fa-light fa-arrows-rotate"></i> Sync Products
 				</Button>
 			</div>

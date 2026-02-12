@@ -50,7 +50,7 @@
 		</div>
 
 		<div class="col margin-bottom-2">
-			<Button variant="secondary" size="sm" href="/account/settings/details" data-tip="Edit profile">
+			<Button variant="secondary" href="/account/settings/details" data-tip="Edit profile">
 				<i class="fa-light fa-pen"></i>
 			</Button>
 		</div>
@@ -65,7 +65,7 @@
 								<span class="text-ignore detail-subtitle muted-color text-small">{field.subtitle}</span>
 							</div>
 							<div class="col-xxs end-xxs muted-color text-small">
-								{#if user}{field.value}{:else}<Spinner size="sm" />{/if}
+								{#if user}{field.value}{:else}<Spinner />{/if}
 							</div>
 						</div>
 					</div>

@@ -96,7 +96,7 @@
 				<p class="muted-color text-small">{product?.name ?? `Loading...`}</p>
 			</div>
 			<div class="col-xxs-auto">
-				<Button href="/admin/commerce/products" variant="ghost" size="sm">
+				<Button href="/admin/commerce/products" variant="secondary">
 					<i class="fa-light fa-arrow-left"></i> Back
 				</Button>
 			</div>
@@ -171,7 +171,7 @@
 					{/each}
 				</ul>
 				<div class="margin-top-2">
-					<Button href="/admin/commerce/features" variant="ghost" size="sm">
+					<Button href="/admin/commerce/features" variant="secondary">
 						<i class="fa-light fa-stars"></i> Manage Features
 					</Button>
 				</div>

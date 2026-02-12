@@ -175,7 +175,7 @@
 			</div>
 			<div class="col-xxs end">
 				<Tooltip text="End all active sessions" position="left">
-					<Button variant="danger" size="sm" on:click={logoutAllDevices}>
+					<Button variant="danger" on:click={logoutAllDevices}>
 						<i class="fa-light fa-right-from-bracket"></i>
 					</Button>
 				</Tooltip>
@@ -260,7 +260,7 @@
 					<span class="muted-color text-small">Last changed — unknown</span>
 				</div>
 				<div class="detail-actions">
-					<Button variant="secondary" size="sm" href="/account/settings/password">Change</Button>
+					<Button variant="secondary" href="/account/settings/password">Change</Button>
 				</div>
 			</div>
 		</div>

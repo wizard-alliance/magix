@@ -52,16 +52,16 @@
 	<section>
 		<h2>Button — Variants</h2>
 		<div class="demo">
-			<Button>Primary</Button>
+			<Button variant="primary">Primary</Button>
 			<Button variant="secondary">Secondary</Button>
-			<Button variant="ghost">Ghost</Button>
+			<Button variant="secondary">Ghost</Button>
 			<Button variant="danger">Danger</Button>
 		</div>
 	</section>
 
 	<section>
 		<h2>Button — Sizes</h2>
-		<div class="demo">
+		<div class="col demo middle-xs">
 			<Button size="sm">Small</Button>
 			<Button size="md">Medium</Button>
 			<Button size="lg">Large</Button>
@@ -73,7 +73,7 @@
 		<div class="demo">
 			<Button active>Active Primary</Button>
 			<Button variant="secondary" active>Active Secondary</Button>
-			<Button variant="ghost" active>Active Ghost</Button>
+			<Button variant="secondary" active>Active Ghost</Button>
 			<Button variant="danger" active>Active Danger</Button>
 			<Button disabled>Disabled</Button>
 			<Button variant="secondary" disabled>Disabled</Button>
@@ -97,18 +97,18 @@
 			<Button><i class="fa-light fa-plus"></i> <span>Add Item</span></Button>
 			<Button variant="secondary"><i class="fa-light fa-pen"></i> <span>Edit</span></Button>
 			<Button variant="danger"><i class="fa-light fa-trash"></i> <span>Delete</span></Button>
-			<Button variant="ghost"><i class="fa-light fa-arrow-left"></i> <span>Back</span></Button>
+			<Button variant="secondary"><i class="fa-light fa-arrow-left"></i> <span>Back</span></Button>
 		</div>
 	</section>
 
 	<section>
 		<h2>Button — Icon Only</h2>
 		<div class="demo">
-			<Button iconOnly size="sm"><i class="fa-light fa-gear"></i></Button>
+			<Button iconOnly><i class="fa-light fa-gear"></i></Button>
 			<Button iconOnly><i class="fa-light fa-bell"></i></Button>
 			<Button iconOnly size="lg"><i class="fa-light fa-heart"></i></Button>
 			<Button iconOnly variant="secondary"><i class="fa-light fa-ellipsis-vertical"></i></Button>
-			<Button iconOnly variant="ghost"><i class="fa-light fa-xmark"></i></Button>
+			<Button iconOnly variant="secondary"><i class="fa-light fa-xmark"></i></Button>
 			<Button iconOnly variant="danger"><i class="fa-light fa-trash"></i></Button>
 		</div>
 	</section>
@@ -125,7 +125,7 @@
 		<h2>Button — Link</h2>
 		<div class="demo">
 			<Button href="/">Home Link</Button>
-			<Button href="/" variant="ghost"><i class="fa-light fa-link"></i> <span>Link Ghost</span></Button>
+			<Button href="/" variant="secondary"><i class="fa-light fa-link"></i> <span>Link Ghost</span></Button>
 		</div>
 	</section>
 
@@ -158,9 +158,9 @@
 	<section>
 		<h2>Notifications — Duration</h2>
 		<div class="demo">
-			<Button variant="ghost" on:click={() => app.UI.Notify.info(`Gone in 2 seconds`, `Quick`, 2)}><i class="fa-light fa-bolt"></i> <span>Short (2s)</span></Button>
-			<Button variant="ghost" on:click={() => app.UI.Notify.info(`Default 5 second toast`)}><i class="fa-light fa-clock"></i> <span>Default (5s)</span></Button>
-			<Button variant="ghost" on:click={() => app.UI.Notify.info(`This one sticks around`, `Sticky`, 10)}
+			<Button variant="secondary" on:click={() => app.UI.Notify.info(`Gone in 2 seconds`, `Quick`, 2)}><i class="fa-light fa-bolt"></i> <span>Short (2s)</span></Button>
+			<Button variant="secondary" on:click={() => app.UI.Notify.info(`Default 5 second toast`)}><i class="fa-light fa-clock"></i> <span>Default (5s)</span></Button>
+			<Button variant="secondary" on:click={() => app.UI.Notify.info(`This one sticks around`, `Sticky`, 10)}
 				><i class="fa-light fa-hourglass"></i> <span>Long (10s)</span></Button
 			>
 		</div>
@@ -169,8 +169,8 @@
 	<section>
 		<h2>Notifications — create()</h2>
 		<div class="demo">
-			<Button variant="ghost" on:click={() => app.UI.Notify.create({ message: `Raw create call` })}><span>No type (default info)</span></Button>
-			<Button variant="ghost" on:click={() => app.UI.Notify.create({ title: `Custom`, message: `Full params example`, type: `success`, duration: 3 })}
+			<Button variant="secondary" on:click={() => app.UI.Notify.create({ message: `Raw create call` })}><span>No type (default info)</span></Button>
+			<Button variant="secondary" on:click={() => app.UI.Notify.create({ title: `Custom`, message: `Full params example`, type: `success`, duration: 3 })}
 				><span>Full params</span></Button
 			>
 		</div>
@@ -287,7 +287,7 @@
 	<section>
 		<h2>Avatar</h2>
 		<div class="demo">
-			<Avatar name="John Doe" size="sm" />
+			<Avatar name="John Doe" />
 			<Avatar name="Jane Smith" size="md" />
 			<Avatar name="Bob" size="lg" />
 		</div>
@@ -296,7 +296,7 @@
 	<section>
 		<h2>Avatar — With Tooltip</h2>
 		<div class="demo">
-			<Avatar name="Alice" size="sm" data-tip="Alice — Admin" data-tip-pos="bottom" />
+			<Avatar name="Alice" data-tip="Alice — Admin" data-tip-pos="bottom" />
 			<Avatar name="Bob" size="md" data-tip="Bob — Editor" data-tip-icon="fa-circle-info" data-tip-pos="right" />
 			<Avatar name="Carol" size="lg" data-tip="Carol — Viewer" data-tip-icon="fa-circle-info" data-tip-pos="bottom" />
 			<Avatar name="Dave" size="md" href="#" data-tip="Open Dave's profile" data-tip-icon="fa-arrow-up-right-from-square" data-tip-pos="right" />
@@ -309,7 +309,7 @@
 			<Button data-tip="Save changes" data-tip-pos="top"><i class="fa-light fa-floppy-disk"></i> <span>Save</span></Button>
 			<Button variant="secondary" data-tip="Edit settings" data-tip-icon="fa-circle-info" data-tip-pos="bottom"><i class="fa-light fa-gear"></i> <span>Settings</span></Button
 			>
-			<Button iconOnly variant="ghost" data-tip="Notifications" data-tip-pos="right"><i class="fa-light fa-bell"></i></Button>
+			<Button iconOnly variant="secondary" data-tip="Notifications" data-tip-pos="right"><i class="fa-light fa-bell"></i></Button>
 			<Button iconOnly variant="danger" data-tip="Delete item" data-tip-icon="fa-triangle-exclamation" data-tip-pos="bottom"><i class="fa-light fa-trash"></i></Button>
 		</div>
 	</section>
@@ -335,7 +335,7 @@
 	<section>
 		<h2>Spinner</h2>
 		<div class="demo">
-			<Spinner size="sm" />
+			<Spinner />
 			<Spinner size="md" />
 			<Spinner size="lg" />
 		</div>
@@ -548,7 +548,7 @@
 				</svelte:fragment>
 			</RepeaterField>
 			<div style="display:flex; justify-content:flex-end">
-				<Button size="sm" type="submit">
+				<Button type="submit">
 					<i class="fa-light fa-floppy-disk"></i> <span>Save</span>
 				</Button>
 			</div>
@@ -570,7 +570,7 @@
 			</Button>
 
 			<Button
-				variant="ghost"
+				variant="secondary"
 				on:click={async () => {
 					const choice = await app.UI.Modal.open({
 						icon: "fa-code-branch",

@@ -73,7 +73,7 @@
 				<p class="muted-color text-small">Manage your active subscriptions</p>
 			</div>
 			<div class="col-xxs-auto">
-				<Button href="/account/subscriptions/new" variant="ghost" size="sm">
+				<Button href="/account/subscriptions/new" variant="secondary">
 					<i class="fa-light fa-plus"></i> New Subscription
 				</Button>
 			</div>

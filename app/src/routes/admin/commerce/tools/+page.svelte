@@ -158,25 +158,25 @@
 				{/if}
 			</div>
 			<div class="actions-row">
-				<Button on:click={syncProducts} loading={syncing} disabled={syncing} variant="ghost" size="sm">
+				<Button on:click={syncProducts} loading={syncing} disabled={syncing} variant="secondary">
 					<i class="fa-light fa-arrows-rotate"></i> Sync Products
 				</Button>
-				<Button on:click={syncCustomers} loading={syncing} disabled={syncing} variant="ghost" size="sm">
+				<Button on:click={syncCustomers} loading={syncing} disabled={syncing} variant="secondary">
 					<i class="fa-light fa-arrows-rotate"></i> Sync Customers
 				</Button>
-				<Button on:click={syncOrders} loading={syncing} disabled={syncing} variant="ghost" size="sm">
+				<Button on:click={syncOrders} loading={syncing} disabled={syncing} variant="secondary">
 					<i class="fa-light fa-arrows-rotate"></i> Sync Orders
 				</Button>
-				<Button on:click={syncSubscriptions} loading={syncing} disabled={syncing} variant="ghost" size="sm">
+				<Button on:click={syncSubscriptions} loading={syncing} disabled={syncing} variant="secondary">
 					<i class="fa-light fa-arrows-rotate"></i> Sync Subscriptions
 				</Button>
-				<Button on:click={syncInvoices} loading={syncing} disabled={syncing} variant="ghost" size="sm">
+				<Button on:click={syncInvoices} loading={syncing} disabled={syncing} variant="secondary">
 					<i class="fa-light fa-arrows-rotate"></i> Sync Invoices
 				</Button>
-				<Button on:click={syncAll} loading={syncing} disabled={syncing} variant="ghost" size="sm">
+				<Button on:click={syncAll} loading={syncing} disabled={syncing} variant="secondary">
 					<i class="fa-light fa-arrows-rotate"></i> Full Sync
 				</Button>
-				<Button on:click={loadStore} loading={storeLoading} disabled={storeLoading} variant="ghost" size="sm">
+				<Button on:click={loadStore} loading={storeLoading} disabled={storeLoading} variant="secondary">
 					<i class="fa-light fa-store"></i> Store Info
 				</Button>
 			</div>
@@ -194,7 +194,7 @@
 				<p class="muted-color text-small">Fire test webhook events in dev mode</p>
 			</div>
 			<div class="col-xxs-auto">
-				<Button on:click={randomize} variant="ghost" size="sm">
+				<Button on:click={randomize} variant="secondary">
 					<i class="fa-light fa-dice"></i> Randomize
 				</Button>
 			</div>
@@ -213,7 +213,7 @@
 				<h3 class="subtitle">Core Events</h3>
 				<div class="event-grid">
 					{#each coreEvents as event}
-						<Button variant="ghost" size="sm" disabled={simLoading} on:click={() => triggerEvent(event.name)}>
+						<Button variant="secondary" disabled={simLoading} on:click={() => triggerEvent(event.name)}>
 							{event.label}
 						</Button>
 					{/each}
@@ -224,7 +224,7 @@
 				<h3 class="subtitle">Optional Events</h3>
 				<div class="event-grid">
 					{#each optionalEvents as event}
-						<Button variant="ghost" size="sm" disabled={simLoading} on:click={() => triggerEvent(event.name)}>
+						<Button variant="secondary" disabled={simLoading} on:click={() => triggerEvent(event.name)}>
 							{event.label}
 						</Button>
 					{/each}

@@ -85,7 +85,7 @@
 				<Input label="Email" type="email" placeholder="your@email.com" bind:value={email} required />
 
 				<Button type="submit" disabled={loading}>
-					{#if loading}<Spinner size="sm" mode="light" />{:else}Send Reset Link{/if}
+					{#if loading}<Spinner mode="light" />{:else}Send Reset Link{/if}
 				</Button>
 			</form>
 
@@ -101,7 +101,7 @@
 				<Input label="Confirm Password" type="password" placeholder="Confirm new password" bind:value={confirmPassword} required />
 
 				<Button type="submit" disabled={loading}>
-					{#if loading}<Spinner size="sm" mode="light" />{:else}Reset Password{/if}
+					{#if loading}<Spinner mode="light" />{:else}Reset Password{/if}
 				</Button>
 			</form>
 

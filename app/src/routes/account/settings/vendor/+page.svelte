@@ -141,11 +141,11 @@
 
 						<div class="vendor-action">
 							{#if link}
-								<Button variant="danger" size="sm" on:click={() => disconnect(vendor.key)} loading={disconnecting === vendor.key}>
+								<Button variant="danger" on:click={() => disconnect(vendor.key)} loading={disconnecting === vendor.key}>
 									<i class="fa-light fa-unlink"></i> Disconnect
 								</Button>
 							{:else}
-								<Button variant="secondary" size="sm" on:click={() => connect(vendor.key)}>
+								<Button variant="secondary" on:click={() => connect(vendor.key)}>
 									<i class="fa-light fa-link"></i> Connect
 								</Button>
 							{/if}

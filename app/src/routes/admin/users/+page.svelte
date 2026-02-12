@@ -144,7 +144,7 @@
 		</div>
 		{#if activeFilters}
 			<div class="filter-field filter-reset">
-				<Button variant="ghost" size="sm" on:click={resetFilters}>
+				<Button variant="secondary" on:click={resetFilters}>
 					<i class="fa-light fa-xmark"></i>
 					<span>Reset</span>
 				</Button>

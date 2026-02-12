@@ -153,7 +153,7 @@
 		{#if maxRows !== null && title}
 			<span class="rpt-count">{items.length}/{maxRows}</span>
 		{/if}
-		<Button variant="secondary" size="sm" disabled={atLimit} on:click={addRow}>
+		<Button variant="secondary" disabled={atLimit} on:click={addRow}>
 			<i class="fa-light fa-plus"></i> <span>{addLabel}</span>
 		</Button>
 	</div>

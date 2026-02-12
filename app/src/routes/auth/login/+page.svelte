@@ -110,7 +110,7 @@
 		{#if wasLoggedInOnLoad && userInfo}
 			<div class="col-xxs-12 logged-in-banner margin-bottom-2">
 				<p>You are already logged in as <strong>{userInfo.username || userInfo.email}</strong></p>
-				<Button variant="primary" size="sm" on:click={() => goto("/account/profile")}>
+				<Button variant="primary" on:click={() => goto("/account/profile")}>
 					Continue <i class="fa-light fa-arrow-right"></i>
 				</Button>
 			</div>
@@ -122,7 +122,7 @@
 
 		<div class="col-xxs-12 margin-bottom-2">
 			<Button variant="secondary" on:click={() => vendorLogin(`discord`)} disabled={loading}>
-				{#if loading}<Spinner size="sm" />{:else}Log in with Discord{/if}
+				{#if loading}<Spinner />{:else}Log in with Discord{/if}
 			</Button>
 		</div>
 
@@ -143,7 +143,7 @@
 			</div>
 
 			<Button type="submit" disabled={loading}>
-				{#if loading}<Spinner size="sm" mode="light" />{:else}Login{/if}
+				{#if loading}<Spinner mode="light" />{:else}Login{/if}
 			</Button>
 		</form>
 
