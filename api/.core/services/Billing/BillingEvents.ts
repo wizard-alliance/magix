@@ -165,7 +165,7 @@ export class BillingEvents {
 			api.Log(`Order created: ${JSON.stringify(result)}`, this.prefix)
 
 			// Auto-create invoice
-			const orderId = Number((result as any)?.id ?? (result as any)?.insertId)
+			const orderId = result?.id
 			if (orderId) {
 				try {
 					await api.Billing.Invoices.set({
@@ -174,10 +174,12 @@ export class BillingEvents {
 						billing_info_snapshot: JSON.stringify(customer.billingAddress ?? {}),
 						billing_order_snapshot: JSON.stringify({ amount: data.total, currency: data.currency, status: data.status }),
 					})
-				} catch { /* invoice creation is best-effort */ }
+				} catch (invoiceErr: any) {
+					api.Log(`Error creating invoice for order ${orderId}: ${invoiceErr.message}`, this.prefix)
+				}
 			}
 		} catch (e: any) {
-			api.Log(`Error creating order: ${e.message}`, this.prefix)
+			api.Log(`Error creating order: ${e.message}\n${e.stack}`, this.prefix)
 		}
 	}
 
@@ -270,31 +272,36 @@ export class BillingEvents {
 		const sub = await api.Billing.Subscriptions.get({ provider_subscription_id: String(data.subscription_id) })
 		if (!sub) return
 
-		await api.Billing.Orders.set({
-			customer_id: sub.customerId,
-			type: `subscription`,
-			subscription_id: sub.id,
-			provider_id: 1,
-			provider_order_id: String(data.id),
-			amount: data.total,
-			currency: data.currency,
-			status: `paid`,
-			paid_at: new Date().toISOString().slice(0, 19).replace(`T`, ` `),
-		})
+		try {
+			const result = await api.Billing.Orders.set({
+				customer_id: sub.customerId,
+				type: `subscription`,
+				subscription_id: sub.id,
+				provider_id: 1,
+				provider_order_id: String(data.id),
+				amount: data.total,
+				currency: data.currency,
+				status: `paid`,
+				paid_at: new Date().toISOString().slice(0, 19).replace(`T`, ` `),
+			})
 
-		// Auto-create invoice for renewal
-		const recentOrders = await api.Billing.Orders.getMany({ provider_order_id: String(data.id) })
-		const newOrder = recentOrders[0]
-		if (newOrder) {
-			try {
-				const cust = await api.Billing.Customers.get({ id: sub.customerId })
-				await api.Billing.Invoices.set({
-					order_id: newOrder.id,
-					customer_id: sub.customerId,
-					billing_info_snapshot: JSON.stringify(cust?.billingAddress ?? {}),
-					billing_order_snapshot: JSON.stringify({ amount: data.total, currency: data.currency, status: `paid` }),
-				})
-			} catch { /* best-effort */ }
+			// Auto-create invoice for renewal
+			const orderId = result?.id
+			if (orderId) {
+				try {
+					const cust = await api.Billing.Customers.get({ id: sub.customerId })
+					await api.Billing.Invoices.set({
+						order_id: orderId,
+						customer_id: sub.customerId,
+						billing_info_snapshot: JSON.stringify(cust?.billingAddress ?? {}),
+						billing_order_snapshot: JSON.stringify({ amount: data.total, currency: data.currency, status: `paid` }),
+					})
+				} catch (invoiceErr: any) {
+					api.Log(`Error creating invoice for renewal order ${orderId}: ${invoiceErr.message}`, this.prefix)
+				}
+			}
+		} catch (e: any) {
+			api.Log(`Error creating renewal order: ${e.message}\n${e.stack}`, this.prefix)
 		}
 
 		await api.Billing.Subscriptions.update({

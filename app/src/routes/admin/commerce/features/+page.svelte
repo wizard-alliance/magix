@@ -1,25 +1,35 @@
 <script lang="ts">
 	import { app } from "$lib/app"
-	import { onMount } from "svelte"
+	import { onMount, onDestroy } from "svelte"
 	import type { BillingProductFull, BillingProductFeature } from "$lib/types/commerce"
 	import Spinner from "$components/modules/spinner.svelte"
 	import Button from "$components/fields/button.svelte"
 	import Input from "$components/fields/input.svelte"
 	import Select from "$components/fields/select.svelte"
 	import Textarea from "$components/fields/textarea.svelte"
+	import SearchInput from "$components/fields/searchInput.svelte"
 	import AdvancedTable from "$components/modules/AdvancedTable.svelte"
 
 	let loading = true
 	let saving = false
+	let filtering = false
+	let allFeatures: BillingProductFeature[] = []
 	let features: any[] = []
 	let products: BillingProductFull[] = []
 	let productOptions: { label: string; value: string }[] = []
+	let mounted = false
 
 	// Form state
 	let editingId: number | null = null
 	let featureName = ``
 	let productId = ``
 	let description = ``
+
+	// Filter state
+	let searchQuery = ``
+	let filterProduct = ``
+
+	let debounceTimer: ReturnType<typeof setTimeout>
 
 	const productName = (id: number) => products.find((p) => p.id === id)?.name ?? `—`
 
@@ -33,20 +43,58 @@
 		}))
 
 	const loadData = async () => {
+		filtering = true
 		try {
 			products = await app.Commerce.Products.list()
 			productOptions = products.map((p) => ({ label: p.name, value: String(p.id) }))
-			const raw = await app.Commerce.Products.listFeatures()
-			features = createTableData(raw)
+			const query: Record<string, any> = {}
+			if (filterProduct) query.product_id = Number(filterProduct)
+			allFeatures = await app.Commerce.Products.listFeatures(query)
+			applyClientFilter()
 		} catch {
 			app.UI.Notify.error(`Failed to load features`)
+		} finally {
+			loading = false
+			filtering = false
 		}
 	}
 
-	onMount(async () => {
-		await loadData()
-		loading = false
-	})
+	const applyClientFilter = () => {
+		let filtered = allFeatures
+		if (searchQuery) {
+			const q = searchQuery.toLowerCase()
+			filtered = filtered.filter((f) =>
+				f.featureName.toLowerCase().includes(q) ||
+				(f.description ?? ``).toLowerCase().includes(q)
+			)
+		}
+		features = createTableData(filtered)
+	}
+
+	const applyFilters = (debounce = 0) => {
+		clearTimeout(debounceTimer)
+		if (debounce > 0) {
+			debounceTimer = setTimeout(() => {
+				if (filterProduct) loadData()
+				else applyClientFilter()
+			}, debounce)
+		} else {
+			loadData()
+		}
+	}
+
+	onMount(() => { mounted = true })
+	onDestroy(() => clearTimeout(debounceTimer))
+
+	$: if (mounted) { searchQuery; applyFilters(800) }
+	$: if (mounted) { filterProduct; applyFilters() }
+
+	const resetFilters = () => {
+		searchQuery = ``
+		filterProduct = ``
+	}
+
+	$: activeFilters = searchQuery || filterProduct
 
 	const resetForm = () => {
 		editingId = null
@@ -81,8 +129,7 @@
 	const handleAction = async (e: CustomEvent<{ event: string; row: Record<string, any> }>) => {
 		const { event, row } = e.detail
 		if (event === `edit`) {
-			const raw = await app.Commerce.Products.listFeatures()
-			const f = raw.find((x) => x.id === row.ID)
+			const f = allFeatures.find((x) => x.id === row.ID)
 			if (!f) return
 			editingId = f.id
 			featureName = f.featureName
@@ -138,16 +185,38 @@
 		</div>
 	</div>
 
+	<div class="filters">
+		<div class="filter-field filter-search">
+			<SearchInput placeholder="Search features..." bind:value={searchQuery} />
+		</div>
+		<div class="filter-field">
+			<Select label="Product" bind:value={filterProduct} options={[{ label: `All Products`, value: `` }, ...productOptions]} />
+		</div>
+		{#if activeFilters}
+			<div class="filter-field filter-reset">
+				<Button variant="ghost" size="sm" on:click={resetFilters}>
+					<i class="fa-light fa-xmark"></i>
+					<span>Reset</span>
+				</Button>
+			</div>
+		{/if}
+	</div>
+
 	{#if loading}
 		<div class="section row center-xxs margin-bottom-4">
 			<Spinner />
 		</div>
 	{:else if features.length === 0}
 		<div class="section">
-			<p class="muted-color">No features yet. Add one above.</p>
+			<p class="muted-color">No features found.</p>
 		</div>
 	{:else}
-		<div class="section">
+		<div class="section table-wrapper">
+			{#if filtering}
+				<div class="table-overlay">
+					<Spinner />
+				</div>
+			{/if}
 			<AdvancedTable
 				rows={features}
 				pagination={10}
@@ -175,5 +244,51 @@
 		font-size: var(--font-size);
 		font-weight: 600;
 		margin-bottom: calc(var(--gutter) * 1.5);
+	}
+
+	.filters {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: flex-end;
+		gap: calc(var(--gutter) * 2);
+		background-color: var(--tertiary-color);
+		border-radius: var(--border-radius);
+		padding: calc(var(--gutter) * 3);
+		margin-bottom: calc(var(--gutter) * 3);
+	}
+
+	.filter-search {
+		flex: 1;
+		min-width: 200px;
+	}
+
+	.filter-field {
+		min-width: 140px;
+	}
+
+	.filter-reset {
+		display: flex;
+		align-items: flex-end;
+		min-width: auto;
+		padding-bottom: 2px;
+
+		i {
+			margin-right: calc(var(--gutter) * 0.5);
+		}
+	}
+
+	.table-wrapper {
+		position: relative;
+	}
+
+	.table-overlay {
+		position: absolute;
+		inset: 0;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		z-index: 10;
+		background-color: rgba(0, 0, 0, 0.25);
+		border-radius: var(--border-radius);
 	}
 </style>

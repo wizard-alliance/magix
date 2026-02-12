@@ -21,10 +21,8 @@
 	let filterDisabled = ``
 	let filterActive = ``
 
-	const permissionOptions = [
+	let permissionOptions = [
 		{ label: `All Permissions`, value: `` },
-		{ label: `User`, value: `user` },
-		{ label: `Administrator`, value: `administrator` },
 	]
 	const disabledOptions = [
 		{ label: `All Statuses`, value: `` },
@@ -69,6 +67,13 @@
 
 	onMount(() => {
 		mounted = true
+		const perms = app.Meta.getPermissions()
+		if (perms.length) {
+			permissionOptions = [
+				{ label: `All Permissions`, value: `` },
+				...perms.map((p) => ({ label: p.value || p.key, value: p.key })),
+			]
+		}
 	})
 
 	onDestroy(() => clearTimeout(debounceTimer))

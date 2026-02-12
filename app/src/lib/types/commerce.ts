@@ -53,6 +53,8 @@ export type BillingSubscription = {
 	status: string
 	created: string | null
 	updated: string | null
+	customerName?: string
+	planName?: string
 }
 
 export type BillingProduct = {

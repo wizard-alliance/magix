@@ -42,7 +42,20 @@ export class LemonSqueezyProvider {
 			return
 		}
 
-		this.sync()
+		this.ensureProvider().then(() => this.sync())
+	}
+
+	/** Ensure a billing_payment_providers row exists for LemonSqueezy (id=1) */
+	private async ensureProvider() {
+		try {
+			const existing = await api.Billing.PaymentProviders.get({ id: 1 })
+			if (!existing) {
+				await api.Billing.PaymentProviders.set({ name: `LemonSqueezy` })
+				api.Log(`Created billing_payment_providers row for LemonSqueezy`, `LemonSqueezy`)
+			}
+		} catch (e: any) {
+			api.Log(`Failed to ensure payment provider row: ${e.message}`, `LemonSqueezy`, `error`)
+		}
 	}
 	
 	private headers() {
@@ -402,19 +415,17 @@ export class LemonSqueezyProvider {
 						const result = await api.Billing.Orders.set(orderData)
 						stats.created++
 						// Auto-create invoice
-						if (result && `insertId` in result || `id` in result) {
-							const orderId = Number((result as any).id ?? (result as any).insertId)
-							if (orderId) {
-								try {
-									await api.Billing.Invoices.set({
-										order_id: orderId,
-										customer_id: customer.id,
-										billing_info_snapshot: JSON.stringify(customer.billingAddress ?? {}),
-										billing_order_snapshot: JSON.stringify({ amount: orderData.amount, currency: orderData.currency, status: orderData.status }),
-										pdf_url: a.urls?.receipt ?? null,
-									})
-								} catch { /* invoice creation is best-effort */ }
-							}
+						const orderId = result?.id
+						if (orderId) {
+							try {
+								await api.Billing.Invoices.set({
+									order_id: orderId,
+									customer_id: customer.id,
+									billing_info_snapshot: JSON.stringify(customer.billingAddress ?? {}),
+									billing_order_snapshot: JSON.stringify({ amount: orderData.amount, currency: orderData.currency, status: orderData.status }),
+									pdf_url: a.urls?.receipt ?? null,
+								})
+							} catch { /* invoice creation is best-effort */ }
 						}
 					}
 				} catch (e: any) {

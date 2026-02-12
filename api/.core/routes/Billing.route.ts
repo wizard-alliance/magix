@@ -102,7 +102,14 @@ export class BillingRoute {
 
 	getCustomers = async (_: any, req: Request) => {
 		const p = api.getParams(req)
-		return await api.Billing.Customers.getMany({}, { limit: Number(p.limit) || 100, offset: Number(p.offset) || 0 })
+		const where: Record<string, any> = {}
+		if (p.is_guest !== undefined) where.is_guest = Number(p.is_guest)
+		return await api.Billing.Customers.getMany(where, {
+			limit: Number(p.limit) || 100,
+			offset: Number(p.offset) || 0,
+			search: p.search || undefined,
+			includeSubscriptions: true,
+		})
 	}
 
 	createCustomer = async (_: any, req: Request) => {
@@ -279,7 +286,15 @@ export class BillingRoute {
 
 	getSubscriptions = async (_: any, req: Request) => {
 		const p = api.getParams(req)
-		return await api.Billing.Subscriptions.getMany({}, { limit: Number(p.limit) || 100, offset: Number(p.offset) || 0 })
+		const where: Record<string, any> = {}
+		if (p.status) where.status = p.status
+		if (p.customer_id) where.customer_id = Number(p.customer_id)
+		if (p.plan_id) where.plan_id = Number(p.plan_id)
+		return await api.Billing.Subscriptions.getMany(where, {
+			limit: Number(p.limit) || 100,
+			offset: Number(p.offset) || 0,
+			search: p.search || undefined,
+		})
 	}
 
 	cancelSubscription = async ($: any, req: Request) => {
@@ -367,7 +382,11 @@ export class BillingRoute {
 
 	getOrders = async (_: any, req: Request) => {
 		const p = api.getParams(req)
-		return await api.Billing.Orders.getMany({}, { limit: Number(p.limit) || 100, offset: Number(p.offset) || 0 })
+		const where: Record<string, any> = {}
+		if (p.status) where.status = p.status
+		if (p.customer_id) where.customer_id = Number(p.customer_id)
+		if (p.type) where.type = p.type
+		return await api.Billing.Orders.getMany(where, { limit: Number(p.limit) || 100, offset: Number(p.offset) || 0 })
 	}
 
 	// Invoices
@@ -380,7 +399,10 @@ export class BillingRoute {
 
 	getInvoices = async (_: any, req: Request) => {
 		const p = api.getParams(req)
-		return await api.Billing.Invoices.getMany({}, { limit: Number(p.limit) || 100, offset: Number(p.offset) || 0 })
+		const where: Record<string, any> = {}
+		if (p.customer_id) where.customer_id = Number(p.customer_id)
+		if (p.order_id) where.order_id = Number(p.order_id)
+		return await api.Billing.Invoices.getMany(where, { limit: Number(p.limit) || 100, offset: Number(p.offset) || 0 })
 	}
 
 	// Webhook for LemonSqueezy

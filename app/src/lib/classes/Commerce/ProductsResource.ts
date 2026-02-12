@@ -6,8 +6,10 @@ export class ProductsResource extends BaseResource<BillingProductFull> {
 		super('billing/product', 'billing/products')
 	}
 
-	async listFeatures(productId?: number): Promise<BillingProductFeature[]> {
-		const query = productId ? { product_id: productId } : undefined
+	async listFeatures(queryOrProductId?: number | Record<string, any>): Promise<BillingProductFeature[]> {
+		const query = typeof queryOrProductId === `number`
+			? { product_id: queryOrProductId }
+			: queryOrProductId ?? undefined
 		const data = await this.request<BillingProductFeature[]>('get', 'billing/product/features', { query })
 		return Array.isArray(data) ? data : []
 	}

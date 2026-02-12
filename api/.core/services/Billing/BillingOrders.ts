@@ -38,7 +38,8 @@ export class BillingOrders {
 	}
 
 	async set(params: Partial<BillingOrderDBRow>) {
-		return await this.db.insertInto("billing_orders").values(params as any).executeTakeFirst()
+		const result = await this.db.insertInto("billing_orders").values(params as any).executeTakeFirst()
+		return { id: result.insertId ? Number(result.insertId) : null }
 	}
 
 	async update(data: Partial<BillingOrderDBRow>, where: Partial<BillingOrderDBRow>) {

@@ -26,12 +26,36 @@ export class BillingSubscriptions {
 		return row ? toShape(row) : null
 	}
 
-	async getMany(params: Partial<BillingSubscriptionDBRow> = {}, options = {}): Promise<BillingSubscription[]> {
-		let query = this.db.selectFrom("billing_subscriptions").selectAll()
+	async getMany(params: Partial<BillingSubscriptionDBRow> = {}, options: Record<string, any> = {}): Promise<(BillingSubscription & { customerName?: string; planName?: string })[]> {
+		let query = this.db
+			.selectFrom("billing_subscriptions")
+			.selectAll("billing_subscriptions")
+			.leftJoin("billing_customers", "billing_customers.id", "billing_subscriptions.customer_id")
+			.leftJoin("billing_products", "billing_products.id", "billing_subscriptions.plan_id")
+			.select([
+				"billing_customers.billing_name as customer_name",
+				"billing_products.name as plan_name",
+			])
+
+		// Search: LIKE on customer name/email
+		if (options.search) {
+			const term = `%${options.search}%`
+			query = query.where((eb) =>
+				eb.or([
+					eb("billing_customers.billing_name", "like", term),
+					eb("billing_customers.billing_email", "like", term),
+				])
+			)
+		}
+
 		query = api.Utils.applyWhere(query, params)
 		query = api.Utils.applyOptions(query, options)
 		const rows = await query.execute()
-		return rows.map(toShape)
+		return rows.map((row) => ({
+			...toShape(row),
+			customerName: (row as any).customer_name ?? undefined,
+			planName: (row as any).plan_name ?? undefined,
+		}))
 	}
 
 	async set(params: Partial<BillingSubscriptionDBRow>) {

@@ -42,12 +42,55 @@ export class BillingCustomers {
 		return { ...customer, subscriptions, invoices, orders }
 	}
 
-	async getMany(params: Partial<BillingCustomerDBRow> = {}, options = {}): Promise<BillingCustomer[]> {
-		let query = this.db.selectFrom("billing_customers").selectAll()
+	async getMany(params: Partial<BillingCustomerDBRow> = {}, options: Record<string, any> = {}): Promise<(BillingCustomer & { productName?: string; planName?: string })[]> {
+		let query = this.db.selectFrom("billing_customers").selectAll("billing_customers")
+
+		// Search: LIKE on billing_name/billing_email
+		if (options.search) {
+			const term = `%${options.search}%`
+			query = query.where((eb) =>
+				eb.or([
+					eb("billing_name", "like", term),
+					eb("billing_email", "like", term),
+				])
+			)
+		}
+
 		query = api.Utils.applyWhere(query, params)
 		query = api.Utils.applyOptions(query, options)
 		const rows = await query.execute()
-		return rows.map(toShape)
+		const customers = rows.map(toShape)
+
+		// Optionally enrich with active subscription/product info
+		if (options.includeSubscriptions && customers.length) {
+			const ids = customers.map((c) => c.id)
+			const subs = await this.db
+				.selectFrom("billing_subscriptions")
+				.leftJoin("billing_products", "billing_products.id", "billing_subscriptions.plan_id")
+				.select([
+					"billing_subscriptions.customer_id",
+					"billing_subscriptions.status",
+					"billing_products.name as product_name",
+					"billing_products.type as product_type",
+				])
+				.where("billing_subscriptions.customer_id", "in", ids)
+				.where("billing_subscriptions.status", "in", ["active", "paused", "past_due"])
+				.execute()
+
+			const subMap = new Map<number, { productName: string; status: string }>()
+			for (const s of subs) {
+				if (!subMap.has(s.customer_id)) {
+					subMap.set(s.customer_id, { productName: (s as any).product_name ?? `—`, status: s.status })
+				}
+			}
+
+			return customers.map((c) => {
+				const sub = subMap.get(c.id)
+				return { ...c, productName: sub?.productName ?? `—`, subscriptionStatus: sub?.status ?? `—` }
+			})
+		}
+
+		return customers
 	}
 
 	async set(params: Partial<BillingCustomerDBRow>) {
