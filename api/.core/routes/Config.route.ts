@@ -10,12 +10,11 @@ export class ConfigRoute {
 		const cached = api.Cache.get(this.cacheKey)
 		if (cached) return cached
 
-		const [settingsRows, permissions, products, features, providers] = await Promise.all([
+		const [settingsRows, permissions, products, features] = await Promise.all([
 			api.DB.connection.selectFrom(`global_settings`).select([`key`, `value`]).execute(),
 			api.User.Permissions.listDefined(),
 			api.Billing.Products.getMany({ is_active: 1 }),
 			api.Billing.Products.getFeatures({}),
-			api.Billing.PaymentProviders.getMany(),
 		])
 
 		const featureMap = new Map<number, typeof features>()
@@ -29,7 +28,6 @@ export class ConfigRoute {
 			settings: settingsRows.map(r => ({ key: r.key, value: r.value })),
 			permissions,
 			products: products.map(p => ({ ...p, features: featureMap.get(p.id) || [] })),
-			paymentProviders: providers.map(p => ({ id: p.id, name: p.name })),
 		}
 
 		api.Cache.set(this.cacheKey, result, 2)

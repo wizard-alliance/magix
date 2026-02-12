@@ -42,20 +42,7 @@ export class LemonSqueezyProvider {
 			return
 		}
 
-		this.ensureProvider().then(() => this.sync())
-	}
-
-	/** Ensure a billing_payment_providers row exists for LemonSqueezy (id=1) */
-	private async ensureProvider() {
-		try {
-			const existing = await api.Billing.PaymentProviders.get({ id: 1 })
-			if (!existing) {
-				await api.Billing.PaymentProviders.set({ name: `LemonSqueezy` })
-				api.Log(`Created billing_payment_providers row for LemonSqueezy`, `LemonSqueezy`)
-			}
-		} catch (e: any) {
-			api.Log(`Failed to ensure payment provider row: ${e.message}`, `LemonSqueezy`, `error`)
-		}
+		this.sync()
 	}
 	
 	private headers() {
@@ -400,7 +387,6 @@ export class LemonSqueezyProvider {
 					const orderData: Record<string, any> = {
 						customer_id: customer.id,
 						type: `purchase`,
-						provider_id: 1,
 						provider_order_id: providerOrderId,
 						amount: a.total ?? 0,
 						currency: a.currency || `USD`,

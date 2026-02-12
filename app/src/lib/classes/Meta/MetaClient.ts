@@ -14,7 +14,7 @@ import {
 import { Navigations } from './Navigations'
 
 import type { Writable } from 'svelte/store'
-import type { AppMeta, PageMeta, PageLoadData, ConfigResponse, ConfigPermission, ConfigProduct, ConfigPaymentProvider } from '$lib/types/meta'
+import type { AppMeta, PageMeta, PageLoadData, ConfigResponse, ConfigPermission, ConfigProduct } from '$lib/types/meta'
 
 const defaultPage: PageMeta = {
 	slug: ``,
@@ -60,7 +60,6 @@ export class MetaClient {
 	// Global config data — populated from GET /config
 	permissions: ConfigPermission[] = []
 	products: ConfigProduct[] = []
-	paymentProviders: ConfigPaymentProvider[] = []
 
 	// Per-page meta — writable store, always up to date
 	page: Writable<PageMeta> = writable({ ...defaultPage })
@@ -120,7 +119,6 @@ export class MetaClient {
 
 			this.permissions = data.permissions || []
 			this.products = data.products || []
-			this.paymentProviders = data.paymentProviders || []
 
 			if (!cached) app.Cache.set(`config`, data)
 			this.dbLoaded = true
@@ -153,7 +151,6 @@ export class MetaClient {
 	getPage = () => get(this.page)
 	getPermissions = () => this.permissions
 	getProducts = () => this.products
-	getPaymentProviders = () => this.paymentProviders
 
 	// Build the full page title: [appName] [sep] [parent] / [title]
 	buildTitle = (title: string, parent?: string): string => {

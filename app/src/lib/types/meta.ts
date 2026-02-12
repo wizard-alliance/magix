@@ -113,12 +113,9 @@ export type ConfigProduct = {
 	features: ConfigProductFeature[]
 }
 
-export type ConfigPaymentProvider = { id: number, name: string }
-
 export type ConfigResponse = {
 	settings: { key: string, value: string | null }[]
 	permissions: ConfigPermission[]
 	products: ConfigProduct[]
-	paymentProviders: ConfigPaymentProvider[]
 }
 

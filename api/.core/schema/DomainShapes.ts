@@ -116,7 +116,6 @@ export type BillingOrder = {
 	customerId: number
 	type: 'subscription' | 'purchase' | 'refund' | 'adjustment' | 'trial'
 	subscriptionId: number | null
-	providerId: number
 	providerOrderId: string
 	amount: number
 	currency: string
@@ -127,14 +126,6 @@ export type BillingOrder = {
 	updated: string | null
 	parentOrderId: number | null
 	idempotencyKey: string | null
-}
-
-export type BillingPaymentProvider = {
-	id: number
-	name: string
-	config: Record<string, any> | null
-	created: string | null
-	updated: string | null
 }
 
 export type BillingProduct = {

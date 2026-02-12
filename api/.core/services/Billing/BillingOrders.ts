@@ -6,7 +6,6 @@ const toShape = (row: BillingOrderDBRow): BillingOrder => ({
 	customerId: row.customer_id,
 	type: row.type,
 	subscriptionId: row.subscription_id,
-	providerId: row.provider_id,
 	providerOrderId: row.provider_order_id,
 	amount: row.amount,
 	currency: row.currency,

@@ -156,7 +156,6 @@ export class BillingEvents {
 				customer_id: customer.id,
 				type: `purchase`,
 				provider_order_id: String(data.id),
-				provider_id: 1, // LS
 				amount: data.total,
 				currency: data.currency,
 				status: data.status === `paid` ? `paid` : `pending`,
@@ -277,7 +276,6 @@ export class BillingEvents {
 				customer_id: sub.customerId,
 				type: `subscription`,
 				subscription_id: sub.id,
-				provider_id: 1,
 				provider_order_id: String(data.id),
 				amount: data.total,
 				currency: data.currency,

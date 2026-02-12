@@ -38,7 +38,6 @@ export type BillingOrderDBRow = {
 	customer_id: number
 	type: 'subscription' | 'purchase' | 'refund' | 'adjustment' | 'trial'
 	subscription_id: number | null
-	provider_id: number
 	provider_order_id: string
 	amount: number
 	currency: string
@@ -52,14 +51,6 @@ export type BillingOrderDBRow = {
 	idempotency_key: string | null
 }
 
-export type BillingPaymentProviderDBRow = {
-	id?: number
-	name: string
-	config: string | null
-	created: string | null
-	updated: string | null
-	deleted_at: string | null
-}
 
 export type BillingProductFeatureDBRow = {
 	id?: number
@@ -251,7 +242,6 @@ export type DatabaseSchema = {
 	billing_customers: BillingCustomerDBRow
 	billing_invoices: BillingInvoiceDBRow
 	billing_orders: BillingOrderDBRow
-	billing_payment_providers: BillingPaymentProviderDBRow
 	billing_product_features: BillingProductFeatureDBRow
 	billing_products: BillingProductDBRow
 	billing_subscriptions: BillingSubscriptionDBRow
@@ -348,7 +338,6 @@ export const schemaColumns = {
 		customer_id: 'number',
 		type: 'string',
 		subscription_id: 'number',
-		provider_id: 'number',
 		provider_order_id: 'string',
 		amount: 'number',
 		currency: 'string',
@@ -360,15 +349,6 @@ export const schemaColumns = {
 		deleted_at: 'date',
 		parent_order_id: 'number',
 		idempotency_key: 'string'
-	},
-
-	billing_payment_providers: {
-		id: 'number',
-		name: 'string',
-		config: 'string',
-		created: 'date',
-		updated: 'date',
-		deleted_at: 'date'
 	},
 
 	billing_product_features: {
@@ -601,7 +581,6 @@ export const tableColumnSets: ColumnSetMap = {
 	billing_customers: createColumnSet(schemaColumns.billing_customers),
 	billing_invoices: createColumnSet(schemaColumns.billing_invoices),
 	billing_orders: createColumnSet(schemaColumns.billing_orders),
-	billing_payment_providers: createColumnSet(schemaColumns.billing_payment_providers),
 	billing_product_features: createColumnSet(schemaColumns.billing_product_features),
 	billing_products: createColumnSet(schemaColumns.billing_products),
 	billing_subscriptions: createColumnSet(schemaColumns.billing_subscriptions),
@@ -629,7 +608,6 @@ export type TableMap = {
 	billing_customers: string
 	billing_invoices: string
 	billing_orders: string
-	billing_payment_providers: string
 	billing_product_features: string
 	billing_products: string
 	billing_subscriptions: string
@@ -658,7 +636,6 @@ export const TableMap: TableMap = {
 	billing_customers: "billing_customers",
 	billing_invoices: "billing_invoices",
 	billing_orders: "billing_orders",
-	billing_payment_providers: "billing_payment_providers",
 	billing_product_features: "billing_product_features",
 	billing_products: "billing_products",
 	billing_subscriptions: "billing_subscriptions",
