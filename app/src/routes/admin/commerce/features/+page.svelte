@@ -4,26 +4,18 @@
 	import type { BillingProductFull, BillingProductFeature } from "$lib/types/commerce"
 	import Spinner from "$components/modules/spinner.svelte"
 	import Button from "$components/fields/button.svelte"
-	import Input from "$components/fields/input.svelte"
-	import Select from "$components/fields/select.svelte"
-	import Textarea from "$components/fields/textarea.svelte"
 	import SearchInput from "$components/fields/searchInput.svelte"
+	import Select from "$components/fields/select.svelte"
 	import AdvancedTable from "$components/modules/AdvancedTable.svelte"
+	import FeatureForm from "./FeatureForm.svelte"
 
 	let loading = true
-	let saving = false
 	let filtering = false
 	let allFeatures: BillingProductFeature[] = []
 	let features: any[] = []
 	let products: BillingProductFull[] = []
 	let productOptions: { label: string; value: string }[] = []
 	let mounted = false
-
-	// Form state
-	let editingId: number | null = null
-	let featureName = ``
-	let productId = ``
-	let description = ``
 
 	// Filter state
 	let searchQuery = ``
@@ -38,6 +30,7 @@
 			ID: f.id,
 			Feature: f.featureName,
 			Product: productName(f.productId),
+			Order: f.sortOrder,
 			Description: f.description ?? `—`,
 			Created: f.created ?? `—`,
 		}))
@@ -52,7 +45,7 @@
 			allFeatures = await app.Commerce.Products.listFeatures(query)
 			applyClientFilter()
 		} catch {
-			app.UI.Notify.error(`Failed to load features`)
+			app.UI.Notify.error(`Failed to load features`, `Features`)
 		} finally {
 			loading = false
 			filtering = false
@@ -94,99 +87,59 @@
 		applyFilters()
 	}
 
-	const resetFilters = () => {
-		searchQuery = ``
-		filterProduct = ``
-	}
-
-	$: activeFilters = searchQuery || filterProduct
-
-	const resetForm = () => {
-		editingId = null
-		featureName = ``
-		productId = ``
-		description = ``
-	}
-
-	const save = async () => {
-		if (!featureName.trim() || !productId) {
-			app.UI.Notify.error(`Feature name and product are required`)
-			return
-		}
-		saving = true
+	const openForm = async (feature: BillingProductFeature | null = null) => {
+		const result = await app.UI.Modal.form({
+			title: feature ? `Edit Feature` : `Add Feature`,
+			icon: `fa-stars`,
+			component: FeatureForm,
+			componentProps: {
+				feature,
+				productOptions,
+			},
+		})
+		if (!result) return
 		try {
-			const body = { featureName: featureName.trim(), productId: Number(productId), description: description.trim() || undefined }
-			if (editingId) {
-				await app.Commerce.Products.updateFeature(editingId, body)
-				app.UI.Notify.success(`Feature updated`)
+			if (feature) {
+				await app.Commerce.Products.updateFeature(feature.id, result)
+				app.UI.Notify.success(`Feature updated`, `Saved`)
 			} else {
-				await app.Commerce.Products.createFeature(body)
-				app.UI.Notify.success(`Feature created`)
+				await app.Commerce.Products.createFeature(result)
+				app.UI.Notify.success(`Feature created`, `Saved`)
 			}
-			resetForm()
 			await loadData()
 		} catch (err) {
-			app.UI.Notify.error(`Save failed: ${app.Helpers.errMsg(err)}`)
+			app.UI.Notify.error(app.Helpers.errMsg(err), `Features`)
 		}
-		saving = false
 	}
 
 	const handleAction = async (e: CustomEvent<{ event: string; row: Record<string, any> }>) => {
 		const { event, row } = e.detail
 		if (event === `edit`) {
 			const f = allFeatures.find((x) => x.id === row.ID)
-			if (!f) return
-			editingId = f.id
-			featureName = f.featureName
-			productId = String(f.productId)
-			description = f.description ?? ``
+			if (f) openForm(f)
 		}
 		if (event === `delete`) {
 			const ok = await app.UI.Modal.confirm(`Delete feature`, `Are you sure you want to delete "${row.Feature}"?`)
 			if (!ok) return
 			try {
 				await app.Commerce.Products.deleteFeature(row.ID)
-				app.UI.Notify.success(`Feature deleted`)
+				app.UI.Notify.success(`Feature deleted`, `Deleted`)
 				await loadData()
 			} catch (err) {
-				app.UI.Notify.error(`Delete failed: ${app.Helpers.errMsg(err)}`)
+				app.UI.Notify.error(app.Helpers.errMsg(err), `Features`)
 			}
 		}
 	}
 </script>
 
 <div class="page page-normal">
-	<div class="section margin-bottom-4">
-		<h1 class="title"><i class="fa-light fa-stars"></i> Product Features</h1>
-		<p class="muted-color text-small">Manage features attached to billing products</p>
-	</div>
-
-	<div class="section margin-bottom-4">
-		<h3 class="form-heading">{editingId ? `Edit Feature` : `Add Feature`}</h3>
-		<div class="row margin-bottom-2">
-			<div class="col-xxs-12 col-md">
-				<Input label="Feature name" bind:value={featureName} placeholder="e.g. Unlimited storage" />
-			</div>
-			<div class="col-xxs-12 col-md">
-				<Select label="Product" bind:value={productId} options={productOptions} />
-			</div>
+	<div class="section margin-bottom-4 row middle-xxs between-xxs">
+		<div class="col-xxs">
+			<h1 class="title"><i class="fa-light fa-stars"></i> Product Features</h1>
+			<p class="muted-color text-small">Manage features attached to billing products</p>
 		</div>
-		<div class="row margin-bottom-2">
-			<div class="col-xxs-12">
-				<Textarea label="Description" bind:value={description} placeholder="Optional description" rows={2} />
-			</div>
-		</div>
-		<div class="row">
-			<div class="col-xxs-auto">
-				<Button on:click={save} loading={saving} disabled={saving}>
-					{editingId ? `Update` : `Add Feature`}
-				</Button>
-			</div>
-			{#if editingId}
-				<div class="col-xxs-auto">
-					<Button on:click={resetForm} variant="secondary">Cancel</Button>
-				</div>
-			{/if}
+		<div class="col-xxs-auto">
+			<Button on:click={() => openForm()}>Add Feature</Button>
 		</div>
 	</div>
 
@@ -197,14 +150,6 @@
 		<div class="filter-field">
 			<Select label="Product" bind:value={filterProduct} options={[{ label: `All Products`, value: `` }, ...productOptions]} />
 		</div>
-		{#if activeFilters}
-			<div class="filter-field filter-reset">
-				<Button variant="secondary" on:click={resetFilters}>
-					<i class="fa-light fa-xmark"></i>
-					<span>Reset</span>
-				</Button>
-			</div>
-		{/if}
 	</div>
 
 	{#if loading}
@@ -226,6 +171,10 @@
 				rows={features}
 				pagination={10}
 				scrollable="x"
+				onRowClick={(row) => {
+					const f = allFeatures.find((x) => x.id === row.ID)
+					if (f) openForm(f)
+				}}
 				colActions={[
 					{ name: `Edit`, icon: `fa-light fa-pen`, event: `edit` },
 					{ name: `Delete`, icon: `fa-light fa-trash`, event: `delete` },
@@ -244,11 +193,6 @@
 			margin-right: calc(var(--gutter) * 0.75);
 			opacity: 0.6;
 		}
-	}
-	.form-heading {
-		font-size: var(--font-size);
-		font-weight: 600;
-		margin-bottom: calc(var(--gutter) * 1.5);
 	}
 
 	.filters {
@@ -269,17 +213,6 @@
 
 	.filter-field {
 		min-width: 140px;
-	}
-
-	.filter-reset {
-		display: flex;
-		align-items: flex-end;
-		min-width: auto;
-		padding-bottom: 2px;
-
-		i {
-			margin-right: calc(var(--gutter) * 0.5);
-		}
 	}
 
 	.table-wrapper {

@@ -24,6 +24,7 @@ const toFeatureShape = (row: BillingProductFeatureDBRow): BillingProductFeature 
 	productId: row.product_id,
 	featureName: row.feature_name,
 	description: row.description,
+	sortOrder: row.sort_order,
 	created: row.created,
 })
 
@@ -88,6 +89,7 @@ export class BillingProducts {
 		let query = this.db.selectFrom("billing_product_features").selectAll()
 		query = api.Utils.applyWhere(query, params)
 		query = api.Utils.applyOptions(query, options)
+		query = query.orderBy('sort_order', 'asc').orderBy('created', 'asc')
 		const rows = await query.execute()
 		return rows.map(toFeatureShape)
 	}

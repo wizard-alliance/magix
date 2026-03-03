@@ -97,7 +97,18 @@ export class BillingEvents {
 
 		// 2. Resolve user_id from customData or email lookup (trusted identity)
 		const user = email ? await api.User.Repo.get(email) : null
-		const userId = customData?.user_id ? Number(customData.user_id) : user?.id || null
+		let userId = customData?.user_id ? Number(customData.user_id) : user?.id || null
+
+		// Guard: if customData.user_id was passed but the webhook email doesn't match
+		// that user's email, the checkout was completed with a different account.
+		// Ignore the user_id and let email-based resolution handle it.
+		if (userId && customData?.user_id && email) {
+			const claimedUser = await api.User.Repo.get(Number(customData.user_id))
+			if (claimedUser && claimedUser.info.email.toLowerCase() !== email.toLowerCase()) {
+				api.Log(`Email mismatch: webhook email "${email}" != user #${userId} email "${claimedUser.info.email}". Falling back to email resolution.`, this.prefix)
+				userId = user?.id || null
+			}
+		}
 
 		// 3. Lookup by user_id — takes priority over email
 		let customer = null as any
@@ -152,6 +163,7 @@ export class BillingEvents {
 		if (!customer) return
 
 		try {
+			const now = new Date().toISOString().slice(0, 19).replace(`T`, ` `)
 			const result = await api.Billing.Orders.set({
 				customer_id: customer.id,
 				type: `purchase`,
@@ -159,7 +171,8 @@ export class BillingEvents {
 				amount: data.total,
 				currency: data.currency,
 				status: data.status === `paid` ? `paid` : `pending`,
-				paid_at: data.status === `paid` ? new Date().toISOString().slice(0, 19).replace(`T`, ` `) : null,
+				paid_at: data.status === `paid` ? now : null,
+				created: now,
 			})
 			api.Log(`Order created: ${JSON.stringify(result)}`, this.prefix)
 
@@ -170,8 +183,9 @@ export class BillingEvents {
 					await api.Billing.Invoices.set({
 						order_id: orderId,
 						customer_id: customer.id,
-						billing_info_snapshot: JSON.stringify(customer.billingAddress ?? {}),
+						billing_customers_snapshot: JSON.stringify(customer.billingAddress ?? {}),
 						billing_order_snapshot: JSON.stringify({ amount: data.total, currency: data.currency, status: data.status }),
+						pdf_url: null,
 					})
 				} catch (invoiceErr: any) {
 					api.Log(`Error creating invoice for order ${orderId}: ${invoiceErr.message}`, this.prefix)
@@ -291,8 +305,9 @@ export class BillingEvents {
 					await api.Billing.Invoices.set({
 						order_id: orderId,
 						customer_id: sub.customerId,
-						billing_info_snapshot: JSON.stringify(cust?.billingAddress ?? {}),
+						billing_customers_snapshot: JSON.stringify(cust?.billingAddress ?? {}),
 						billing_order_snapshot: JSON.stringify({ amount: data.total, currency: data.currency, status: `paid` }),
+						pdf_url: null,
 					})
 				} catch (invoiceErr: any) {
 					api.Log(`Error creating invoice for renewal order ${orderId}: ${invoiceErr.message}`, this.prefix)

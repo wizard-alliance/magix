@@ -88,9 +88,9 @@
 				payload[def.key] = String(values[def.key])
 			}
 			await app.Account.Settings.save(payload)
-			app.UI.Notify.success("Preferences saved")
+			app.UI.Notify.success("Preferences saved", "Settings")
 		} catch (err) {
-			app.UI.Notify.error(`Failed to save preferences: ${app.Helpers.errMsg(err)}`)
+			app.UI.Notify.error(app.Helpers.errMsg(err), "Settings")
 		} finally {
 			saving = false
 		}

@@ -11,9 +11,11 @@
 		inputType?: string
 		inputPlaceholder?: string
 		onresult?: (value: string | null) => void
+		component?: any
+		componentProps?: Record<string, any>
 	}
 
-	let { icon, title, subtitle, content, choices = [], closable = true, inputType, inputPlaceholder, onresult }: Props = $props()
+	let { icon, title, subtitle, content, choices = [], closable = true, inputType, inputPlaceholder, onresult, component, componentProps = {} }: Props = $props()
 
 	let inputValue = $state("")
 	let inputRef: HTMLInputElement | undefined = $state()
@@ -63,15 +65,20 @@
 			<p class="modal-subtitle">{subtitle}</p>
 		{/if}
 
-		{#if content}
+		{#if component}
+			{@const Comp = component}
+			<div class="modal-body">
+				<Comp {...componentProps} />
+			</div>
+		{:else if content}
 			<p class="modal-content">{content}</p>
 		{/if}
 
-		{#if inputType}
+		{#if !component && inputType}
 			<input class="modal-input" type={inputType} placeholder={inputPlaceholder || ""} bind:value={inputValue} bind:this={inputRef} />
 		{/if}
 
-		{#if choices.length}
+		{#if !component && choices.length}
 			<div class="modal-choices">
 				{#each choices as choice}
 					<button type="button" class="modal-btn {choice.variant || ''}" onclick={() => close(inputType ? inputValue : choice.value)}>
@@ -104,7 +111,7 @@
 		box-shadow: 0 8px 40px rgba(0, 0, 0, 0.3);
 		padding: calc(var(--gutter) * 4);
 		min-width: 320px;
-		max-width: 440px;
+		max-width: 560px;
 		width: 90vw;
 		display: flex;
 		flex-direction: column;
@@ -154,6 +161,11 @@
 		color: var(--muted-color-2);
 		margin: 0;
 		line-height: 1.5;
+	}
+
+	.modal-body {
+		width: 100%;
+		text-align: left;
 	}
 
 	.modal-input {

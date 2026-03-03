@@ -12,6 +12,8 @@ type ModalParams = {
 	closable?: boolean
 	inputType?: string
 	inputPlaceholder?: string
+	component?: any
+	componentProps?: Record<string, any>
 }
 
 export class Modal {
@@ -91,5 +93,33 @@ export class Modal {
 				{ label: opts?.confirmLabel || 'Submit', value: '__submit__', variant: opts?.confirmVariant || 'primary' },
 			],
 		}).then(v => (v && v !== '' ? v : null))
+	}
+
+	form<T = any>(params: { title?: string; icon?: string; component: any; componentProps?: Record<string, any>; closable?: boolean }): Promise<T | null> {
+		this.dismiss()
+		const container = this.getContainer()
+
+		return new Promise((resolve) => {
+			const finish = (value: T | null) => {
+				this.dismiss()
+				resolve(value)
+			}
+
+			this.activeModal = mount(ModalDialog, {
+				target: container,
+				props: {
+					icon: params.icon,
+					title: params.title,
+					closable: params.closable ?? true,
+					component: params.component,
+					componentProps: {
+						...params.componentProps,
+						onsubmit: (result: T) => finish(result),
+						oncancel: () => finish(null),
+					},
+					onresult: () => finish(null),
+				},
+			})
+		})
 	}
 }

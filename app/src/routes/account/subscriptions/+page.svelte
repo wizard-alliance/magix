@@ -54,7 +54,7 @@
 				historySubs = createTableData(history)
 			}
 		} catch {
-			app.UI.Notify.error(`Failed to load subscriptions`)
+			app.UI.Notify.error(`Failed to load subscriptions`, `Subscriptions`)
 		}
 		loading = false
 	})

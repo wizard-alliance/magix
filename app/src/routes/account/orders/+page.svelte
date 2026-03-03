@@ -24,7 +24,7 @@
 			const customer = await app.Commerce.Customer.get()
 			if (customer?.orders) orders = createTableData(customer.orders)
 		} catch {
-			app.UI.Notify.error(`Failed to load orders`)
+			app.UI.Notify.error(`Failed to load orders`, `Orders`)
 		}
 		loading = false
 	})

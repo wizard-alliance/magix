@@ -55,23 +55,28 @@ export class DatabaseClient {
 	}
 
 	private createDialect = () => {
-		return new MysqlDialect({
-			pool: createPool({
-				host: this.config.host,
-				port: this.config.port,
-				user: this.config.user,
-				password: this.config.password,
-				database: this.config.database,
+		const pool = createPool({
+			host: this.config.host,
+			port: this.config.port,
+			user: this.config.user,
+			password: this.config.password,
+			database: this.config.database,
 
-				waitForConnections: true,
-				queueLimit: 0,
-				connectTimeout: 2000,
-				supportBigNumbers: true,
-				decimalNumbers: true,
-				dateStrings: true,
-				timezone: "Z",
-			}),
+			waitForConnections: true,
+			queueLimit: 0,
+			connectTimeout: 2000,
+			supportBigNumbers: true,
+			decimalNumbers: true,
+			dateStrings: true,
+			timezone: "Z",
 		})
+
+		// Ensure CURRENT_TIMESTAMP uses UTC on every new connection
+		pool.on(`connection`, (conn: any) => {
+			conn.query(`SET time_zone = '+00:00'`)
+		})
+
+		return new MysqlDialect({ pool })
 	}
 
 	// Shorthand

@@ -44,12 +44,12 @@
 		if (!file) return
 
 		if (!allowedMimes.includes(file.type)) {
-			app.UI.Notify.error(`Unsupported image format. Use JPG, PNG, or AVIF`)
+			app.UI.Notify.error(`Unsupported image format. Use JPG, PNG, or AVIF`, `Avatar`)
 			return
 		}
 
 		if (file.size > maxFileSize) {
-			app.UI.Notify.error(`File exceeds the ${maxFileSizeMB}MB size limit`)
+			app.UI.Notify.error(`File exceeds the ${maxFileSizeMB}MB size limit`, `Avatar`)
 			return
 		}
 
@@ -75,9 +75,9 @@
 			}
 			selectedFile = null
 			previewUrl = ""
-			app.UI.Notify.success("Avatar updated")
+			app.UI.Notify.success("Avatar updated", "Avatar")
 		} catch (err) {
-			app.UI.Notify.error(`Upload failed: ${app.Helpers.errMsg(err)}`)
+			app.UI.Notify.error(app.Helpers.errMsg(err), "Avatar")
 		} finally {
 			uploading = false
 		}
@@ -88,9 +88,9 @@
 			await app.Account.Avatar.remove()
 			avatarUrl = ""
 			avatarSrcset = ""
-			app.UI.Notify.success("Avatar removed")
+			app.UI.Notify.success("Avatar removed", "Avatar")
 		} catch (err) {
-			app.UI.Notify.error(`Failed to remove avatar: ${app.Helpers.errMsg(err)}`)
+			app.UI.Notify.error(app.Helpers.errMsg(err), "Avatar")
 		}
 	}
 </script>

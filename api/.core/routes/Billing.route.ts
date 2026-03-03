@@ -1,4 +1,4 @@
-import type { Request } from "express"
+import type { Request, Response } from "express"
 
 export class BillingRoute {
 	private readonly route = "billing"
@@ -46,6 +46,8 @@ export class BillingRoute {
 
 		// Invoices
 		api.Router.set("GET", `${this.route}/invoice`, this.getInvoice, opts)
+		api.Router.set("GET", `${this.route}/invoice/pdf`, this.downloadInvoicePdf, opts)
+		api.Router.set("POST", `${this.route}/invoice/pdf/regenerate`, this.regenerateInvoicePdf, adminOpts)
 		api.Router.set("GET", `${this.route}/invoices`, this.getInvoices, adminOpts)
 
 		// LemonSqueezy Admin (direct LS API access)
@@ -300,10 +302,10 @@ export class BillingRoute {
 	cancelSubscription = async ($: any, req: Request) => {
 		const p = api.getParams(req)
 		const id = Number(p.id)
-		if (!id) return { code: 422, error: "Subscription ID required" }
+		if (!id) return { code: 422, error: `Subscription ID required` }
 		const sub = await api.Billing.Subscriptions.get({ id })
-		if (!sub) return { code: 404, error: "Subscription not found" }
-		if (!sub.providerSubscriptionId) return { code: 400, error: "No provider subscription linked" }
+		if (!sub) return { code: 404, error: `Subscription not found` }
+		if (!sub.providerSubscriptionId) return { code: 400, error: `No provider subscription linked` }
 		try {
 			await api.Billing.Providers.LS.cancelSubscription(sub.providerSubscriptionId)
 			return { success: true }
@@ -315,10 +317,10 @@ export class BillingRoute {
 	pauseSubscription = async ($: any, req: Request) => {
 		const p = api.getParams(req)
 		const id = Number(p.id)
-		if (!id) return { code: 422, error: "Subscription ID required" }
+		if (!id) return { code: 422, error: `Subscription ID required` }
 		const sub = await api.Billing.Subscriptions.get({ id })
-		if (!sub) return { code: 404, error: "Subscription not found" }
-		if (!sub.providerSubscriptionId) return { code: 400, error: "No provider subscription linked" }
+		if (!sub) return { code: 404, error: `Subscription not found` }
+		if (!sub.providerSubscriptionId) return { code: 400, error: `No provider subscription linked` }
 		try {
 			await api.Billing.Providers.LS.pauseSubscription(sub.providerSubscriptionId)
 			return { success: true }
@@ -330,10 +332,10 @@ export class BillingRoute {
 	resumeSubscription = async ($: any, req: Request) => {
 		const p = api.getParams(req)
 		const id = Number(p.id)
-		if (!id) return { code: 422, error: "Subscription ID required" }
+		if (!id) return { code: 422, error: `Subscription ID required` }
 		const sub = await api.Billing.Subscriptions.get({ id })
-		if (!sub) return { code: 404, error: "Subscription not found" }
-		if (!sub.providerSubscriptionId) return { code: 400, error: "No provider subscription linked" }
+		if (!sub) return { code: 404, error: `Subscription not found` }
+		if (!sub.providerSubscriptionId) return { code: 400, error: `No provider subscription linked` }
 		try {
 			await api.Billing.Providers.LS.resumeSubscription(sub.providerSubscriptionId)
 			return { success: true }
@@ -346,21 +348,23 @@ export class BillingRoute {
 	createCheckout = async ($: any, req: Request) => {
 		const p = api.getParams(req)
 		const authUser = (req as any).authUser
-		const variantId = p.variant_id || p.variantId
-		if (!variantId) return { code: 422, error: "Variant ID required" }
+		const planId = p.plan_id || p.planId
 
 		// Prevent duplicate subscriptions for the same plan
-		const planId = p.plan_id
-		if (authUser?.id) {
+		if (authUser?.id && planId) {
 			const customer = await api.Billing.Customers.get({ user_id: authUser.id })
 			if (customer) {
 				const existing = await api.Billing.Subscriptions.getMany({ customer_id: customer.id })
 				const activeSub = (existing ?? []).find((s: any) =>
-					['active', 'paused'].includes(s.status) && (!planId || s.plan_id === planId)
+					['active', 'paused'].includes(s.status) && s.plan_id === Number(planId)
 				)
 				if (activeSub) return { code: 409, error: `You already have an active subscription for this plan` }
 			}
 		}
+
+		// All plans go through LemonSqueezy (MoR is the source of truth)
+		const variantId = p.variant_id || p.variantId
+		if (!variantId) return { code: 422, error: `Variant ID required` }
 
 		try {
 			const result = await api.Billing.Providers.LS.createCheckout({
@@ -370,8 +374,11 @@ export class BillingRoute {
 				customData: { user_id: authUser?.id, plan_id: planId },
 				redirectUrl: p.redirectUrl || p.redirect_url,
 			})
+			api.Log(`Checkout result: ${JSON.stringify(result)}`, `Billing`)
+			if (!result?.url) return { code: 502, error: `Payment provider did not return a checkout URL` }
 			return result
 		} catch (e: any) {
+			api.Log(`Checkout error: ${e.message}`, `Billing`, `error`)
 			return { code: 500, error: e.message }
 		}
 	}
@@ -412,7 +419,17 @@ export class BillingRoute {
 		const p = api.getParams(req)
 		const id = Number(p.id)
 		if (!id) return { code: 422, error: "Invoice ID required" }
-		return await api.Billing.Invoices.get({ id }) ?? { code: 404, error: "Invoice not found" }
+
+		const invoice = await api.Billing.Invoices.get({ id })
+		if (!invoice) return { code: 404, error: "Invoice not found" }
+
+		// Ownership check — resolve caller's customer and verify match
+		const authUser = (req as any).authUser
+		if (!authUser?.id) return { code: 401, error: "Unauthorized" }
+		const customer = await api.Billing.Customers.get({ user_id: authUser.id })
+		if (!customer || invoice.customerId !== customer.id) return { code: 403, error: "Access denied" }
+
+		return invoice
 	}
 
 	getInvoices = async (_: any, req: Request) => {
@@ -421,6 +438,50 @@ export class BillingRoute {
 		if (p.customer_id) where.customer_id = Number(p.customer_id)
 		if (p.order_id) where.order_id = Number(p.order_id)
 		return await api.Billing.Invoices.getMany(where, { limit: Number(p.limit) || 100, offset: Number(p.offset) || 0 })
+	}
+
+	/** Proxy-download the invoice PDF — generates via LS API on first request, then serves from cache */
+	downloadInvoicePdf = async (_: any, req: Request, res: Response) => {
+		const p = api.getParams(req)
+		const id = Number(p.id)
+		if (!id) { res.status(422).json({ error: `Invoice ID required` }); return }
+
+		const authUser = (req as any).authUser
+		if (!authUser?.id) { res.status(401).json({ error: `Unauthorized` }); return }
+
+		const invoice = await api.Billing.Invoices.get({ id })
+		if (!invoice) { res.status(404).json({ error: `Invoice not found` }); return }
+
+		// Admins can download any invoice; regular users must own it
+		const admin = await api.User.Permissions.isAdmin(authUser.id)
+		if (!admin) {
+			const customer = await api.Billing.Customers.get({ user_id: authUser.id })
+			if (!customer || invoice.customerId !== customer.id) { res.status(403).json({ error: `Access denied` }); return }
+		}
+
+		try {
+			const filePath = await api.Billing.Invoices.getOrCachePdf(invoice)
+			res.setHeader(`Content-Type`, `application/pdf`)
+			res.setHeader(`Content-Disposition`, `attachment; filename="invoice-${invoice.id}.pdf"`)
+			await new Promise<void>((resolve, reject) => {
+				res.sendFile(filePath, (err) => err ? reject(err) : resolve())
+			})
+		} catch (e: any) {
+			api.Log(`Invoice PDF download failed for #${id}: ${e.message}\n${e.stack}`, `Billing`, `error`)
+			res.status(502).json({ error: `Failed to generate invoice PDF`, detail: e.message })
+		}
+	}
+
+	/** Admin-only: force-regenerate an invoice PDF from LS */
+	regenerateInvoicePdf = async ($: any) => {
+		const id = Number($.body.id)
+		if (!id) return { code: 422, error: `Invoice ID required` }
+
+		const invoice = await api.Billing.Invoices.get({ id })
+		if (!invoice) return { code: 404, error: `Invoice not found` }
+
+		const filePath = await api.Billing.Invoices.getOrCachePdf(invoice, true)
+		return { success: true, path: filePath }
 	}
 
 	// Webhook for LemonSqueezy

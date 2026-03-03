@@ -36,9 +36,9 @@
 		saving = true
 		try {
 			await app.Commerce.Customer.saveMe(form)
-			app.UI.Notify.success("Billing info saved")
+			app.UI.Notify.success("Billing info saved", "Billing")
 		} catch (err) {
-			app.UI.Notify.error(`Failed to save billing info: ${app.Helpers.errMsg(err)}`)
+			app.UI.Notify.error(app.Helpers.errMsg(err), "Billing")
 		} finally {
 			saving = false
 		}

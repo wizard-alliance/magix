@@ -5,7 +5,6 @@
 	import Spinner from "$components/modules/spinner.svelte"
 	import AdvancedTable from "$components/modules/AdvancedTable.svelte"
 	import SearchInput from "$components/fields/searchInput.svelte"
-	import Button from "$components/fields/button.svelte"
 
 	let loading = true
 	let filtering = false
@@ -37,7 +36,7 @@
 			const data = await app.Commerce.Customer.list(query)
 			customers = createTableData(data)
 		} catch {
-			app.UI.Notify.error(`Failed to load customers`)
+			app.UI.Notify.error(`Failed to load customers`, `Customers`)
 		} finally {
 			loading = false
 			filtering = false
@@ -63,16 +62,10 @@
 		applyFilters(800)
 	}
 
-	const resetFilters = () => {
-		searchQuery = ``
-	}
-
-	$: activeFilters = searchQuery
-
 	const handleAction = (e: CustomEvent<{ event: string; row: Record<string, any>; index: number }>) => {
 		const { event, row } = e.detail
 		if (event === `edit`) goto(`/admin/commerce/customers/${row.ID}`)
-		if (event === `view`) app.UI.Notify.info(`Customer: ${row.Name || row.ID}`)
+		if (event === `view`) app.UI.Notify.info(`Customer: ${row.Name || row.ID}`, `Customer`)
 	}
 </script>
 
@@ -86,14 +79,6 @@
 		<div class="filter-field filter-search">
 			<SearchInput placeholder="Search by name or email..." bind:value={searchQuery} />
 		</div>
-		{#if activeFilters}
-			<div class="filter-field filter-reset">
-				<Button variant="secondary" on:click={resetFilters}>
-					<i class="fa-light fa-xmark"></i>
-					<span>Reset</span>
-				</Button>
-			</div>
-		{/if}
 	</div>
 
 	{#if loading}
@@ -154,17 +139,6 @@
 
 	.filter-field {
 		min-width: 140px;
-	}
-
-	.filter-reset {
-		display: flex;
-		align-items: flex-end;
-		min-width: auto;
-		padding-bottom: 2px;
-
-		i {
-			margin-right: calc(var(--gutter) * 0.5);
-		}
 	}
 
 	.table-wrapper {

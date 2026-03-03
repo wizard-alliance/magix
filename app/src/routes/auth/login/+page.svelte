@@ -62,7 +62,7 @@
 			await app.Auth.login(form)
 			goto("/account/profile")
 		} catch (error) {
-			app.UI.Notify.error(app.Helpers.errMsg(error))
+			app.UI.Notify.error(app.Helpers.errMsg(error), "Login")
 		} finally {
 			loading = false
 		}

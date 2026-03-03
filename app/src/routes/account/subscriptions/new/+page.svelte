@@ -17,7 +17,7 @@
 			const all = await app.Commerce.Products.list()
 			products = all.filter((p) => showTypes.has(p.type) && p.isActive).sort((a, b) => a.sortOrder - b.sortOrder)
 		} catch {
-			app.UI.Notify.error(`Failed to load plans`)
+			app.UI.Notify.error(`Failed to load plans`, `Plans`)
 		}
 		loading = false
 	})
@@ -25,15 +25,20 @@
 	const subscribe = async (product: BillingProductFull) => {
 		subscribing = product.id
 		try {
+			if (!product.providerVariantId) {
+				app.UI.Notify.warning(`This plan is not available for checkout yet`, `Checkout`)
+				subscribing = null
+				return
+			}
 			const res = await app.Commerce.Checkout.create({
-				variantId: product.providerVariantId!,
+				variantId: product.providerVariantId,
 				planId: product.id,
 				redirectUrl: `${window.location.origin}/account/subscriptions`,
 			})
 			if (res?.url) window.location.href = res.url
-			else app.UI.Notify.error(`Checkout unavailable`)
+			else app.UI.Notify.error(`No checkout URL returned`, `Checkout`)
 		} catch (err) {
-			app.UI.Notify.error(`Checkout failed: ${app.Helpers.errMsg(err)}`)
+			app.UI.Notify.error(app.Helpers.errMsg(err), `Checkout`)
 		}
 		subscribing = null
 	}

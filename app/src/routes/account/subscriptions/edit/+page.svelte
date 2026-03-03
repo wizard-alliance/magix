@@ -27,7 +27,7 @@
 			sub = customer?.subscriptions?.find((s) => s.id === subId) ?? null
 			if (sub?.planId) plan = await app.Commerce.Products.get(sub.planId)
 		} catch {
-			app.UI.Notify.error(`Failed to load subscription`)
+			app.UI.Notify.error(`Failed to load subscription`, `Subscription`)
 		}
 		loading = false
 	}
@@ -37,10 +37,10 @@
 		acting = true
 		try {
 			await app.Commerce.Subscriptions.pause(sub.id)
-			app.UI.Notify.success(`Subscription paused`)
+			app.UI.Notify.success(`Subscription paused`, `Subscription`)
 			await loadData()
 		} catch (err) {
-			app.UI.Notify.error(`Failed: ${app.Helpers.errMsg(err)}`)
+			app.UI.Notify.error(app.Helpers.errMsg(err), `Subscription`)
 		}
 		acting = false
 	}
@@ -50,10 +50,10 @@
 		acting = true
 		try {
 			await app.Commerce.Subscriptions.resume(sub.id)
-			app.UI.Notify.success(`Subscription resumed`)
+			app.UI.Notify.success(`Subscription resumed`, `Subscription`)
 			await loadData()
 		} catch (err) {
-			app.UI.Notify.error(`Failed: ${app.Helpers.errMsg(err)}`)
+			app.UI.Notify.error(app.Helpers.errMsg(err), `Subscription`)
 		}
 		acting = false
 	}

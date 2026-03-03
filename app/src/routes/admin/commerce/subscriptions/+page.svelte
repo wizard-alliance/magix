@@ -6,7 +6,6 @@
 	import AdvancedTable from "$components/modules/AdvancedTable.svelte"
 	import SearchInput from "$components/fields/searchInput.svelte"
 	import Select from "$components/fields/select.svelte"
-	import Button from "$components/fields/button.svelte"
 
 	let loading = true
 	let filtering = false
@@ -28,17 +27,15 @@
 
 	let debounceTimer: ReturnType<typeof setTimeout>
 
-	const dateOnly = (v: string | null | undefined) => (v ? v.split(`T`)[0].split(` `)[0] : `—`)
-
 	const createTableData = (raw: BillingSubscription[]) =>
 		raw.map((s) => ({
 			ID: s.id,
 			Plan: s.planName ?? `—`,
 			Customer: s.customerName ? `${s.customerName} (#${s.customerId})` : `#${s.customerId}`,
 			Status: s.status,
-			"Period Start": dateOnly(s.currentPeriodStart),
-			"Period End": dateOnly(s.currentPeriodEnd),
-			Created: dateOnly(s.created),
+			"Period Start": s.currentPeriodStart ?? `—`,
+			"Period End": s.currentPeriodEnd ?? `—`,
+			Created: s.created ?? `—`,
 		}))
 
 	const loadData = async () => {
@@ -50,7 +47,7 @@
 			const data = await app.Commerce.Subscriptions.list(query)
 			subscriptions = createTableData(data)
 		} catch {
-			app.UI.Notify.error(`Failed to load subscriptions`)
+			app.UI.Notify.error(`Failed to load subscriptions`, `Subscriptions`)
 		} finally {
 			loading = false
 			filtering = false
@@ -79,13 +76,6 @@
 		filterStatus
 		applyFilters()
 	}
-
-	const resetFilters = () => {
-		searchQuery = ``
-		filterStatus = ``
-	}
-
-	$: activeFilters = searchQuery || filterStatus
 </script>
 
 <div class="page page-normal">
@@ -101,14 +91,6 @@
 		<div class="filter-field">
 			<Select label="Status" bind:value={filterStatus} options={statusOptions} />
 		</div>
-		{#if activeFilters}
-			<div class="filter-field filter-reset">
-				<Button variant="secondary" on:click={resetFilters}>
-					<i class="fa-light fa-xmark"></i>
-					<span>Reset</span>
-				</Button>
-			</div>
-		{/if}
 	</div>
 
 	{#if loading}
@@ -160,17 +142,6 @@
 
 	.filter-field {
 		min-width: 140px;
-	}
-
-	.filter-reset {
-		display: flex;
-		align-items: flex-end;
-		min-width: auto;
-		padding-bottom: 2px;
-
-		i {
-			margin-right: calc(var(--gutter) * 0.5);
-		}
 	}
 
 	.table-wrapper {

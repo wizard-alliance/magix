@@ -13,6 +13,7 @@
 	export let pagination: number = 0
 	export let totalRows: number = 0
 	export let colActions: { name: string; icon: string; event: string }[] = []
+	export let onRowClick: ((row: Record<string, any>, index: number) => void) | null = null
 
 	const dispatch = createEventDispatcher<{
 		pageChange: { page: number; limit: number }
@@ -164,8 +165,17 @@
 
 			<!-- Rows -->
 			{#each displayRows as row, rowIndex}
-				<!-- svelte-ignore a11y_no_static_element_interactions -->
-				<div class="table-row" class:active={actionOpen === rowIndex || (ctxOpen && ctxRowIndex === rowIndex)} on:contextmenu={(e) => onRowContext(e, row, rowIndex)}>
+				<!-- svelte-ignore a11y_no_static_element_interactions a11y_click_events_have_key_events -->
+				<div
+					class="table-row"
+					class:clickable={!!onRowClick}
+					class:active={actionOpen === rowIndex || (ctxOpen && ctxRowIndex === rowIndex)}
+					on:contextmenu={(e) => onRowContext(e, row, rowIndex)}
+					on:click={(e) => {
+						if ((e.target as HTMLElement).closest(`button, a, .action-wrapper`)) return
+						onRowClick?.(row, rowIndex)
+					}}
+				>
 					{#each columns as col, i}
 						{#if col === `Actions`}
 							<div
@@ -359,6 +369,10 @@
 		display: grid;
 		grid-column: 1 / -1;
 		grid-template-columns: subgrid;
+
+		&.clickable .table-col-value {
+			cursor: pointer;
+		}
 
 		&:hover .table-col-value,
 		&.active .table-col-value {

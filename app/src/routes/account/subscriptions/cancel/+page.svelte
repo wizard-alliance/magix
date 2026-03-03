@@ -19,7 +19,7 @@
 			const customer = await app.Commerce.Customer.get()
 			sub = customer?.subscriptions?.find((s) => s.id === subId) ?? null
 		} catch {
-			app.UI.Notify.error(`Failed to load subscription`)
+			app.UI.Notify.error(`Failed to load subscription`, `Subscription`)
 		}
 		loading = false
 	})
@@ -29,10 +29,10 @@
 		cancelling = true
 		try {
 			await app.Commerce.Subscriptions.cancel(sub.id)
-			app.UI.Notify.success(`Subscription cancelled`)
+			app.UI.Notify.success(`Subscription cancelled`, `Subscription`)
 			goto(`/account/subscriptions`)
 		} catch (err) {
-			app.UI.Notify.error(`Failed: ${app.Helpers.errMsg(err)}`)
+			app.UI.Notify.error(app.Helpers.errMsg(err), `Subscription`)
 			cancelling = false
 		}
 	}

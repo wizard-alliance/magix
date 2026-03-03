@@ -29,7 +29,7 @@ export class LemonSqueezyProvider {
 	private get storeId() { return api.Config(`LEMON_SQUEEZY_STORE_ID`) }
 	private get webhookSecret() { return api.Config(`LEMON_SQUEEZY_WEBHOOK_SECRET`) }
 
-	private constructor() {
+	constructor() {
 		if(!this.enabled) {
 			api.Log(`LemonSqueezy provider is not enabled`, `LemonSqueezy`, `warning`)
 		}
@@ -205,9 +205,50 @@ export class LemonSqueezyProvider {
 		return result.data
 	}
 
+	async getOrder(orderId: string | number) {
+		const result = await this.request('GET', `/orders/${orderId}`)
+		return result.data
+	}
+
 	async getOrders() {
 		const result = await this.request('GET', `/orders`)
 		return result.data
+	}
+
+	async getSubscriptionInvoice(invoiceId: string | number) {
+		const result = await this.request('GET', `/subscription-invoices/${invoiceId}`)
+		return result.data
+	}
+
+	/**
+	 * Call LS generate-invoice API — returns a signed temporary PDF download URL.
+	 * Params are sent as query string per LS docs.
+	 */
+	async generateInvoice(providerOrderId: string | number, params: {
+		name: string
+		address: string
+		city: string
+		state?: string
+		zip_code: string
+		country: string
+		notes?: string
+		locale?: string
+	}): Promise<string> {
+		if (!this.enabled) throw new Error(`LemonSqueezy is not enabled`)
+		const qs = new URLSearchParams()
+		for (const [k, v] of Object.entries(params)) {
+			if (v != null && v !== ``) qs.set(k, v)
+		}
+		const url = `${LS_API_BASE}/orders/${providerOrderId}/generate-invoice?${qs.toString()}`
+		const res = await fetch(url, { method: `POST`, headers: this.headers() })
+		if (!res.ok) {
+			const err = await res.text()
+			throw new Error(`LS generate-invoice failed: ${res.status} ${err}`)
+		}
+		const json = await res.json()
+		const downloadUrl = json?.meta?.urls?.download_invoice
+		if (!downloadUrl) throw new Error(`LS generate-invoice returned no download URL`)
+		return downloadUrl
 	}
 
 	async getCustomers() {
@@ -407,9 +448,9 @@ export class LemonSqueezyProvider {
 								await api.Billing.Invoices.set({
 									order_id: orderId,
 									customer_id: customer.id,
-									billing_info_snapshot: JSON.stringify(customer.billingAddress ?? {}),
+							billing_customers_snapshot: JSON.stringify(customer.billingAddress ?? {}),
 									billing_order_snapshot: JSON.stringify({ amount: orderData.amount, currency: orderData.currency, status: orderData.status }),
-									pdf_url: a.urls?.receipt ?? null,
+									pdf_url: null,
 								})
 							} catch { /* invoice creation is best-effort */ }
 						}
@@ -520,9 +561,9 @@ export class LemonSqueezyProvider {
 					await api.Billing.Invoices.set({
 						order_id: orderId,
 						customer_id: sub.customerId,
-						billing_info_snapshot: JSON.stringify({}),
+					billing_customers_snapshot: JSON.stringify({}),
 						billing_order_snapshot: JSON.stringify({ amount: a.total ?? 0, currency: a.currency || `USD`, status: a.status }),
-						pdf_url: a.urls?.invoice_url ?? null,
+						pdf_url: null,
 					})
 					stats.created++
 				} catch (e: any) {

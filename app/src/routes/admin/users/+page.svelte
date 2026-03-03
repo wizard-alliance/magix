@@ -7,7 +7,6 @@
 	import AdvancedTable from "$components/modules/AdvancedTable.svelte"
 	import SearchInput from "$components/fields/searchInput.svelte"
 	import Select from "$components/fields/select.svelte"
-	import Button from "$components/fields/button.svelte"
 
 	let usersData: UserFull[] = []
 	let loading = true
@@ -47,7 +46,7 @@
 			usersData = await app.Admin.Users.list(query)
 			users = createUserTableData(usersData)
 		} catch (err) {
-			app.UI.Notify.error(`Failed to load users`)
+			app.UI.Notify.error(`Failed to load users`, `Users`)
 		} finally {
 			loading = false
 			filtering = false
@@ -85,15 +84,6 @@
 		applyFilters()
 	}
 
-	const resetFilters = () => {
-		searchQuery = ``
-		filterPermission = ``
-		filterDisabled = ``
-		filterActive = ``
-	}
-
-	$: activeFilters = searchQuery || filterPermission || filterDisabled || filterActive
-
 	const createUserTableData = (users: UserFull[]) => {
 		let tableData: any[] = []
 
@@ -118,8 +108,8 @@
 	const handleAction = (e: CustomEvent<{ event: string; row: Record<string, any>; index: number }>) => {
 		const { event, row } = e.detail
 		if (event === `edit`) goto(`/admin/users/${row.ID}`)
-		if (event === `view`) app.UI.Notify.info(`View user ${row.Name || row.ID}`)
-		if (event === `delete`) app.UI.Notify.warning(`Delete user ${row.Name || row.ID}`)
+		if (event === `view`) app.UI.Notify.info(`View user ${row.Name || row.ID}`, `Users`)
+		if (event === `delete`) app.UI.Notify.warning(`Delete user ${row.Name || row.ID}`, `Users`)
 	}
 </script>
 
@@ -142,14 +132,6 @@
 		<div class="filter-field">
 			<Select label="Active" bind:value={filterActive} options={activeOptions} />
 		</div>
-		{#if activeFilters}
-			<div class="filter-field filter-reset">
-				<Button variant="secondary" on:click={resetFilters}>
-					<i class="fa-light fa-xmark"></i>
-					<span>Reset</span>
-				</Button>
-			</div>
-		{/if}
 	</div>
 
 	{#if loading}
@@ -208,17 +190,6 @@
 
 	.filter-field {
 		min-width: 140px;
-	}
-
-	.filter-reset {
-		display: flex;
-		align-items: flex-end;
-		min-width: auto;
-		padding-bottom: 2px;
-
-		i {
-			margin-right: calc(var(--gutter) * 0.5);
-		}
 	}
 
 	.table-wrapper {

@@ -43,7 +43,7 @@
 			items = data.filter((s) => !hiddenKeys.includes(s.key)).map((s) => ({ key: s.key, value: s.value, autoload: !!s.autoload, _boolValue: s.value === `1` }))
 			originalItems = structuredClone(items)
 		} catch (err) {
-			app.UI.Notify.error(`Failed to load settings`)
+			app.UI.Notify.error(`Failed to load settings`, `Configuration`)
 		} finally {
 			loading = false
 		}
@@ -61,7 +61,7 @@
 		// Validate: no duplicate keys
 		const keys = validItems.map((i) => i.key.trim())
 		if (new Set(keys).size !== keys.length) {
-			app.UI.Notify.error(`Duplicate keys are not allowed`)
+			app.UI.Notify.error(`Duplicate keys are not allowed`, `Validation`)
 			return
 		}
 
@@ -106,7 +106,7 @@
 			// Reload to pick up new settings across all components
 			setTimeout(() => location.reload(), 500)
 		} catch (err) {
-			app.UI.Notify.error(`Failed to save settings`)
+			app.UI.Notify.error(`Failed to save settings`, `Configuration`)
 		} finally {
 			saving = false
 		}

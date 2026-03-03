@@ -22,7 +22,7 @@
 		try {
 			linked = await app.Auth.listVendors()
 		} catch (err) {
-			app.UI.Notify.error(`Failed to load connections: ${app.Helpers.errMsg(err)}`)
+			app.UI.Notify.error(`Failed to load connections: ${app.Helpers.errMsg(err)}`, `Connections`)
 		}
 	}
 
@@ -44,9 +44,9 @@
 
 		try {
 			await app.Auth.connectVendor(vendor, connectToken)
-			app.UI.Notify.success(`${vendor} connected successfully`)
+			app.UI.Notify.success(`${vendor} connected successfully`, `Connected`)
 		} catch (err) {
-			app.UI.Notify.error(`Failed to connect ${vendor}: ${app.Helpers.errMsg(err)}`)
+			app.UI.Notify.error(`Failed to connect ${vendor}: ${app.Helpers.errMsg(err)}`, `Connection`)
 		} finally {
 			connecting = false
 		}
@@ -79,10 +79,10 @@
 			disconnecting = vendor
 			try {
 				await app.Auth.disconnectVendor(vendor, enteredPassword)
-				app.UI.Notify.success(`${vendor} disconnected`)
+				app.UI.Notify.success(`${vendor} disconnected`, `Disconnected`)
 				await fetchVendors()
 			} catch (err) {
-				app.UI.Notify.error(`Failed to disconnect: ${app.Helpers.errMsg(err)}`)
+				app.UI.Notify.error(app.Helpers.errMsg(err), `Connection`)
 			} finally {
 				disconnecting = null
 			}
@@ -95,10 +95,10 @@
 		disconnecting = vendor
 		try {
 			await app.Auth.disconnectVendor(vendor)
-			app.UI.Notify.success(`${vendor} disconnected`)
+			app.UI.Notify.success(`${vendor} disconnected`, `Disconnected`)
 			await fetchVendors()
 		} catch (err) {
-			app.UI.Notify.error(`Failed to disconnect: ${app.Helpers.errMsg(err)}`)
+			app.UI.Notify.error(app.Helpers.errMsg(err), `Connection`)
 		} finally {
 			disconnecting = null
 		}

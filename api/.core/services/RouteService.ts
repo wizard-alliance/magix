@@ -282,9 +282,10 @@ export class RouteController {
 			api.Express[methodKey](route.path, ...middlewares, async (req: Request, res: Response) => {
 				const $ = this.getParams(req, route.meta?.tableName || undefined)
 				try {
-					this.return((await route.callback($, req, res)), res, req, $)
+					const result = await route.callback($, req, res)
+					if (!res.headersSent) this.return(result, res, req, $)
 				} catch (err) {
-					this.error(err, res, req, $)
+					if (!res.headersSent) this.error(err, res, req, $)
 				}
 			})
 

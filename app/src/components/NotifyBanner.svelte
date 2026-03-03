@@ -27,7 +27,7 @@
 		padding: calc(var(--gutter, 1rem) * 2) calc(var(--gutter, 1rem) * 2);
 		border-radius: 8px;
 		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-		z-index: 10000;
+		z-index: 999999;
 		display: flex;
 		flex-direction: column;
 		gap: calc(var(--gutter) * 1);

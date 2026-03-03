@@ -26,7 +26,7 @@ export type BillingInvoiceDBRow = {
 	id?: number
 	order_id: number
 	customer_id: number
-	billing_info_snapshot: string | null
+	billing_customers_snapshot: string | null
 	billing_order_snapshot: string | null
 	snapshot_version: string
 	pdf_url: string | null
@@ -57,6 +57,7 @@ export type BillingProductFeatureDBRow = {
 	product_id: number
 	feature_name: string
 	description: string | null
+	sort_order: number
 	created: string | null
 }
 
@@ -326,7 +327,7 @@ export const schemaColumns = {
 		id: 'number',
 		order_id: 'number',
 		customer_id: 'number',
-		billing_info_snapshot: 'string',
+		billing_customers_snapshot: 'string',
 		billing_order_snapshot: 'string',
 		snapshot_version: 'string',
 		pdf_url: 'string',
@@ -356,6 +357,7 @@ export const schemaColumns = {
 		product_id: 'number',
 		feature_name: 'string',
 		description: 'string',
+		sort_order: 'number',
 		created: 'date'
 	},
 

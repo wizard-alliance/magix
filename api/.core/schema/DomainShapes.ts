@@ -104,7 +104,7 @@ export type BillingInvoice = {
 	id: number
 	orderId: number
 	customerId: number
-	billingInfoSnapshot: Record<string, any> | null
+	billingCustomersSnapshot: Record<string, any> | null
 	billingOrderSnapshot: Record<string, any> | null
 	snapshotVersion: string
 	pdfUrl: string | null
@@ -151,6 +151,7 @@ export type BillingProductFeature = {
 	productId: number
 	featureName: string
 	description: string | null
+	sortOrder: number
 	created: string | null
 }
 

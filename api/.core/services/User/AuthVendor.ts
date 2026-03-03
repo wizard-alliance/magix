@@ -107,11 +107,21 @@ export class AuthVendor {
 				? payload.email
 				: `${normalizedId}@${this.config.name}.local`
 
+		// Discord: prefer global_name (display name) > displayName > username
+		const displayName = payload?.global_name ?? payload?.displayName ?? payload?.username ?? this.config.name
+
+		// Discord avatar CDN URL
+		let avatarUrl: string | undefined
+		if (this.config.name === "discord" && payload?.id && payload?.avatar) {
+			avatarUrl = `https://cdn.discordapp.com/avatars/${payload.id}/${payload.avatar}.png?size=512`
+		}
+
 		return {
 			id: normalizedId,
 			email,
 			username: normalizedName.toLowerCase(),
-			displayName: payload?.displayName ?? payload?.username ?? this.config.name,
+			displayName,
+			avatarUrl,
 		}
 	}
 }

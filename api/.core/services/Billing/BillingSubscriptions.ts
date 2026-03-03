@@ -48,7 +48,10 @@ export class BillingSubscriptions {
 			)
 		}
 
-		query = api.Utils.applyWhere(query, params)
+		const qualified = Object.fromEntries(
+			Object.entries(params).map(([k, v]) => [`billing_subscriptions.${k}`, v])
+		)
+		query = api.Utils.applyWhere(query, qualified)
 		query = api.Utils.applyOptions(query, options)
 		const rows = await query.execute()
 		return rows.map((row) => ({

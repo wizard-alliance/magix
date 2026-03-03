@@ -72,10 +72,10 @@
 		if (!confirmed) return
 		try {
 			await app.Auth.logoutAllDevices()
-			app.UI.Notify.success("All sessions ended")
+			app.UI.Notify.success("All sessions ended", "Security")
 			goto("/auth/login")
 		} catch (error) {
-			app.UI.Notify.error(`Error: ${app.Helpers.errMsg(error)}`)
+			app.UI.Notify.error(app.Helpers.errMsg(error), "Security")
 		}
 	}
 
@@ -88,14 +88,14 @@
 			await app.Auth.logoutDevice(device.id)
 			if (device.current) {
 				app.Auth.logoutAllDevices()
-				app.UI.Notify.success("Session ended")
+				app.UI.Notify.success("Session ended", "Security")
 				goto("/auth/login")
 			} else {
-				app.UI.Notify.success("Device logged out")
+				app.UI.Notify.success("Device logged out", "Security")
 				await loadDevices()
 			}
 		} catch (error) {
-			app.UI.Notify.error(`Error: ${app.Helpers.errMsg(error)}`)
+			app.UI.Notify.error(app.Helpers.errMsg(error), "Security")
 		}
 	}
 
@@ -106,10 +106,10 @@
 		if (!name) return
 		try {
 			await app.Auth.renameDevice(device.id, name)
-			app.UI.Notify.success("Device renamed")
+			app.UI.Notify.success("Device renamed", "Device")
 			await loadDevices()
 		} catch (error) {
-			app.UI.Notify.error(`Error: ${app.Helpers.errMsg(error)}`)
+			app.UI.Notify.error(app.Helpers.errMsg(error), "Device")
 		}
 	}
 
@@ -124,14 +124,14 @@
 			await app.Auth.deleteDevice(device.id)
 			if (device.current) {
 				app.Auth.logoutAllDevices()
-				app.UI.Notify.success("Device deleted")
+				app.UI.Notify.success("Device deleted", "Security")
 				goto("/auth/login")
 			} else {
-				app.UI.Notify.success("Device deleted")
+				app.UI.Notify.success("Device deleted", "Security")
 				await loadDevices()
 			}
 		} catch (error) {
-			app.UI.Notify.error(`Error: ${app.Helpers.errMsg(error)}`)
+			app.UI.Notify.error(app.Helpers.errMsg(error), "Security")
 		}
 	}
 </script>

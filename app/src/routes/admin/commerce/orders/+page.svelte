@@ -6,7 +6,6 @@
 	import AdvancedTable from "$components/modules/AdvancedTable.svelte"
 	import SearchInput from "$components/fields/searchInput.svelte"
 	import Select from "$components/fields/select.svelte"
-	import Button from "$components/fields/button.svelte"
 
 	let loading = true
 	let filtering = false
@@ -38,18 +37,16 @@
 
 	let debounceTimer: ReturnType<typeof setTimeout>
 
-	const dateOnly = (v: string | null | undefined) => (v ? v.split(`T`)[0].split(` `)[0] : `—`)
-
 	const createTableData = (raw: BillingOrder[]) =>
 		raw.map((o) => ({
 			ID: o.id,
 			Customer: o.customerName ? `${o.customerName}` : o.customerEmail ? o.customerEmail : `#${o.customerId}`,
+			Plan: o.planName ?? `—`,
 			Type: o.type,
 			Amount: app.Format.Currency.format(o.amount, o.currency),
 			Status: o.status,
-			"Payment Method": o.paymentMethod ?? `—`,
-			"Paid At": dateOnly(o.paidAt),
-			Created: dateOnly(o.created),
+			"Payment Date": o.paidAt ?? `—`,
+			Created: o.created ?? `—`,
 		}))
 
 	const loadData = async () => {
@@ -62,7 +59,7 @@
 			const data = await app.Commerce.Orders.list(query)
 			orders = createTableData(data)
 		} catch {
-			app.UI.Notify.error(`Failed to load orders`)
+			app.UI.Notify.error(`Failed to load orders`, `Orders`)
 		} finally {
 			loading = false
 			filtering = false
@@ -92,14 +89,6 @@
 		filterType
 		applyFilters()
 	}
-
-	const resetFilters = () => {
-		searchQuery = ``
-		filterStatus = ``
-		filterType = ``
-	}
-
-	$: activeFilters = searchQuery || filterStatus || filterType
 </script>
 
 <div class="page page-normal">
@@ -118,14 +107,6 @@
 		<div class="filter-field">
 			<Select label="Type" bind:value={filterType} options={typeOptions} />
 		</div>
-		{#if activeFilters}
-			<div class="filter-field filter-reset">
-				<Button variant="secondary" on:click={resetFilters}>
-					<i class="fa-light fa-xmark"></i>
-					<span>Reset</span>
-				</Button>
-			</div>
-		{/if}
 	</div>
 
 	{#if loading}
@@ -177,17 +158,6 @@
 
 	.filter-field {
 		min-width: 140px;
-	}
-
-	.filter-reset {
-		display: flex;
-		align-items: flex-end;
-		min-width: auto;
-		padding-bottom: 2px;
-
-		i {
-			margin-right: calc(var(--gutter) * 0.5);
-		}
 	}
 
 	.table-wrapper {

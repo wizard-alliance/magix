@@ -81,9 +81,9 @@
 					},
 				},
 			})
-			app.UI.Notify.success(`Event fired: ${eventName}`)
+			app.UI.Notify.success(`Event fired: ${eventName}`, `Webhook`)
 		} catch (err) {
-			app.UI.Notify.error(`Event failed: ${app.Helpers.errMsg(err)}`)
+			app.UI.Notify.error(app.Helpers.errMsg(err), `Webhook`)
 		}
 		simLoading = false
 	}
@@ -104,9 +104,9 @@
 		syncing = true
 		try {
 			await fn()
-			app.UI.Notify.success(`${label} synced`)
+			app.UI.Notify.success(`${label} synced`, `Sync`)
 		} catch (err) {
-			app.UI.Notify.error(`Sync failed: ${app.Helpers.errMsg(err)}`)
+			app.UI.Notify.error(app.Helpers.errMsg(err), `Sync`)
 		}
 		syncing = false
 	}
@@ -124,7 +124,7 @@
 		try {
 			storeInfo = await app.Commerce.Admin.LS.getStore()
 		} catch {
-			app.UI.Notify.error(`Failed to load store info`)
+			app.UI.Notify.error(`Failed to load store info`, `Store`)
 		}
 		storeLoading = false
 	}

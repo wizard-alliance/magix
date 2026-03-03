@@ -28,7 +28,11 @@ export class Notify {
 
 	create(params: createPayload) {
 		const container = this.getContainer()
-		app.Helpers.Success(params.message, this.prefix)
+		const logMethod = params.type === `error` ? app.Helpers.Error
+			: params.type === `warning` ? app.Helpers.Warn
+			: params.type === `success` ? app.Helpers.Success
+			: app.Helpers.Log
+		logMethod(params.message, this.prefix)
 
 		container.innerHTML = ''
 

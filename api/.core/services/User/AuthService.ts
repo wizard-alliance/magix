@@ -180,11 +180,16 @@ export class AuthService {
 		}
 
 		// 3. Create new user + auto-activate + link
+		const nameParts = profile.displayName.trim().split(/\s+/)
+		const firstName = nameParts[0] || profile.displayName
+		const lastName = nameParts.length > 1 ? nameParts.slice(1).join(` `) : undefined
+
 		const result = await api.User.Repo.create({
 			email: profile.email,
 			username: profile.username,
 			password: randomUUID(),
-			firstName: profile.displayName,
+			firstName,
+			lastName,
 		})
 		if ("error" in result) return result
 
@@ -193,6 +198,27 @@ export class AuthService {
 			.set({ activated: 1, activation_token: null, activation_token_expiration: null })
 			.where("id", "=", result.id)
 			.execute()
+
+		// Download and upload avatar from vendor if available
+		if (profile.avatarUrl) {
+			try {
+				const avatarRes = await fetch(profile.avatarUrl)
+				if (avatarRes.ok) {
+					const buffer = Buffer.from(await avatarRes.arrayBuffer())
+					const record = await api.File.upload(buffer, {
+						category: `avatar`,
+						userId: result.id,
+						mimetype: `image/png`,
+					})
+					await this.db.updateTable(`users`)
+						.set({ avatar_url: record.variants.original.path } as any)
+						.where(`id`, `=`, result.id)
+						.execute()
+				}
+			} catch {
+				// Avatar download failed — not critical, skip
+			}
+		}
 
 		const user = await api.User.Repo.get(result.id)
 		if (!user) return { error: "User not found after creation", code: 404 }

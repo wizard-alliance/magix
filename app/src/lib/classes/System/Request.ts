@@ -37,6 +37,9 @@ export class RequestClient {
 		if (options.headers) req = req.set(options.headers)
 		if (options.body) req = req.send(options.body)
 		const response = await req.accept('application/json')
+		if (response.body?.error === true) {
+			throw new Error(response.body.errorMessage || `An unexpected error occurred`)
+		}
 		return (response.body?.data ?? response.body) as T
 	}
 
@@ -81,6 +84,49 @@ export class RequestClient {
 
 	delete<T = any>(path: string, options: InternalOptions = {}) {
 		return this.call<T>('delete', path, options)
+	}
+
+	/**
+	 * Download a binary file from the API and trigger a browser save dialog
+	 */
+	async download(path: string, filename?: string, options: InternalOptions = {}): Promise<void> {
+		const url = `${this.apiBase}${path.startsWith('/') ? path : `/${path}`}`
+
+		const doDownload = async () => {
+			let req = superagent.get(url).responseType('blob')
+			if (options.query) req = req.query(options.query)
+			const token = this.resolveToken()
+			if (token) req = req.set('Authorization', `Bearer ${token}`)
+			if (options.headers) req = req.set(options.headers)
+			const response = await req
+
+			const blob = response.body instanceof Blob
+				? response.body
+				: new Blob([response.body], { type: response.headers['content-type'] || 'application/octet-stream' })
+
+			const resolvedName = filename
+				|| response.headers['content-disposition']?.match(/filename="?(.+?)"?$/)?.[1]
+				|| 'download'
+
+			const a = document.createElement('a')
+			a.href = URL.createObjectURL(blob)
+			a.download = resolvedName
+			document.body.appendChild(a)
+			a.click()
+			a.remove()
+			URL.revokeObjectURL(a.href)
+		}
+
+		try {
+			await doDownload()
+		} catch (error: any) {
+			const status = error?.status ?? error?.response?.status
+			if (status === 401) {
+				const refreshed = await this.refreshSession()
+				if (refreshed) return await doDownload()
+			}
+			throw new Error(this.extractErrorMessage(error))
+		}
 	}
 
 	/**

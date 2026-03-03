@@ -146,8 +146,8 @@ export class CacheClient {
 			this.storageSet(VERSION_KEY, remote.version)
 
 			return { version: remote.version, lastCleared: remote.lastCleared, wasCleared }
-		} catch (error) {
-			console.warn(`${this.prefix}: failed to check cache version`, error)
+		} catch {
+			// Endpoint may not exist yet — silently use defaults
 			return { version: '0', lastCleared: null, wasCleared: false }
 		}
 	}

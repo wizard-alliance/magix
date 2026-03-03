@@ -54,16 +54,16 @@
 
 	onMount(async () => {
 		if (!productId) {
-			app.UI.Notify.error(`No product ID provided`)
+			app.UI.Notify.error(`No product ID provided`, `Product`)
 			loading = false
 			return
 		}
 		try {
 			product = await app.Commerce.Products.get({ id: productId })
 			if (product) populate(product)
-			else app.UI.Notify.error(`Product not found`)
+			else app.UI.Notify.error(`Product not found`, `Product`)
 		} catch {
-			app.UI.Notify.error(`Failed to load product`)
+			app.UI.Notify.error(`Failed to load product`, `Product`)
 		}
 		loading = false
 	})
@@ -80,9 +80,9 @@
 					isActive,
 				},
 			)
-			app.UI.Notify.success(`Product updated`)
+			app.UI.Notify.success(`Product updated`, `Saved`)
 		} catch (err) {
-			app.UI.Notify.error(`Save failed: ${app.Helpers.errMsg(err)}`)
+			app.UI.Notify.error(app.Helpers.errMsg(err), `Product`)
 		}
 		saving = false
 	}

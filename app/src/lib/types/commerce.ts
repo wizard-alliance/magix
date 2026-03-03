@@ -39,6 +39,7 @@ export type BillingOrder = {
 	idempotencyKey: string | null
 	customerName?: string
 	customerEmail?: string
+	planName?: string
 }
 
 export type BillingSubscription = {
@@ -81,6 +82,7 @@ export type BillingProductFeature = {
 	productId: number
 	featureName: string
 	description: string | null
+	sortOrder: number
 	created: string | null
 }
 
@@ -92,11 +94,13 @@ export type BillingInvoice = {
 	id: number
 	orderId: number
 	customerId: number
-	billingInfoSnapshot: Record<string, any> | null
+	billingCustomersSnapshot: Record<string, any> | null
 	billingOrderSnapshot: Record<string, any> | null
 	snapshotVersion: string
 	pdfUrl: string | null
 	created: string | null
+	customerName?: string
+	customerEmail?: string
 }
 
 export type BillingCustomerFull = BillingCustomer & {

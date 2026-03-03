@@ -28,7 +28,7 @@
 			const data = await app.Commerce.Products.list()
 			products = createTableData(data)
 		} catch {
-			app.UI.Notify.error(`Failed to load products`)
+			app.UI.Notify.error(`Failed to load products`, `Products`)
 		}
 	}
 
@@ -36,10 +36,10 @@
 		syncing = true
 		try {
 			await app.Commerce.Admin.LS.syncProducts()
-			app.UI.Notify.success(`Products synced from LemonSqueezy`)
+			app.UI.Notify.success(`Products synced from LemonSqueezy`, `Sync`)
 			await loadProducts()
 		} catch (err) {
-			app.UI.Notify.error(`Sync failed: ${app.Helpers.errMsg(err)}`)
+			app.UI.Notify.error(app.Helpers.errMsg(err), `Sync`)
 		}
 		syncing = false
 	}
