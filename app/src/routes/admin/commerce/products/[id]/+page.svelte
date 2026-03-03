@@ -2,7 +2,7 @@
 	import { app } from "$lib/app"
 	import { page } from "$app/stores"
 	import { onMount } from "svelte"
-	import type { BillingProductFull } from "$lib/types/commerce"
+	import type { BillingProductFull, BillingProductMeta } from "$lib/types/commerce"
 	import Spinner from "$components/modules/spinner.svelte"
 	import Button from "$components/fields/button.svelte"
 	import Input from "$components/fields/input.svelte"
@@ -27,6 +27,13 @@
 	let description = ``
 	let isActive = false
 
+	// Meta
+	let allowMultiple = false
+	let metaEntries: BillingProductMeta[] = []
+	let newMetaKey = ``
+	let newMetaValue = ``
+	let savingMeta = false
+
 	const typeOptions = [
 		{ label: `Subscription`, value: `subscription` },
 		{ label: `One-time`, value: `one_time` },
@@ -50,6 +57,9 @@
 		sortOrder = String(p.sortOrder)
 		description = p.description ?? ``
 		isActive = p.isActive
+		metaEntries = p.meta ?? []
+		const amMeta = metaEntries.find((m) => m.key === `allow_multiple`)
+		allowMultiple = amMeta?.value === `true`
 	}
 
 	onMount(async () => {
@@ -80,11 +90,49 @@
 					isActive,
 				},
 			)
+			// Save allow_multiple meta
+			await app.Commerce.Products.setMeta({
+				productId: product.id,
+				key: `allow_multiple`,
+				value: String(allowMultiple),
+			})
 			app.UI.Notify.success(`Product updated`, `Saved`)
 		} catch (err) {
 			app.UI.Notify.error(app.Helpers.errMsg(err), `Product`)
 		}
 		saving = false
+	}
+
+	const addMeta = async () => {
+		if (!product || !newMetaKey.trim()) return
+		savingMeta = true
+		try {
+			await app.Commerce.Products.setMeta({
+				productId: product.id,
+				key: newMetaKey.trim(),
+				value: newMetaValue || null,
+			})
+			product = await app.Commerce.Products.get({ id: product.id })
+			if (product) populate(product)
+			newMetaKey = ``
+			newMetaValue = ``
+			app.UI.Notify.success(`Meta added`, `Product`)
+		} catch (err) {
+			app.UI.Notify.error(app.Helpers.errMsg(err), `Product`)
+		}
+		savingMeta = false
+	}
+
+	const removeMeta = async (meta: BillingProductMeta) => {
+		if (!product) return
+		try {
+			await app.Commerce.Products.deleteMeta(meta.id)
+			product = await app.Commerce.Products.get({ id: product.id })
+			if (product) populate(product)
+			app.UI.Notify.success(`Meta removed`, `Product`)
+		} catch (err) {
+			app.UI.Notify.error(app.Helpers.errMsg(err), `Product`)
+		}
 	}
 </script>
 
@@ -160,6 +208,12 @@
 					<Toggle label="Active" labelPosition="right" bind:checked={isActive} />
 				</div>
 			</div>
+			<div class="row margin-bottom-2">
+				<div class="col-xxs-12">
+					<Toggle label="Allow multiple purchases" labelPosition="right" bind:checked={allowMultiple} />
+					<p class="muted-color text-small margin-top-1">When disabled, users cannot purchase this product more than once.</p>
+				</div>
+			</div>
 		</div>
 
 		{#if product.features?.length}
@@ -177,6 +231,32 @@
 				</div>
 			</div>
 		{/if}
+
+		<div class="section margin-bottom-4">
+			<h3 class="subtitle">Meta ({metaEntries.filter((m) => m.key !== `allow_multiple`).length})</h3>
+			{#each metaEntries.filter((m) => m.key !== `allow_multiple`) as meta (meta.id)}
+				<div class="meta-row">
+					<span class="meta-key">{meta.key}</span>
+					<span class="meta-value">{meta.value ?? `—`}</span>
+					<button class="meta-remove" on:click={() => removeMeta(meta)} title="Remove">
+						<i class="fa-light fa-xmark"></i>
+					</button>
+				</div>
+			{/each}
+			<div class="row margin-top-2" style="align-items: flex-end; gap: var(--gutter);">
+				<div class="col-xxs-12 col-md-4">
+					<Input label="Key" bind:value={newMetaKey} placeholder="meta_key" />
+				</div>
+				<div class="col-xxs-12 col-md-4">
+					<Input label="Value" bind:value={newMetaValue} placeholder="value" />
+				</div>
+				<div class="col-xxs-12 col-md-auto">
+					<Button on:click={addMeta} loading={savingMeta} disabled={savingMeta || !newMetaKey.trim()} variant="secondary" size="sm">
+						<i class="fa-light fa-plus"></i> Add
+					</Button>
+				</div>
+			</div>
+		</div>
 
 		<div class="section">
 			<Button on:click={save} loading={saving} disabled={saving}>
@@ -239,6 +319,41 @@
 			i {
 				color: var(--accent-color);
 				font-size: 0.7rem;
+			}
+		}
+	}
+
+	.meta-row {
+		display: flex;
+		align-items: center;
+		gap: calc(var(--gutter) * 1.5);
+		padding: calc(var(--gutter) * 0.75) 0;
+		border-bottom: var(--border);
+		font-size: var(--font-size-small);
+
+		.meta-key {
+			font-weight: 600;
+			min-width: 140px;
+		}
+
+		.meta-value {
+			flex: 1;
+			color: var(--muted-color);
+		}
+
+		.meta-remove {
+			background: none;
+			border: none;
+			color: var(--muted-color);
+			cursor: pointer;
+			padding: calc(var(--gutter) * 0.25);
+			font-size: var(--font-size-small);
+			opacity: 0.5;
+			transition: opacity 0.15s;
+
+			&:hover {
+				opacity: 1;
+				color: var(--danger-color);
 			}
 		}
 	}

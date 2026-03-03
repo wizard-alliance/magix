@@ -102,6 +102,21 @@ CREATE TABLE `billing_product_features` (
 ) ENGINE=InnoDB AUTO_INCREMENT=48 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Defines features included in subscription plans.';
 
 
+DROP TABLE IF EXISTS `billing_product_meta`;
+CREATE TABLE `billing_product_meta` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT 'Primary Key for billing_product_meta table',
+  `product_id` bigint NOT NULL COMMENT 'FK referencing billing_products(id)',
+  `key` varchar(255) NOT NULL COMMENT 'Meta key name',
+  `value` text COMMENT 'Meta value',
+  `created` datetime DEFAULT CURRENT_TIMESTAMP COMMENT 'Timestamp when the meta record was created',
+  `updated` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Timestamp when the meta record was last updated',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `unique_product_key` (`product_id`,`key`),
+  KEY `idx_billing_product_meta_product` (`product_id`),
+  CONSTRAINT `fk_billing_product_meta_product` FOREIGN KEY (`product_id`) REFERENCES `billing_products` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Key-value metadata for billing products.';
+
+
 DROP TABLE IF EXISTS `billing_products`;
 CREATE TABLE `billing_products` (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT 'Primary Key for billing_plans table',

@@ -1,5 +1,5 @@
-import type { BillingProductDBRow, BillingProductFeatureDBRow } from "../../schema/Database.js"
-import type { BillingProduct, BillingProductFeature, BillingProductFull } from "../../schema/DomainShapes.js"
+import type { BillingProductDBRow, BillingProductFeatureDBRow, BillingProductMetaDBRow } from "../../schema/Database.js"
+import type { BillingProduct, BillingProductFeature, BillingProductMeta, BillingProductFull } from "../../schema/DomainShapes.js"
 
 const toShape = (row: BillingProductDBRow): BillingProduct => ({
 	id: row.id!,
@@ -28,6 +28,15 @@ const toFeatureShape = (row: BillingProductFeatureDBRow): BillingProductFeature 
 	created: row.created,
 })
 
+const toMetaShape = (row: BillingProductMetaDBRow): BillingProductMeta => ({
+	id: row.id!,
+	productId: row.product_id,
+	key: row.key,
+	value: row.value,
+	created: row.created,
+	updated: row.updated,
+})
+
 export class BillingProducts {
 	private db = api.DB.connection
 
@@ -38,7 +47,8 @@ export class BillingProducts {
 		if (!row) return null
 		const product = toShape(row)
 		const features = await this.getFeatures({ product_id: product.id })
-		return { ...product, features }
+		const meta = await this.getMetaAll({ product_id: product.id })
+		return { ...product, features, meta }
 	}
 
 	async getMany(params: Partial<BillingProductDBRow> = {}, options = {}): Promise<BillingProductFull[]> {
@@ -55,7 +65,14 @@ export class BillingProducts {
 			list.push(f)
 			featureMap.set(f.productId, list)
 		}
-		return products.map(p => ({ ...p, features: featureMap.get(p.id) || [] }))
+		const allMeta = ids.length ? await this.getMetaAll() : []
+		const metaMap = new Map<number, BillingProductMeta[]>()
+		for (const m of allMeta) {
+			const list = metaMap.get(m.productId) || []
+			list.push(m)
+			metaMap.set(m.productId, list)
+		}
+		return products.map(p => ({ ...p, features: featureMap.get(p.id) || [], meta: metaMap.get(p.id) || [] }))
 	}
 
 	async set(params: Partial<BillingProductDBRow>) {
@@ -108,6 +125,47 @@ export class BillingProducts {
 
 	async deleteFeature(where: Partial<BillingProductFeatureDBRow>) {
 		let query = this.db.deleteFrom("billing_product_features")
+		query = api.Utils.applyWhere(query, where)
+		const result = await query.executeTakeFirst()
+		return { numDeletedRows: Number(result.numDeletedRows) }
+	}
+
+	// Product Meta
+	async getMeta(params: Partial<BillingProductMetaDBRow>): Promise<BillingProductMeta | null> {
+		let query = this.db.selectFrom("billing_product_meta").selectAll()
+		query = api.Utils.applyWhere(query, params)
+		const row = await query.executeTakeFirst()
+		return row ? toMetaShape(row) : null
+	}
+
+	async getMetaAll(params: Partial<BillingProductMetaDBRow> = {}, options = {}): Promise<BillingProductMeta[]> {
+		let query = this.db.selectFrom("billing_product_meta").selectAll()
+		query = api.Utils.applyWhere(query, params)
+		query = api.Utils.applyOptions(query, options)
+		query = query.orderBy('key', 'asc')
+		const rows = await query.execute()
+		return rows.map(toMetaShape)
+	}
+
+	async setMeta(params: { product_id: number; key: string; value: string | null }) {
+		const existing = await this.getMeta({ product_id: params.product_id, key: params.key })
+		if (existing) {
+			await this.updateMeta({ value: params.value }, { id: existing.id })
+			return { id: existing.id }
+		}
+		const result = await this.db.insertInto("billing_product_meta").values(params as any).executeTakeFirst()
+		return { id: result.insertId ? Number(result.insertId) : null }
+	}
+
+	async updateMeta(data: Partial<BillingProductMetaDBRow>, where: Partial<BillingProductMetaDBRow>) {
+		let query = this.db.updateTable("billing_product_meta").set(data)
+		query = api.Utils.applyWhere(query, where)
+		const result = await query.executeTakeFirst()
+		return { numUpdatedRows: Number(result.numUpdatedRows) }
+	}
+
+	async deleteMeta(where: Partial<BillingProductMetaDBRow>) {
+		let query = this.db.deleteFrom("billing_product_meta")
 		query = api.Utils.applyWhere(query, where)
 		const result = await query.executeTakeFirst()
 		return { numDeletedRows: Number(result.numDeletedRows) }

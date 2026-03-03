@@ -215,10 +215,17 @@ export class BillingEvents {
 		const customer = await this.findOrCreateCustomer(data, customData)
 		if (!customer) return
 
+		// Resolve plan_id: prefer customData, fall back to variant lookup
+		let planId = customData?.plan_id ? Number(customData.plan_id) : undefined
+		if (!planId && data.variant_id) {
+			const product = await api.Billing.Products.get({ provider_variant_id: String(data.variant_id) })
+			if (product) planId = product.id
+		}
+
 		try {
 			const result = await api.Billing.Subscriptions.set({
 				customer_id: customer.id,
-				plan_id: customData?.plan_id ? Number(customData.plan_id) : undefined,
+				plan_id: planId,
 				provider_subscription_id: String(data.id),
 				status: data.status,
 				current_period_start: this.toMySQLDate(data.created_at),

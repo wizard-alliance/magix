@@ -30,6 +30,13 @@ export class BillingRoute {
 		api.Router.set("PUT", `${this.route}/product/feature`, this.updateProductFeature, adminOpts)
 		api.Router.set("DELETE", `${this.route}/product/feature`, this.deleteProductFeature, adminOpts)
 
+		// Product Meta
+		api.Router.set("GET", `${this.route}/product/meta`, this.getProductMeta, adminOpts)
+		api.Router.set("GET", `${this.route}/product/metas`, this.getProductMetas, adminOpts)
+		api.Router.set("POST", `${this.route}/product/meta`, this.setProductMeta, adminOpts)
+		api.Router.set("PUT", `${this.route}/product/meta`, this.updateProductMeta, adminOpts)
+		api.Router.set("DELETE", `${this.route}/product/meta`, this.deleteProductMeta, adminOpts)
+
 		// Subscriptions
 		api.Router.set("GET", `${this.route}/subscription`, this.getSubscription, opts)
 		api.Router.set("GET", `${this.route}/subscriptions`, this.getSubscriptions, adminOpts)
@@ -278,6 +285,43 @@ export class BillingRoute {
 		return await api.Billing.Products.deleteFeature({ id })
 	}
 
+	// Product Meta
+	getProductMeta = async (_: any, req: Request) => {
+		const p = api.getParams(req)
+		const id = Number(p.id)
+		if (!id) return { code: 422, error: `Meta ID required` }
+		return await api.Billing.Products.getMeta({ id }) ?? { code: 404, error: `Meta not found` }
+	}
+
+	getProductMetas = async (_: any, req: Request) => {
+		const p = api.getParams(req)
+		const product_id = Number(p.product_id)
+		return await api.Billing.Products.getMetaAll(product_id ? { product_id } : {})
+	}
+
+	setProductMeta = async (_: any, req: Request) => {
+		const p = api.getParams(req)
+		const product_id = Number(p.product_id)
+		const key = p.key as string
+		if (!product_id || !key) return { code: 422, error: `product_id and key are required` }
+		return await api.Billing.Products.setMeta({ product_id, key, value: p.value ?? null })
+	}
+
+	updateProductMeta = async (_: any, req: Request) => {
+		const p = api.getParams(req)
+		const id = Number(p.id)
+		if (!id) return { code: 422, error: `Meta ID required` }
+		const { id: _id, ...data } = p
+		return await api.Billing.Products.updateMeta(data, { id })
+	}
+
+	deleteProductMeta = async (_: any, req: Request) => {
+		const p = api.getParams(req)
+		const id = Number(p.id)
+		if (!id) return { code: 422, error: `Meta ID required` }
+		return await api.Billing.Products.deleteMeta({ id })
+	}
+
 	// Subscriptions
 	getSubscription = async (_: any, req: Request) => {
 		const p = api.getParams(req)
@@ -305,7 +349,14 @@ export class BillingRoute {
 		if (!id) return { code: 422, error: `Subscription ID required` }
 		const sub = await api.Billing.Subscriptions.get({ id })
 		if (!sub) return { code: 404, error: `Subscription not found` }
-		if (!sub.providerSubscriptionId) return { code: 400, error: `No provider subscription linked` }
+
+		// Local-only subscription (no LS link) — update DB directly
+		if (!sub.providerSubscriptionId) {
+			const now = new Date().toISOString().slice(0, 19).replace(`T`, ` `)
+			await api.Billing.Subscriptions.update({ status: `cancelled`, canceled_at: now }, { id })
+			return { success: true }
+		}
+
 		try {
 			await api.Billing.Providers.LS.cancelSubscription(sub.providerSubscriptionId)
 			return { success: true }
@@ -320,7 +371,14 @@ export class BillingRoute {
 		if (!id) return { code: 422, error: `Subscription ID required` }
 		const sub = await api.Billing.Subscriptions.get({ id })
 		if (!sub) return { code: 404, error: `Subscription not found` }
-		if (!sub.providerSubscriptionId) return { code: 400, error: `No provider subscription linked` }
+
+		// Local-only subscription — update DB directly
+		if (!sub.providerSubscriptionId) {
+			const now = new Date().toISOString().slice(0, 19).replace(`T`, ` `)
+			await api.Billing.Subscriptions.update({ status: `paused`, paused_at: now }, { id })
+			return { success: true }
+		}
+
 		try {
 			await api.Billing.Providers.LS.pauseSubscription(sub.providerSubscriptionId)
 			return { success: true }
@@ -335,7 +393,13 @@ export class BillingRoute {
 		if (!id) return { code: 422, error: `Subscription ID required` }
 		const sub = await api.Billing.Subscriptions.get({ id })
 		if (!sub) return { code: 404, error: `Subscription not found` }
-		if (!sub.providerSubscriptionId) return { code: 400, error: `No provider subscription linked` }
+
+		// Local-only subscription — update DB directly
+		if (!sub.providerSubscriptionId) {
+			await api.Billing.Subscriptions.update({ status: `active`, paused_at: null } as any, { id })
+			return { success: true }
+		}
+
 		try {
 			await api.Billing.Providers.LS.resumeSubscription(sub.providerSubscriptionId)
 			return { success: true }
@@ -350,15 +414,23 @@ export class BillingRoute {
 		const authUser = (req as any).authUser
 		const planId = p.plan_id || p.planId
 
-		// Prevent duplicate subscriptions for the same plan
+		// Prevent duplicate subscriptions for the same plan (unless allow_multiple is set)
 		if (authUser?.id && planId) {
-			const customer = await api.Billing.Customers.get({ user_id: authUser.id })
-			if (customer) {
-				const existing = await api.Billing.Subscriptions.getMany({ customer_id: customer.id })
-				const activeSub = (existing ?? []).find((s: any) =>
-					['active', 'paused'].includes(s.status) && s.plan_id === Number(planId)
-				)
-				if (activeSub) return { code: 409, error: `You already have an active subscription for this plan` }
+			const product = await api.Billing.Products.get({ id: Number(planId) })
+			const allowMultiple = product?.meta?.find((m) => m.key === `allow_multiple`)?.value === `true`
+
+			if (!allowMultiple) {
+				const customer = await api.Billing.Customers.get({ user_id: authUser.id })
+				if (customer) {
+					const existing = await api.Billing.Subscriptions.getMany({ customer_id: customer.id })
+					const activeSub = (existing ?? []).find((s: any) =>
+						[`active`, `paused`].includes(s.status) && (
+							s.plan_id === Number(planId) ||
+							(s.plan_id == null && product?.providerVariantId && s.providerVariantId === product.providerVariantId)
+						)
+					)
+					if (activeSub) return { code: 409, error: `You already have an active subscription for this plan` }
+				}
 			}
 		}
 

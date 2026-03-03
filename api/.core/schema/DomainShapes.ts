@@ -177,8 +177,18 @@ export type BillingCustomerFull = BillingCustomer & {
 	orders: BillingOrder[]
 }
 
+export type BillingProductMeta = {
+	id: number
+	productId: number
+	key: string
+	value: string | null
+	created: string | null
+	updated: string | null
+}
+
 export type BillingProductFull = BillingProduct & {
 	features: BillingProductFeature[]
+	meta: BillingProductMeta[]
 }
 
 // Organization

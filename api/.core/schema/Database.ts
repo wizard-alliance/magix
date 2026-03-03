@@ -61,6 +61,15 @@ export type BillingProductFeatureDBRow = {
 	created: string | null
 }
 
+export type BillingProductMetaDBRow = {
+	id?: number
+	product_id: number
+	key: string
+	value: string | null
+	created: string | null
+	updated: string | null
+}
+
 export type BillingProductDBRow = {
 	id?: number
 	name: string
@@ -244,6 +253,7 @@ export type DatabaseSchema = {
 	billing_invoices: BillingInvoiceDBRow
 	billing_orders: BillingOrderDBRow
 	billing_product_features: BillingProductFeatureDBRow
+	billing_product_meta: BillingProductMetaDBRow
 	billing_products: BillingProductDBRow
 	billing_subscriptions: BillingSubscriptionDBRow
 	// Global tables
@@ -359,6 +369,15 @@ export const schemaColumns = {
 		description: 'string',
 		sort_order: 'number',
 		created: 'date'
+	},
+
+	billing_product_meta: {
+		id: 'number',
+		product_id: 'number',
+		key: 'string',
+		value: 'string',
+		created: 'date',
+		updated: 'date'
 	},
 
 	billing_products: {
@@ -584,6 +603,7 @@ export const tableColumnSets: ColumnSetMap = {
 	billing_invoices: createColumnSet(schemaColumns.billing_invoices),
 	billing_orders: createColumnSet(schemaColumns.billing_orders),
 	billing_product_features: createColumnSet(schemaColumns.billing_product_features),
+	billing_product_meta: createColumnSet(schemaColumns.billing_product_meta),
 	billing_products: createColumnSet(schemaColumns.billing_products),
 	billing_subscriptions: createColumnSet(schemaColumns.billing_subscriptions),
 	// Global tables
@@ -611,6 +631,7 @@ export type TableMap = {
 	billing_invoices: string
 	billing_orders: string
 	billing_product_features: string
+	billing_product_meta: string
 	billing_products: string
 	billing_subscriptions: string
 	// Global tables
@@ -639,6 +660,7 @@ export const TableMap: TableMap = {
 	billing_invoices: "billing_invoices",
 	billing_orders: "billing_orders",
 	billing_product_features: "billing_product_features",
+	billing_product_meta: "billing_product_meta",
 	billing_products: "billing_products",
 	billing_subscriptions: "billing_subscriptions",
 	// Global tables

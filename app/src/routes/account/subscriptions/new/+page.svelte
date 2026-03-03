@@ -9,18 +9,35 @@
 	let loading = true
 	let products: BillingProductFull[] = []
 	let subscribing: number | null = null
+	let activePlanIds = new Set<number>()
 
 	const showTypes = new Set([`subscription`, `lead_magnet`])
 
 	onMount(async () => {
 		try {
-			const all = await app.Commerce.Products.list()
+			const [all, customer] = await Promise.all([app.Commerce.Products.list(), app.Commerce.Customer.get()])
 			products = all.filter((p) => showTypes.has(p.type) && p.isActive).sort((a, b) => a.sortOrder - b.sortOrder)
+
+			if (customer?.subscriptions) {
+				const activeStatuses = new Set([`active`, `paused`, `past_due`])
+				for (const sub of customer.subscriptions) {
+					if (sub.planId && activeStatuses.has(sub.status)) activePlanIds.add(sub.planId)
+				}
+				activePlanIds = activePlanIds
+			}
 		} catch {
 			app.UI.Notify.error(`Failed to load plans`, `Plans`)
 		}
 		loading = false
 	})
+
+	const isCurrentPlan = (product: BillingProductFull) => activePlanIds.has(product.id)
+
+	const canPurchase = (product: BillingProductFull) => {
+		if (!isCurrentPlan(product)) return true
+		const allowMultiple = product.meta?.find((m) => m.key === `allow_multiple`)?.value === `true`
+		return allowMultiple
+	}
 
 	const subscribe = async (product: BillingProductFull) => {
 		subscribing = product.id
@@ -37,8 +54,10 @@
 			})
 			if (res?.url) window.location.href = res.url
 			else app.UI.Notify.error(`No checkout URL returned`, `Checkout`)
-		} catch (err) {
-			app.UI.Notify.error(app.Helpers.errMsg(err), `Checkout`)
+		} catch (err: any) {
+			const status = err?.status ?? err?.response?.status
+			if (status === 409) app.UI.Notify.warning(`You already have an active subscription for this plan`, `Checkout`)
+			else app.UI.Notify.error(app.Helpers.errMsg(err), `Checkout`)
 		}
 		subscribing = null
 	}
@@ -91,8 +110,12 @@
 		<div class="plans-grid">
 			{#each products as product, idx (product.id)}
 				{@const popular = idx === 1 && products.length > 1}
-				<div class="plan-card" class:popular>
-					{#if popular}
+				{@const current = isCurrentPlan(product)}
+				{@const purchasable = canPurchase(product)}
+				<div class="plan-card" class:popular class:current>
+					{#if current}
+						<div class="popular-badge"><Badge text="CURRENT PLAN" variant="default" /></div>
+					{:else if popular}
 						<div class="popular-badge"><Badge text="POPULAR" variant="success" /></div>
 					{/if}
 
@@ -119,9 +142,9 @@
 						<Button
 							on:click={() => subscribe(product)}
 							loading={subscribing === product.id}
-							disabled={subscribing !== null}
-							variant={popular ? `primary` : `ghost`}
-							size="sm">{ctaLabel(product)}</Button
+							disabled={subscribing !== null || !purchasable}
+							variant={current ? `secondary` : popular ? `primary` : `secondary`}
+							size="md">{current && !purchasable ? `Current Plan` : ctaLabel(product)}</Button
 						>
 					</div>
 
@@ -168,6 +191,11 @@
 
 		&.popular {
 			border-color: var(--accent-color);
+		}
+
+		&.current {
+			border-color: var(--info-color);
+			opacity: 0.75;
 		}
 	}
 

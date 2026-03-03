@@ -1,5 +1,5 @@
 import { BaseResource } from '../Data/BaseResource'
-import type { BillingProductFull, BillingProductFeature } from '../../types/commerce'
+import type { BillingProductFull, BillingProductFeature, BillingProductMeta } from '../../types/commerce'
 
 export class ProductsResource extends BaseResource<BillingProductFull> {
 	constructor() {
@@ -24,5 +24,24 @@ export class ProductsResource extends BaseResource<BillingProductFull> {
 
 	async deleteFeature(id: number) {
 		return this.request('delete', 'billing/product/feature', { query: { id } })
+	}
+
+	// Product Meta
+	async listMeta(productId?: number): Promise<BillingProductMeta[]> {
+		const query = productId ? { product_id: productId } : undefined
+		const data = await this.request<BillingProductMeta[]>('get', 'billing/product/metas', { query })
+		return Array.isArray(data) ? data : []
+	}
+
+	async setMeta(body: { productId: number, key: string, value: string | null }) {
+		return this.request('post', 'billing/product/meta', { body: this.normalizeBody(body) })
+	}
+
+	async updateMeta(id: number, body: Record<string, any>) {
+		return this.request('put', 'billing/product/meta', { query: { id }, body: this.normalizeBody(body) })
+	}
+
+	async deleteMeta(id: number) {
+		return this.request('delete', 'billing/product/meta', { query: { id } })
 	}
 }
