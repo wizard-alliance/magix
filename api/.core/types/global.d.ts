@@ -51,6 +51,7 @@ declare global {
 		Billing: import('../services/BillingService.js').BillingService
 		Organization: import('../services/OrganizationService.js').OrganizationService
 		FileManager: import('../services/FileManager.js').FileManager
+		Meta: import('../services/MetaService.js').MetaService
 	}
 
 	var api: ApiGlobal

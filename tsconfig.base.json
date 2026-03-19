@@ -16,6 +16,8 @@
 
 			"@uploads/*": ["./api/uploads/*"],
 
+			"@shared/*": ["./shared/*"],
+
 			// Framework specific
 			"@magix/config": ["./.magix/config.ts"],
 			"@magix/*": ["./.magix/*"]

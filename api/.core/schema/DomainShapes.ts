@@ -19,7 +19,13 @@ export type User = {
 	lastName: string | null
 	phone?: string | null
 	company?: string | null
-	address?: string | null
+	addressLine1?: string | null
+	addressLine2?: string | null
+	city?: string | null
+	state?: string | null
+	zip?: string | null
+	country?: string | null
+	language?: string | null
 	avatarUrl?: string | null
 	avatar?: import('../services/FileManager.js').FileRecord | null
 	password?: string

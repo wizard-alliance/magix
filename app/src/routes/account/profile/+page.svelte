@@ -20,6 +20,11 @@
 	$: avatarSrcset = avatarResolved?.srcset || ""
 	$: redactedEmail = info.email ? info.email.replace(/(.{2}).+(@.+)/, "$1***$2") : ""
 
+	$: countryName = info.country ? (app.Meta.Country.get(info.country)?.name || info.country) : ``
+	$: languageName = info.language ? (app.Meta.Language.get(info.language)?.name || info.language) : ``
+	$: addressParts = [info.addressLine1, info.addressLine2, info.city, info.state, info.zip, countryName].filter(Boolean)
+	$: addressDisplay = addressParts.join(`, `)
+
 	// Detail rows rendered via {#each} — add, remove, or reorder entries here
 	$: fields = [
 		{ title: `Name`, subtitle: `Your legal name`, value: `${info.firstName} ${info.lastName}` },
@@ -27,7 +32,8 @@
 		{ title: `Username`, subtitle: `Your username`, value: info.username },
 		{ title: `Phone`, subtitle: `Your phone number`, value: info.phone },
 		{ title: `Company`, subtitle: `Your company name`, value: info.company },
-		{ title: `Address`, subtitle: `Your address`, value: info.address },
+		{ title: `Address`, subtitle: `Your address`, value: addressDisplay },
+		{ title: `Language`, subtitle: `Your preferred language`, value: languageName },
 		{ title: `Member since`, subtitle: `Your registration date`, value: user ? app.Format.Date.format(info.created) : `` },
 	]
 </script>

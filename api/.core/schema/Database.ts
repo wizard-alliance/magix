@@ -287,7 +287,13 @@ export type UserDBRow = {
 	last_name: string | null
 	phone: string | null
 	company: string | null
-	address: string | null
+	address_line1: string | null
+	address_line2: string | null
+	city: string | null
+	state: string | null
+	zip: string | null
+	country: string | null
+	language: string | null
 	avatar_url: string | null
 	activation_token: string | null
 	activated: number
@@ -463,7 +469,13 @@ export const schemaColumns = {
 		last_name: 'string',
 		phone: 'string',
 		company: 'string',
-		address: 'string',
+		address_line1: 'string',
+		address_line2: 'string',
+		city: 'string',
+		state: 'string',
+		zip: 'string',
+		country: 'string',
+		language: 'string',
 		avatar_url: 'string',
 		activation_token: 'string',
 		activated: 'number',

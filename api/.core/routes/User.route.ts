@@ -180,7 +180,7 @@ export class AuthRoute {
 		const me = token ? await api.User.Repo.me(token) : null
 		if (!me || "error" in me) return me ?? { error: "Unauthorized", code: 401 }
 
-		const allowed = ["first_name", "last_name", "phone", "company", "address"]
+		const allowed = ["first_name", "last_name", "phone", "company", "address_line1", "address_line2", "city", "state", "zip", "country", "language"]
 		const data: Record<string, any> = {}
 		for (const key of allowed) {
 			if ($.body[key] !== undefined) data[key] = $.body[key]
@@ -188,6 +188,18 @@ export class AuthRoute {
 		// Also accept camelCase
 		if ($.body.firstName !== undefined) data.first_name = $.body.firstName
 		if ($.body.lastName !== undefined) data.last_name = $.body.lastName
+		if ($.body.addressLine1 !== undefined) data.address_line1 = $.body.addressLine1
+		if ($.body.addressLine2 !== undefined) data.address_line2 = $.body.addressLine2
+
+		// Validate country slug against Meta
+		if (data.country && !api.Meta.Country.get(data.country)) {
+			return { error: "Invalid country code", code: 422 }
+		}
+
+		// Validate language slug against Meta
+		if (data.language && !api.Meta.Language.get(data.language)) {
+			return { error: "Invalid language code", code: 422 }
+		}
 
 		return await api.User.Repo.update(me.id, data)
 	}

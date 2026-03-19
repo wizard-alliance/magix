@@ -23,6 +23,7 @@ import { ProductsResource } from "./classes/Commerce/ProductsResource"
 import { InvoicesResource } from "./classes/Commerce/InvoicesResource"
 import { CheckoutClient } from "./classes/Commerce/CheckoutClient"
 import { LSAdminClient } from "./classes/Commerce/LSAdminClient"
+import { LemonSqueezyClient } from "./classes/Commerce/LemonSqueezy"
 
 import { SettingsResource } from "./classes/Admin/SettingsResource"
 import { UsersResource } from "./classes/Admin/UsersResource"
@@ -75,6 +76,7 @@ export const createAppClient = () => ({
 		Products: new ProductsResource(),
 		Invoices: new InvoicesResource(),
 		Checkout: new CheckoutClient(),
+		LemonSqueezy: new LemonSqueezyClient(),
 		Admin: { LS: new LSAdminClient() },
 	},
 

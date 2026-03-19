@@ -2,6 +2,7 @@
 	import { app } from "$lib/app"
 	import { onMount } from "svelte"
 	import Input from "$components/fields/input.svelte"
+	import Select from "$components/fields/select.svelte"
 	import Button from "$components/fields/button.svelte"
 	import Spinner from "$components/modules/spinner.svelte"
 
@@ -19,6 +20,8 @@
 		country: "",
 		vatId: "",
 	}
+
+	const countryOptions = app.Meta.Country.options()
 
 	onMount(async () => {
 		try {
@@ -104,7 +107,7 @@
 							<Input id="zip" label="ZIP / Postal code" bind:value={form.zip} />
 						</div>
 						<div class="col-xxs-12 col-md-6">
-							<Input id="country" label="Country" bind:value={form.country} />
+							<Select id="country" label="Country" bind:value={form.country} options={countryOptions} placeholder="Select country" />
 						</div>
 					</div>
 				</form>

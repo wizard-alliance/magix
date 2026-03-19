@@ -106,6 +106,7 @@ export default defineConfig({
 			$lib: resolve("./src/lib"),
 			$styles: resolve("./src/styles"),
 			$uploads: resolve("../uploads"),
+			$shared: resolve("../shared"),
 		},
 	},
 	css: {

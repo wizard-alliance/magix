@@ -119,3 +119,22 @@ export type ConfigResponse = {
 	products: ConfigProduct[]
 }
 
+// Country metadata (ISO 3166-1 alpha-2)
+export type Country = {
+	id: number
+	name: string
+	slug: string
+	code: string
+	localName: string
+	phoneCode: string
+}
+
+// Language metadata (ISO 639-1)
+export type Language = {
+	id: number
+	slug: string
+	name: string
+	localName: string
+	code: string
+}
+

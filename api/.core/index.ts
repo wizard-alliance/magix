@@ -31,6 +31,7 @@ import { UserService } from "@api/core/services/UserService.js"
 import { BillingService } from "@api/core/services/BillingService.js"
 import { OrganizationService } from "@api/core/services/OrganizationService.js"
 import { FileManager } from "@api/core/services/FileManager.js"
+import { MetaService } from "@api/core/services/MetaService.js"
 
 import { Config } from "@api/core/config/env.js"
 import { magixConfig } from "@magix/config" 
@@ -87,6 +88,7 @@ scope.api.WS = new WebSocketServerManager()
 scope.api.Billing = new BillingService()
 scope.api.Organization = new OrganizationService()
 scope.api.FileManager = new FileManager()
+scope.api.Meta = new MetaService()
 
 scope.api.Logger = new Logger({ basePath: "../.logs", scope: 'api', label: 'API' })
 scope.api.LoggerApp = new Logger({ basePath: "../.logs", scope: 'app', label: 'App' })

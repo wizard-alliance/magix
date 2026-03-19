@@ -8,6 +8,9 @@ type LSCheckoutParams = {
 	name?: string
 	customData?: Record<string, string | number>
 	redirectUrl?: string
+	billingCountry?: string
+	billingZip?: string
+	taxNumber?: string
 }
 
 type LSWebhookEvent = {
@@ -72,7 +75,7 @@ export class LemonSqueezyProvider {
 	// ─────────────────────────────────────────────────────────────
 
 	async createCheckout(params: LSCheckoutParams) {
-		const { variantId, email, name, customData, redirectUrl } = params
+		const { variantId, email, name, customData, redirectUrl, billingCountry, billingZip, taxNumber } = params
 		// LS requires custom data values to be strings
 		const custom: Record<string, string> = {}
 		if (customData) {
@@ -84,9 +87,30 @@ export class LemonSqueezyProvider {
 			data: {
 				type: 'checkouts',
 				attributes: {
+					checkout_options: {
+						embed: true,
+						logo: false,
+						media: false,
+						desc: false,
+						background_color: `#292b2f3d`,
+						button_color: `#74e7a8`,
+						button_text_color: `#000000`,
+						primary_text_color: `#FFFFFF`,
+						secondary_text_color: `#aaadb6`,
+						headings_color: `#FFFFFF`,
+						links_color: `#74e7a8`,
+						borders_color: `#292B2F`,
+						checkbox_color: `#74e7a8`,
+						active_state_color: `#74e7a8`,
+					},
 					checkout_data: {
 						email: email || undefined,
 						name: name || undefined,
+						billing_address: {
+							country: billingCountry || undefined,
+							zip: billingZip || undefined,
+						},
+						tax_number: taxNumber || undefined,
 						custom: Object.keys(custom).length ? custom : undefined,
 					},
 					product_options: {

@@ -52,7 +52,7 @@
 				planId: product.id,
 				redirectUrl: `${window.location.origin}/account/subscriptions`,
 			})
-			if (res?.url) window.location.href = res.url
+			if (res?.url) app.Commerce.LemonSqueezy.open(res.url)
 			else app.UI.Notify.error(`No checkout URL returned`, `Checkout`)
 		} catch (err: any) {
 			const status = err?.status ?? err?.response?.status

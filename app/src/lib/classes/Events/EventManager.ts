@@ -33,6 +33,10 @@ type AppEvents = {
 
 	'logger:app:response': { action: string, requestId: string, entries?: AppLogEntry[], count?: number }
 	'datetime': Record<string, unknown>
+
+	'ls:Checkout.Success': any
+	'ls:Checkout.Closed': any
+	'ls:PaymentMethodUpdate.Updated': any
 }
 
 type Handler<T> = (payload: T) => void

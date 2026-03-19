@@ -367,11 +367,11 @@ export class BillingEvents {
 		}
 
 		const updateData: Record<string, any> = {}
-		if (data.name !== undefined) updateData.billing_name = data.name
-		if (data.email !== undefined) updateData.billing_email = data.email
-		if (data.city !== undefined) updateData.billing_city = data.city
-		if (data.region !== undefined) updateData.billing_state = data.region
-		if (data.country !== undefined) updateData.billing_country = data.country
+		if (data.name) updateData.billing_name = data.name
+		if (data.email) updateData.billing_email = data.email
+		if (data.city) updateData.billing_city = data.city
+		if (data.region) updateData.billing_state = data.region
+		if (data.country && api.Meta.Country.get(data.country)) updateData.billing_country = data.country
 
 		if (Object.keys(updateData).length) {
 			await api.Billing.Customers.update(updateData, { id: customer.id })

@@ -12,6 +12,8 @@ import {
 } from '$env/static/public'
 
 import { Navigations } from './Navigations'
+import { CountryMeta } from './CountryMeta'
+import { LanguageMeta } from './LanguageMeta'
 
 import type { Writable } from 'svelte/store'
 import type { AppMeta, PageMeta, PageLoadData, ConfigResponse, ConfigPermission, ConfigProduct } from '$lib/types/meta'
@@ -66,6 +68,10 @@ export class MetaClient {
 
 	// Navigation sub-system
 	navigations = new Navigations()
+
+	// Country & language lookup
+	Country = new CountryMeta()
+	Language = new LanguageMeta()
 
 	// Called by layout on every navigation — bridges SvelteKit $page.data → Meta store
 	// Layering: .env → page.ts → DB (if loaded)

@@ -94,11 +94,11 @@ export class BillingRoute {
 			if (existing) return existing
 
 			// Auto-create stub billing customer from user profile
-			const fullName = [authUser.first_name, authUser.last_name].filter(Boolean).join(` `)
+			const fullName = [authUser.info.firstName, authUser.info.lastName].filter(Boolean).join(` `)
 			const result = await api.Billing.Customers.set({
 				user_id: authUser.id,
 				billing_name: fullName || null,
-				billing_email: authUser.email || null,
+				billing_email: authUser.info.email || null,
 			})
 			if (result && "id" in result) {
 				return await api.Billing.Customers.get({ id: result.id ?? undefined }) ?? result
@@ -149,11 +149,11 @@ export class BillingRoute {
 		// Ensure customer exists for this user
 		let customer = await api.Billing.Customers.get({ user_id: authUser.id })
 		if (!customer) {
-			const fullName = [authUser.first_name, authUser.last_name].filter(Boolean).join(` `)
+			const fullName = [authUser.info.firstName, authUser.info.lastName].filter(Boolean).join(` `)
 			const result = await api.Billing.Customers.set({
 				user_id: authUser.id,
 				billing_name: fullName || null,
-				billing_email: authUser.email || null,
+				billing_email: authUser.info.email || null,
 			})
 			if (!result || "error" in result) return result ?? { code: 500, error: "Failed to create customer" }
 			customer = await api.Billing.Customers.get({ user_id: authUser.id })
@@ -189,7 +189,7 @@ export class BillingRoute {
 		}
 
 		// billing_email is always locked to the user's account email
-		data.billing_email = authUser.email
+		data.billing_email = authUser.info.email
 
 		if (!Object.keys(data).length) return { code: 422, error: "No valid fields provided" }
 
@@ -201,10 +201,10 @@ export class BillingRoute {
 			try {
 				const lsFields: Record<string, any> = {}
 				if (data.billing_name) lsFields.name = data.billing_name
-				lsFields.email = authUser.email
+				lsFields.email = authUser.info.email
 				if (data.billing_city) lsFields.city = data.billing_city
 				if (data.billing_state) lsFields.region = data.billing_state
-				if (data.billing_country) lsFields.country = data.billing_country
+				if (data.billing_country && api.Meta.Country.get(data.billing_country)) lsFields.country = data.billing_country
 				if (Object.keys(lsFields).length) {
 					await api.Billing.Providers.LS.updateCustomer(updated.providerCustomerId, lsFields)
 				}
@@ -439,12 +439,19 @@ export class BillingRoute {
 		if (!variantId) return { code: 422, error: `Variant ID required` }
 
 		try {
+			const billingCustomer = authUser?.id
+				? await api.Billing.Customers.get({ user_id: authUser.id })
+				: null
+
 			const result = await api.Billing.Providers.LS.createCheckout({
 				variantId,
-				email: p.email || authUser?.email,
-				name: p.name || [authUser?.first_name, authUser?.last_name].filter(Boolean).join(` `),
+				email: p.email || billingCustomer?.billingEmail || authUser?.info?.email,
+				name: p.name || billingCustomer?.billingName || undefined,
 				customData: { user_id: authUser?.id, plan_id: planId },
 				redirectUrl: p.redirectUrl || p.redirect_url,
+				billingCountry: billingCustomer?.billingAddress?.country || undefined,
+				billingZip: billingCustomer?.billingAddress?.zip || undefined,
+				taxNumber: billingCustomer?.vatId || undefined,
 			})
 			api.Log(`Checkout result: ${JSON.stringify(result)}`, `Billing`)
 			if (!result?.url) return { code: 502, error: `Payment provider did not return a checkout URL` }
