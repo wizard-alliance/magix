@@ -23,13 +23,16 @@
 
 	let debounceTimer: ReturnType<typeof setTimeout>
 
-	const productName = (id: number) => products.find((p) => p.id === id)?.name ?? `—`
+	const productName = (providerId: string) => {
+		const p = products.find((p) => p.providerId === providerId)
+		return p?.name ?? `—`
+	}
 
 	const createTableData = (raw: BillingProductFeature[]) =>
 		raw.map((f) => ({
 			ID: f.id,
 			Feature: f.featureName,
-			Product: productName(f.productId),
+			Product: productName(f.providerId),
 			Order: f.sortOrder,
 			Description: f.description ?? `—`,
 			Created: f.created ?? `—`,
@@ -39,9 +42,14 @@
 		filtering = true
 		try {
 			products = await app.Commerce.Products.list()
-			productOptions = products.map((p) => ({ label: p.name, value: String(p.id) }))
+			// Deduplicate to one entry per product group (by providerId) — features apply to the group
+			const seen = new Map<string, string>()
+			for (const p of products) {
+				if (p.providerId && !seen.has(p.providerId)) seen.set(p.providerId, p.name)
+			}
+			productOptions = [...seen.entries()].map(([value, label]) => ({ label, value }))
 			const query: Record<string, any> = {}
-			if (filterProduct) query.product_id = Number(filterProduct)
+			if (filterProduct) query.provider_id = filterProduct
 			allFeatures = await app.Commerce.Products.listFeatures(query)
 			applyClientFilter()
 		} catch {

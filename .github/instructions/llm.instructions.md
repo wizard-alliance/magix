@@ -77,6 +77,7 @@ window.api.request(...)
 - Source lives in `api/src/` with classes, controllers, helpers, and routes.
 - Follows the same global facade pattern under the `api.*` namespace.
 - **`api-test-app/`** is a standalone test app with full API integration—reference it for real examples of how the app communicates with the API (auth, requests, data flow, etc.).
+- **Database migrations** go in `api/.core/db/migrations/` as timestamped SQL files (`YYYY-MM-DD_description.sql`). Never modify `api/.core/db/latest-db-structure.sql` directly—create a migration instead.
 
 ---
 

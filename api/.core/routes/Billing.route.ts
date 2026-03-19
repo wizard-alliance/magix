@@ -19,6 +19,7 @@ export class BillingRoute {
 		// Plans
 		api.Router.set("GET", `${this.route}/product`, this.getProduct)
 		api.Router.set("GET", `${this.route}/products`, this.getProducts)
+		api.Router.set("GET", `${this.route}/products/grouped`, this.getProductsGrouped)
 		api.Router.set("POST", `${this.route}/product`, this.createProduct, adminOpts)
 		api.Router.set("PUT", `${this.route}/product`, this.updateProduct, adminOpts)
 		api.Router.set("DELETE", `${this.route}/product`, this.deleteProduct, adminOpts)
@@ -43,6 +44,7 @@ export class BillingRoute {
 		api.Router.set("POST", `${this.route}/subscription/cancel`, this.cancelSubscription, opts)
 		api.Router.set("POST", `${this.route}/subscription/pause`, this.pauseSubscription, opts)
 		api.Router.set("POST", `${this.route}/subscription/resume`, this.resumeSubscription, opts)
+		api.Router.set("POST", `${this.route}/subscription/change`, this.changeSubscriptionPlan, opts)
 
 		// Checkout
 		api.Router.set("POST", `${this.route}/checkout`, this.createCheckout, opts)
@@ -231,6 +233,10 @@ export class BillingRoute {
 		return await api.Billing.Products.getMany(where, { limit: Number(p.limit) || 100, offset: Number(p.offset) || 0 })
 	}
 
+	getProductsGrouped = async () => {
+		return await api.Billing.Products.getGrouped()
+	}
+
 	createProduct = async (_: any, req: Request) => {
 		const p = api.getParams(req)
 		return await api.Billing.Products.set(p)
@@ -261,8 +267,8 @@ export class BillingRoute {
 
 	getProductFeatures = async (_: any, req: Request) => {
 		const p = api.getParams(req)
-		const product_id = Number(p.product_id)
-		return await api.Billing.Products.getFeatures(product_id ? { product_id } : {})
+		const provider_id = p.provider_id ? String(p.provider_id) : undefined
+		return await api.Billing.Products.getFeatures(provider_id ? { provider_id } : {})
 	}
 
 	createProductFeature = async (_: any, req: Request) => {
@@ -343,14 +349,25 @@ export class BillingRoute {
 		})
 	}
 
+	/** Verify the authenticated user owns the given subscription */
+	private async resolveOwnedSubscription(req: Request, subId: number) {
+		const authUser = (req as any).authUser
+		if (!authUser?.id) return { error: { code: 401, error: `Unauthorized` } }
+		const sub = await api.Billing.Subscriptions.get({ id: subId })
+		if (!sub) return { error: { code: 404, error: `Subscription not found` } }
+		const customer = await api.Billing.Customers.get({ user_id: authUser.id })
+		if (!customer || sub.customerId !== customer.id) return { error: { code: 403, error: `Access denied` } }
+		return { sub, customer }
+	}
+
 	cancelSubscription = async ($: any, req: Request) => {
 		const p = api.getParams(req)
 		const id = Number(p.id)
 		if (!id) return { code: 422, error: `Subscription ID required` }
-		const sub = await api.Billing.Subscriptions.get({ id })
-		if (!sub) return { code: 404, error: `Subscription not found` }
+		const result = await this.resolveOwnedSubscription(req, id)
+		if (`error` in result) return result.error
+		const { sub } = result
 
-		// Local-only subscription (no LS link) — update DB directly
 		if (!sub.providerSubscriptionId) {
 			const now = new Date().toISOString().slice(0, 19).replace(`T`, ` `)
 			await api.Billing.Subscriptions.update({ status: `cancelled`, canceled_at: now }, { id })
@@ -369,10 +386,10 @@ export class BillingRoute {
 		const p = api.getParams(req)
 		const id = Number(p.id)
 		if (!id) return { code: 422, error: `Subscription ID required` }
-		const sub = await api.Billing.Subscriptions.get({ id })
-		if (!sub) return { code: 404, error: `Subscription not found` }
+		const result = await this.resolveOwnedSubscription(req, id)
+		if (`error` in result) return result.error
+		const { sub } = result
 
-		// Local-only subscription — update DB directly
 		if (!sub.providerSubscriptionId) {
 			const now = new Date().toISOString().slice(0, 19).replace(`T`, ` `)
 			await api.Billing.Subscriptions.update({ status: `paused`, paused_at: now }, { id })
@@ -391,10 +408,10 @@ export class BillingRoute {
 		const p = api.getParams(req)
 		const id = Number(p.id)
 		if (!id) return { code: 422, error: `Subscription ID required` }
-		const sub = await api.Billing.Subscriptions.get({ id })
-		if (!sub) return { code: 404, error: `Subscription not found` }
+		const result = await this.resolveOwnedSubscription(req, id)
+		if (`error` in result) return result.error
+		const { sub } = result
 
-		// Local-only subscription — update DB directly
 		if (!sub.providerSubscriptionId) {
 			await api.Billing.Subscriptions.update({ status: `active`, paused_at: null } as any, { id })
 			return { success: true }
@@ -408,28 +425,60 @@ export class BillingRoute {
 		}
 	}
 
+	changeSubscriptionPlan = async ($: any, req: Request) => {
+		const p = api.getParams(req)
+		const subscriptionId = Number(p.subscription_id || p.subscriptionId)
+		const variantId = p.variant_id || p.variantId
+		const planId = Number(p.plan_id || p.planId) || undefined
+		if (!subscriptionId) return { code: 422, error: `Subscription ID required` }
+		if (!variantId) return { code: 422, error: `Variant ID required` }
+
+		const result = await this.resolveOwnedSubscription(req, subscriptionId)
+		if (`error` in result) return result.error
+		const { sub } = result
+
+		if (!sub.providerSubscriptionId) return { code: 422, error: `Cannot change plan on a local-only subscription` }
+
+		// Verify target variant exists and is active
+		const targetProduct = await api.Billing.Products.get({ provider_variant_id: String(variantId) })
+		if (!targetProduct || !targetProduct.isActive) return { code: 404, error: `Target plan variant not found or inactive` }
+
+		try {
+			await api.Billing.Providers.LS.updateSubscription(sub.providerSubscriptionId, String(variantId))
+			return { success: true, message: `Plan change initiated. It will be confirmed shortly.` }
+		} catch (e: any) {
+			api.Log(`Plan change error: ${e.message}`, `Billing`, `error`)
+			return { code: 500, error: e.message }
+		}
+	}
+
 	// Checkout
 	createCheckout = async ($: any, req: Request) => {
 		const p = api.getParams(req)
 		const authUser = (req as any).authUser
 		const planId = p.plan_id || p.planId
 
-		// Prevent duplicate subscriptions for the same plan (unless allow_multiple is set)
-		if (authUser?.id && planId) {
-			const product = await api.Billing.Products.get({ id: Number(planId) })
-			const allowMultiple = product?.meta?.find((m) => m.key === `allow_multiple`)?.value === `true`
+		// Prevent subscribing when user already has an active subscription (exclusive plans)
+		if (authUser?.id) {
+			const customer = await api.Billing.Customers.get({ user_id: authUser.id })
+			if (customer) {
+				const existing = await api.Billing.Subscriptions.getMany({ customer_id: customer.id })
+				const activeSub = (existing ?? []).find((s: any) => [`active`, `paused`, `past_due`].includes(s.status))
 
-			if (!allowMultiple) {
-				const customer = await api.Billing.Customers.get({ user_id: authUser.id })
-				if (customer) {
-					const existing = await api.Billing.Subscriptions.getMany({ customer_id: customer.id })
-					const activeSub = (existing ?? []).find((s: any) =>
-						[`active`, `paused`].includes(s.status) && (
-							s.plan_id === Number(planId) ||
-							(s.plan_id == null && product?.providerVariantId && s.providerVariantId === product.providerVariantId)
-						)
-					)
-					if (activeSub) return { code: 409, error: `You already have an active subscription for this plan` }
+				if (activeSub) {
+					// Check if the target product allows multiple subscriptions (for future addons)
+					const product = planId ? await api.Billing.Products.get({ id: Number(planId) }) : null
+					const allowMultiple = product?.meta?.find((m) => m.key === `allow_multiple`)?.value === `true`
+
+					if (!allowMultiple) {
+						return {
+							code: 409,
+							error: `You already have an active subscription. Use plan change to switch plans.`,
+							existingSubscriptionId: activeSub.id,
+							existingPlanId: activeSub.planId,
+							existingPlanName: activeSub.planName ?? null,
+						}
+					}
 				}
 			}
 		}

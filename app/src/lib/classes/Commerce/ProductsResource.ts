@@ -1,20 +1,17 @@
 import { BaseResource } from '../Data/BaseResource'
-import type { BillingProductFull, BillingProductFeature, BillingProductMeta } from '../../types/commerce'
+import type { BillingProductFull, BillingProductFeature, BillingProductMeta, BillingProductGroup } from '../../types/commerce'
 
 export class ProductsResource extends BaseResource<BillingProductFull> {
 	constructor() {
 		super('billing/product', 'billing/products')
 	}
 
-	async listFeatures(queryOrProductId?: number | Record<string, any>): Promise<BillingProductFeature[]> {
-		const query = typeof queryOrProductId === `number`
-			? { product_id: queryOrProductId }
-			: queryOrProductId ?? undefined
+	async listFeatures(query?: Record<string, any>): Promise<BillingProductFeature[]> {
 		const data = await this.request<BillingProductFeature[]>('get', 'billing/product/features', { query })
 		return Array.isArray(data) ? data : []
 	}
 
-	async createFeature(body: { productId: number, featureName: string, description?: string }) {
+	async createFeature(body: { providerId: string, featureName: string, description?: string, sortOrder?: number }) {
 		return this.request('post', 'billing/product/feature', { body: this.normalizeBody(body) })
 	}
 
@@ -24,6 +21,11 @@ export class ProductsResource extends BaseResource<BillingProductFull> {
 
 	async deleteFeature(id: number) {
 		return this.request('delete', 'billing/product/feature', { query: { id } })
+	}
+
+	async listGrouped(): Promise<BillingProductGroup[]> {
+		const data = await this.request<BillingProductGroup[]>('get', 'billing/products/grouped')
+		return Array.isArray(data) ? data : []
 	}
 
 	// Product Meta

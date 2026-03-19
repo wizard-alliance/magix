@@ -17,4 +17,10 @@ export class SubscriptionsResource extends BaseResource<BillingSubscription> {
 	async resume(id: number) {
 		return this.request('post', 'billing/subscription/resume', { body: { id } })
 	}
+
+	async changePlan(subscriptionId: number, variantId: string) {
+		return this.request('post', 'billing/subscription/change', {
+			body: this.normalizeBody({ subscriptionId, variantId }),
+		})
+	}
 }

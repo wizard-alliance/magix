@@ -137,6 +137,7 @@ export type BillingOrder = {
 export type BillingProduct = {
 	id: number
 	name: string
+	variationName: string | null
 	type: string
 	providerId: string | null
 	providerVariantId: string | null
@@ -154,7 +155,7 @@ export type BillingProduct = {
 
 export type BillingProductFeature = {
 	id: number
-	productId: number
+	providerId: string
 	featureName: string
 	description: string | null
 	sortOrder: number
@@ -195,6 +196,17 @@ export type BillingProductMeta = {
 export type BillingProductFull = BillingProduct & {
 	features: BillingProductFeature[]
 	meta: BillingProductMeta[]
+}
+
+export type BillingProductGroup = {
+	providerId: string
+	name: string
+	slug: string | null
+	sortOrder: number
+	description: string | null
+	features: BillingProductFeature[]
+	meta: BillingProductMeta[]
+	variants: BillingProduct[]
 }
 
 // Organization

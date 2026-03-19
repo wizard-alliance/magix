@@ -169,6 +169,18 @@ export class LemonSqueezyProvider {
 		return result.data
 	}
 
+	async updateSubscription(subscriptionId: string | number, newVariantId: string) {
+		const payload = {
+			data: {
+				type: 'subscriptions',
+				id: String(subscriptionId),
+				attributes: { variant_id: Number(newVariantId) },
+			},
+		}
+		const result = await this.request('PATCH', `/subscriptions/${subscriptionId}`, payload)
+		return result.data
+	}
+
 	// ─────────────────────────────────────────────────────────────
 	// Customer Portal
 	// ─────────────────────────────────────────────────────────────
@@ -323,20 +335,67 @@ export class LemonSqueezyProvider {
 	}
 
 	async syncProducts() {
-		const stats = { created: 0, updated: 0, errors: [] as string[] }
+		const stats = { created: 0, updated: 0, deactivated: 0, errors: [] as string[] }
 
 		try {
 			const products = await this.fetchAll(`/products`)
 			const variants = await this.fetchAll(`/variants`)
 
 			const productMap = new Map<string, any>()
-			for (const p of products) productMap.set(p.id, p)
+			for (const p of products) {
+				if (p.attributes?.status === `published`) productMap.set(p.id, p)
+			}
+
+			// Group variants by product to detect which products have real subscription variants
+			const variantsByProduct = new Map<string, any[]>()
+			for (const v of variants) {
+				const pid = String(v.attributes.product_id)
+				if (!variantsByProduct.has(pid)) variantsByProduct.set(pid, [])
+				variantsByProduct.get(pid)!.push(v)
+			}
+
+			// Track synced variant IDs to deactivate stale ones
+			const syncedVariantIds = new Set<string>()
 
 			for (const variant of variants) {
+
 				try {
-					const product = productMap.get(String(variant.attributes.product_id))
+					const productId = String(variant.attributes.product_id)
+					const product = productMap.get(productId)
 					const variantId = String(variant.id)
 					const existing = await api.Billing.Products.get({ provider_variant_id: variantId })
+
+					// Skip unpublished products — deactivate local copy if it exists
+					if (!product) {
+						if (existing) {
+							await api.Billing.Products.update({ is_active: 0 }, { id: existing.id })
+							stats.deactivated++
+						}
+						continue
+					}
+
+					// Skip non-subscription "Default" variants when the product has real subscription variants
+					const siblings = variantsByProduct.get(productId) ?? []
+					const hasSubscriptionVariants = siblings.some((s: any) => s.attributes.is_subscription)
+					if (hasSubscriptionVariants && !variant.attributes.is_subscription) {
+						if (existing) {
+							await api.Billing.Products.update({ is_active: 0 }, { id: existing.id })
+							stats.deactivated++
+						}
+						continue
+					}
+
+					// Skip the LS auto-created default variant when named variants exist
+					const subscriptionSiblings = siblings.filter((s: any) => s.attributes.is_subscription)
+					const variantName = variant.attributes.name || ``
+					const productName = product?.attributes?.name || ``
+					if (subscriptionSiblings.length > 1 && (!variantName || variantName === productName)) {
+						if (existing) {
+							await api.Billing.Products.update({ is_active: 0 }, { id: existing.id })
+							stats.deactivated++
+						}
+						continue
+					}
 
 					let productType = `one_time`
 					if (product?.attributes?.pay_what_you_want) {
@@ -347,18 +406,26 @@ export class LemonSqueezyProvider {
 						productType = `lead_magnet`
 					}
 
+					// Parent product name + variant-specific name
+					const name = productName || variantName
+					const variationName = variantName && variantName !== productName && variantName !== `Default`
+						? variantName
+						: null
+
 					const productData = {
-						name: product?.attributes?.name || variant.attributes.name,
+						name,
+						variation_name: variationName,
 						type: productType,
-						provider_id: String(variant.attributes.product_id),
+						sort_order: variant.attributes.sort ?? 0,
+						provider_id: productId,
 						provider_variant_id: variantId,
 						price: variant.attributes.price,
 						currency: variant.attributes.currency || `USD`,
 						interval: variant.attributes.interval || ``,
 						interval_count: variant.attributes.interval_count || 1,
-						trial_days: variant.attributes.trial_interval === `day` ? (variant.attributes.trial_interval_count || 0) : 0,
+						trial_days: variant.attributes.has_free_trial && variant.attributes.trial_interval === `day` ? (variant.attributes.trial_interval_count || 0) : 0,
 						description: variant.attributes.description || product?.attributes?.description || null,
-						is_active: product?.attributes?.status === `published` ? 1 : 0,
+						is_active: 1,
 					}
 
 					if (existing) {
@@ -368,6 +435,7 @@ export class LemonSqueezyProvider {
 						await api.Billing.Products.set(productData)
 						stats.created++
 					}
+					syncedVariantIds.add(variantId)
 				} catch (e: any) {
 					stats.errors.push(`Variant ${variant.id}: ${e.message}`)
 				}

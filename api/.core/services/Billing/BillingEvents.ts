@@ -71,10 +71,16 @@ export class BillingEvents {
 		if (!handler) return { success: false, error: `Unknown event: ${payload.event}` }
 		try {
 			await handler(payload.data, payload.customData)
+			this.invalidateCache()
 			return { success: true }
 		} catch (e: any) {
 			return { success: false, error: e.message }
 		}
+	}
+
+	/** Clear API-side caches that may contain stale billing data */
+	private invalidateCache() {
+		api.Cache.clear(`config:public`)
 	}
 
 	private async findOrCreateCustomer(data: any, customData: any) {
@@ -240,11 +246,19 @@ export class BillingEvents {
 
 	private async onSubscriptionUpdated(data: any, _customData: any) {
 		api.Log(`Event triggered: subscription_updated`, this.prefix)
-		await api.Billing.Subscriptions.update({
+		const update: Record<string, any> = {
 			status: data.status,
 			current_period_start: this.toMySQLDate(data.current_period_start),
 			current_period_end: this.toMySQLDate(data.renews_at),
-		}, { provider_subscription_id: String(data.id) })
+		}
+
+		// If variant changed, resolve and update plan_id
+		if (data.variant_id) {
+			const product = await api.Billing.Products.get({ provider_variant_id: String(data.variant_id) })
+			if (product) update.plan_id = product.id
+		}
+
+		await api.Billing.Subscriptions.update(update, { provider_subscription_id: String(data.id) })
 	}
 
 	private async onSubscriptionCancelled(data: any, _customData: any) {
@@ -274,9 +288,9 @@ export class BillingEvents {
 
 	private async onSubscriptionPaused(data: any, _customData: any) {
 		api.Log(`Event triggered: subscription_paused`, this.prefix)
-		// Note: schema doesn't have 'paused', using cancel_at_period_end as pause indicator
 		await api.Billing.Subscriptions.update({
-			cancel_at_period_end: 1,
+			status: `paused`,
+			paused_at: new Date().toISOString().slice(0, 19).replace(`T`, ` `),
 		}, { provider_subscription_id: String(data.id) })
 	}
 
@@ -284,6 +298,7 @@ export class BillingEvents {
 		api.Log(`Event triggered: subscription_unpaused`, this.prefix)
 		await api.Billing.Subscriptions.update({
 			status: `active`,
+			paused_at: null,
 		}, { provider_subscription_id: String(data.id) })
 	}
 
@@ -332,8 +347,8 @@ export class BillingEvents {
 
 	private async onPaymentFailed(data: any, _customData: any) {
 		api.Log(`Event triggered: subscription_payment_failed`, this.prefix)
-		// Note: schema doesn't have 'past_due', keeping active but could add flag
 		await api.Billing.Subscriptions.update({
+			status: `past_due`,
 			cancel_at_period_end: 1,
 		}, { provider_subscription_id: String(data.subscription_id) })
 	}
@@ -382,8 +397,22 @@ export class BillingEvents {
 	private async onPaymentRefunded(_data: any, _customData: any) {
 		api.Log(`Event triggered: subscription_payment_refunded`, this.prefix)
 	}
-	private async onPlanChanged(_data: any, _customData: any) {
+	private async onPlanChanged(data: any, _customData: any) {
 		api.Log(`Event triggered: subscription_plan_changed`, this.prefix)
+		if (!data.id || !data.variant_id) return
+
+		const product = await api.Billing.Products.get({ provider_variant_id: String(data.variant_id) })
+		if (!product) {
+			api.Log(`Plan changed but variant ${data.variant_id} not found locally`, this.prefix)
+			return
+		}
+
+		await api.Billing.Subscriptions.update({
+			plan_id: product.id,
+			status: data.status || `active`,
+			current_period_end: this.toMySQLDate(data.renews_at),
+		}, { provider_subscription_id: String(data.id) })
+		api.Log(`Plan changed to product ${product.id} (${product.name}) for sub ${data.id}`, this.prefix)
 	}
 	private async onLicenseKeyCreated(_data: any, _customData: any) {
 		api.Log(`Event triggered: license_key_created`, this.prefix)

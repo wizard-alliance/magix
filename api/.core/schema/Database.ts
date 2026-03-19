@@ -54,7 +54,7 @@ export type BillingOrderDBRow = {
 
 export type BillingProductFeatureDBRow = {
 	id?: number
-	product_id: number
+	provider_id: string
 	feature_name: string
 	description: string | null
 	sort_order: number
@@ -73,6 +73,7 @@ export type BillingProductMetaDBRow = {
 export type BillingProductDBRow = {
 	id?: number
 	name: string
+	variation_name: string | null
 	type: string
 	provider_id: string | null
 	provider_variant_id: string | null
@@ -370,7 +371,7 @@ export const schemaColumns = {
 
 	billing_product_features: {
 		id: 'number',
-		product_id: 'number',
+		provider_id: 'string',
 		feature_name: 'string',
 		description: 'string',
 		sort_order: 'number',

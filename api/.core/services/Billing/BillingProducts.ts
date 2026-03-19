@@ -1,9 +1,10 @@
 import type { BillingProductDBRow, BillingProductFeatureDBRow, BillingProductMetaDBRow } from "../../schema/Database.js"
-import type { BillingProduct, BillingProductFeature, BillingProductMeta, BillingProductFull } from "../../schema/DomainShapes.js"
+import type { BillingProduct, BillingProductFeature, BillingProductMeta, BillingProductFull, BillingProductGroup } from "../../schema/DomainShapes.js"
 
 const toShape = (row: BillingProductDBRow): BillingProduct => ({
 	id: row.id!,
 	name: row.name,
+	variationName: row.variation_name,
 	type: row.type,
 	providerId: row.provider_id,
 	providerVariantId: row.provider_variant_id,
@@ -21,7 +22,7 @@ const toShape = (row: BillingProductDBRow): BillingProduct => ({
 
 const toFeatureShape = (row: BillingProductFeatureDBRow): BillingProductFeature => ({
 	id: row.id!,
-	productId: row.product_id,
+	providerId: row.provider_id,
 	featureName: row.feature_name,
 	description: row.description,
 	sortOrder: row.sort_order,
@@ -46,7 +47,7 @@ export class BillingProducts {
 		const row = await query.executeTakeFirst()
 		if (!row) return null
 		const product = toShape(row)
-		const features = await this.getFeatures({ product_id: product.id })
+		const features = product.providerId ? await this.getFeatures({ provider_id: product.providerId }) : []
 		const meta = await this.getMetaAll({ product_id: product.id })
 		return { ...product, features, meta }
 	}
@@ -59,11 +60,11 @@ export class BillingProducts {
 		const products = rows.map(toShape)
 		const ids = products.map(p => p.id)
 		const allFeatures = ids.length ? await this.getFeatures() : []
-		const featureMap = new Map<number, BillingProductFeature[]>()
+		const featureMap = new Map<string, BillingProductFeature[]>()
 		for (const f of allFeatures) {
-			const list = featureMap.get(f.productId) || []
+			const list = featureMap.get(f.providerId) || []
 			list.push(f)
-			featureMap.set(f.productId, list)
+			featureMap.set(f.providerId, list)
 		}
 		const allMeta = ids.length ? await this.getMetaAll() : []
 		const metaMap = new Map<number, BillingProductMeta[]>()
@@ -72,7 +73,7 @@ export class BillingProducts {
 			list.push(m)
 			metaMap.set(m.productId, list)
 		}
-		return products.map(p => ({ ...p, features: featureMap.get(p.id) || [], meta: metaMap.get(p.id) || [] }))
+		return products.map(p => ({ ...p, features: featureMap.get(p.providerId ?? ``) || [], meta: metaMap.get(p.id) || [] }))
 	}
 
 	async set(params: Partial<BillingProductDBRow>) {
@@ -169,5 +170,52 @@ export class BillingProducts {
 		query = api.Utils.applyWhere(query, where)
 		const result = await query.executeTakeFirst()
 		return { numDeletedRows: Number(result.numDeletedRows) }
+	}
+
+	// Grouped products — groups variants by provider_id (LS product ID)
+	async getGrouped(): Promise<BillingProductGroup[]> {
+		const all = await this.getMany({ is_active: 1 } as any)
+		const groupMap = new Map<string, BillingProductFull[]>()
+
+		for (const product of all) {
+			if (!product.providerId) continue
+			const list = groupMap.get(product.providerId) || []
+			list.push(product)
+			groupMap.set(product.providerId, list)
+		}
+
+		const groups: BillingProductGroup[] = []
+		for (const [providerId, variants] of groupMap) {
+			// Collect meta from all variants, deduplicate by key (first wins)
+			const metaMap = new Map<string, BillingProductMeta>()
+			for (const v of variants) {
+				for (const m of v.meta) {
+					if (!metaMap.has(m.key)) metaMap.set(m.key, m)
+				}
+			}
+			const meta = [...metaMap.values()]
+			const metaValue = (key: string) => meta.find(m => m.key === key)?.value ?? null
+
+			// Features are now tied to provider_id directly — already loaded on each variant
+			const features = (variants[0]?.features ?? []).sort((a, b) => a.sortOrder - b.sortOrder)
+
+			// Sort variants by price ascending
+			const sortedVariants: BillingProduct[] = [...variants]
+				.sort((a, b) => a.price - b.price)
+				.map(({ features: _f, meta: _m, ...rest }) => rest)
+
+			groups.push({
+				providerId,
+				name: variants[0].name,
+				slug: metaValue(`slug`),
+				sortOrder: Number(metaValue(`group_sort_order`) ?? variants[0].sortOrder),
+				description: metaValue(`description`) ?? variants[0].description,
+				features,
+				meta,
+				variants: sortedVariants,
+			})
+		}
+
+		return groups.sort((a, b) => a.sortOrder - b.sortOrder)
 	}
 }

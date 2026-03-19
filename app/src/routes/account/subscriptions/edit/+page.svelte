@@ -129,6 +129,11 @@
 				</div>
 
 				<div class="actions-row">
+					{#if sub.status === `active` && !sub.canceledAt}
+						<Button href="/account/subscriptions/new" variant="secondary">
+							<i class="fa-light fa-arrows-rotate"></i> Change Plan
+						</Button>
+					{/if}
 					{#if sub.status === `active` && !sub.pausedAt}
 						<Button on:click={pause} loading={acting} disabled={acting} variant="secondary">
 							<i class="fa-light fa-pause"></i> Pause
